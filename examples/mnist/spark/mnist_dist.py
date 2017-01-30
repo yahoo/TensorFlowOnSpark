@@ -152,7 +152,7 @@ def map_fun(args, ctx):
             # print accuracy and save model checkpoint to HDFS every 100 steps
             if (step % 100 == 0):
               print("{0} step: {1} accuracy: {2}".format(datetime.now().isoformat(), step, sess.run(accuracy,{x: batch_xs, y_: batch_ys})))
-          else: # args.mode == "test"
+          else: # args.mode == "inference"
               label, pred, acc = sess.run([y_, prediction, accuracy], feed_dict=feed)
               TFNode.batch_results(ctx.mgr, pred)
               print("pred.shape: {0}".format(pred.shape))
