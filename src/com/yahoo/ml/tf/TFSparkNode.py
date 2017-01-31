@@ -109,10 +109,15 @@ def reserve(cluster_spec, tensorboard, queues=['input', 'output']):
                 tb_port = tb_sock.getsockname()[1]
                 tb_sock.close()
                 logdir="tensorboard_%d" %(worker_num)
-                logging.info("PYSPARK_PYTHON: {0}".format(os.environ['PYSPARK_PYTHON']))
-                pypath = os.environ.get('PYSPARK_PYTHON',"./Python/bin/python")
-                pydir = os.path.dirname(pypath)
-                tb_proc = subprocess.Popen([pypath, "%s/tensorboard"%pydir, "--logdir=%s"%logdir, "--port=%d"%tb_port, "--debug"])
+                if os.environ.contains('PYSPARK_PYTHON'):
+                  # user-specified Python (typically --archives Python.zip)
+                  pypath = os.environ['PYSPARK_PYTHON']
+                  logging.info("PYSPARK_PYTHON: {0}".format(pypath)
+                  pydir = os.path.dirname(pypath)
+                  tb_proc = subprocess.Popen([pypath, "%s/tensorboard"%pydir, "--logdir=%s"%logdir, "--port=%d"%tb_port, "--debug"])
+                else:
+                  # system-installed Python & tensorboard in PATH
+                  tb_proc = subprocess.Popen(["tensorboard", "--logdir=%s"%logdir, "--port=%d"%tb_port, "--debug"])
 
             # find a free port for TF
             # TODO: bind to port until TF server start
