@@ -62,14 +62,14 @@ class TFCluster(object):
       unionRDD = self.sc.union(rdds)
       unionRDD.foreachPartition(TFSparkNode.train(self.cluster_info, qname))
 
-  def test(self, dataRDD, qname='input'):
+  def inference(self, dataRDD, qname='input'):
       """
       Feeds Spark data partitions into the TensorFlow worker nodes and returns an RDD of results.
       """
-      logging.info("Feeding test data")
+      logging.info("Feeding inference data")
       assert(self.input_mode == InputMode.SPARK)
       assert(qname in self.queues)
-      return dataRDD.mapPartitions(TFSparkNode.test(self.cluster_info, qname))
+      return dataRDD.mapPartitions(TFSparkNode.inference(self.cluster_info, qname))
 
   def shutdown(self):
       """

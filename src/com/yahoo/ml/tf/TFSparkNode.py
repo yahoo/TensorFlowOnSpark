@@ -237,11 +237,11 @@ def train(cluster_info, qname='input'):
 
     return _train
 
-def test(cluster_info, qname='input'):
+def inference(cluster_info, qname='input'):
     """
-    Feeds Spark partitions into the shared multiprocessing.Queue and returns test/inference results.
+    Feeds Spark partitions into the shared multiprocessing.Queue and returns inference results.
     """
-    def _test(iter):
+    def _inference(iter):
         # get shared queue, reconnecting if necessary
         mgr = _get_manager(cluster_info, socket.gethostname(), os.getppid())
         queue_in = mgr.get_queue(qname)
@@ -268,7 +268,7 @@ def test(cluster_info, qname='input'):
         logging.info("Finished processing partition")
         return results
 
-    return _test
+    return _inference
 
 def shutdown(cluster_info, queues=['input']):
     def _shutdown(iter):

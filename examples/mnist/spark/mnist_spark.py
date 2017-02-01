@@ -27,12 +27,12 @@ parser.add_argument("-e", "--epochs", help="number of epochs", type=int, default
 parser.add_argument("-f", "--format", help="example format: (csv|pickle|tfr)", choices=["csv","pickle","tfr"], default="csv")
 parser.add_argument("-i", "--images", help="HDFS path to MNIST images in parallelized format")
 parser.add_argument("-l", "--labels", help="HDFS path to MNIST labels in parallelized format")
-parser.add_argument("-m", "--model", help="HDFS path to save/load model during train/test", default="mnist_model")
+parser.add_argument("-m", "--model", help="HDFS path to save/load model during train/inference", default="mnist_model")
 parser.add_argument("-o", "--output", help="HDFS path to save test/inference output", default="predictions")
 parser.add_argument("-r", "--readers", help="number of reader/enqueue threads", type=int, default=1)
 parser.add_argument("-s", "--steps", help="maximum number of steps", type=int, default=1000)
 parser.add_argument("-tb", "--tensorboard", help="launch tensorboard process", action="store_true")
-parser.add_argument("-X", "--mode", help="train|test", default="train")
+parser.add_argument("-X", "--mode", help="train|inference", default="train")
 parser.add_argument("-c", "--rdma", help="use rdma connection", default=False)
 args = parser.parse_args()
 print("args:",args)
@@ -74,7 +74,7 @@ else:
   fs = hdfs.hdfs()
   if fs.exists(args.output):
     fs.delete(args.output)
-  labelRDD = cluster.test(dataRDD)
+  labelRDD = cluster.inference(dataRDD)
   labelRDD.saveAsTextFile(args.output)
 cluster.shutdown()
 

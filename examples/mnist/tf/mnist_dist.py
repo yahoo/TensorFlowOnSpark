@@ -123,9 +123,9 @@ def map_fun(args, ctx):
       sm_b = tf.Variable(tf.zeros([10]), name="sm_b")
 
       # Placeholders or QueueRunner/Readers for input data
-      num_epochs = 1 if args.mode == "test" else None if args.epochs == 0 else args.epochs
-      index = task_index if args.mode == "test" else None
-      workers = num_workers if args.mode == "test" else None
+      num_epochs = 1 if args.mode == "inference" else None if args.epochs == 0 else args.epochs
+      index = task_index if args.mode == "inference" else None
+      workers = num_workers if args.mode == "inference" else None
 
       if args.format == "csv":
         x, y_ = read_csv_examples(args.images, args.labels, 100, num_epochs, index, workers)
@@ -200,7 +200,7 @@ def map_fun(args, ctx):
             print("{0} step: {1} accuracy: {2}".format(datetime.now().isoformat(), step, sess.run(accuracy)))
           _, summary, step = sess.run([train_op, summary_op, global_step])
           summary_writer.add_summary(summary, step)
-        else: # args.mode == "test"
+        else: # args.mode == "inference"
           labels, pred, acc = sess.run([label, prediction, accuracy])
           #print("label: {0}, pred: {1}".format(labels, pred))
           print("acc: {0}".format(acc))
