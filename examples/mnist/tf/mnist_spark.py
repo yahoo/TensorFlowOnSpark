@@ -21,12 +21,18 @@ from datetime import datetime
 from com.yahoo.ml.tf import TFCluster
 import mnist_dist
 
+sc = SparkContext(conf=SparkConf().setAppName("mnist_tf"))
+executors = sc._conf.get("spark.executor.instances")
+num_executors = int(executors) if executors is not None else 1
+num_ps = 1
+
 parser = argparse.ArgumentParser()
 parser.add_argument("-e", "--epochs", help="number of epochs", type=int, default=0)
 parser.add_argument("-f", "--format", help="example format: (csv|pickle|tfr)", choices=["csv","pickle","tfr"], default="tfr")
 parser.add_argument("-i", "--images", help="HDFS path to MNIST images in parallelized format")
 parser.add_argument("-l", "--labels", help="HDFS path to MNIST labels in parallelized format")
 parser.add_argument("-m", "--model", help="HDFS path to save/load model during train/test", default="mnist_model")
+parser.add_argument("-n", "--cluster_size", help="number of nodes in the cluster (for Spark Standalone)", type=int, default=num_executors)
 parser.add_argument("-o", "--output", help="HDFS path to save test/inference output", default="predictions")
 parser.add_argument("-r", "--readers", help="number of reader/enqueue threads", type=int, default=1)
 parser.add_argument("-s", "--steps", help="maximum number of steps", type=int, default=1000)
@@ -36,13 +42,10 @@ parser.add_argument("-c", "--rdma", help="use rdma connection", default=False)
 args = parser.parse_args()
 print("args:",args)
 
-sc = SparkContext(conf=SparkConf().setAppName("mnist_tf"))
 
 print("{0} ===== Start".format(datetime.now().isoformat()))
 
-num_executors = int(sc._conf.get("spark.executor.instances"))
-num_ps = 1
-cluster = TFCluster.reserve(sc, num_executors, num_ps, args.tensorboard, TFCluster.InputMode.TENSORFLOW)
+cluster = TFCluster.reserve(sc, args.cluster_size, num_ps, args.tensorboard, TFCluster.InputMode.TENSORFLOW)
 cluster.start(mnist_dist.map_fun, args)
 cluster.shutdown()
 

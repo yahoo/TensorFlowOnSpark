@@ -1,4 +1,4 @@
-<--
+<!--
 Copyright 2017 Yahoo Inc.
 Licensed under the terms of the Apache 2.0 license.
 Please see LICENSE file in the project root for terms.
@@ -28,7 +28,7 @@ Before you start, you should already be familiar with TensorFlow and have access
 From your grid gateway, download/install Python into a local folder.  This installation of Python will be distributed to the Spark executors, so that any custom dependencies, including TensorFlow, will be available to the executors.
 
     # download and extract Python 2.7
-    export PYTHON_ROOT=~/Python2.7.12
+    export PYTHON_ROOT=~/Python
     curl -O https://www.python.org/ftp/python/2.7.12/Python-2.7.12.tgz
     tar -xvf Python-2.7.12.tgz
     rm Python-2.7.12.tgz
@@ -97,18 +97,18 @@ Next, clone this repo and build a zip package for Spark:
 ### Convert the MNIST zip files into HDFS files
 
     # set environment variables (if not already done)
-    export PYTHON_ROOT=~/Python2.7.12
+    export PYTHON_ROOT=~/Python
     export YROOT=~/y
     export LD_LIBRARY_PATH=${YROOT}/lib64:${PATH}
-    export PYSPARK_PYTHON=Python2.7.12/bin/python
-    export SPARK_YARN_USER_ENV="PYSPARK_PYTHON=Python2.7.12/bin/python"
+    export PYSPARK_PYTHON=${PYTHON_ROOT}/bin/python
+    export SPARK_YARN_USER_ENV="PYSPARK_PYTHON=Python/bin/python"
     export PATH=${PYTHON_ROOT}/bin/:$PATH
     export QUEUE=gpu
     
     # for CPU mode:
     # export QUEUE=default
-    # --conf spark.executorEnv.LD_LIBRARY_PATH="lib64" \
-    # --driver-library-path="lib64" \
+    # remove --conf spark.executorEnv.LD_LIBRARY_PATH="lib64" \
+    # remove --driver-library-path="lib64" \
     
     # save images and labels as CSV files
     ${SPARK_HOME}/bin/spark-submit \
@@ -117,18 +117,33 @@ Next, clone this repo and build a zip package for Spark:
     --queue ${QUEUE} \
     --num-executors 4 \
     --executor-memory 4G \
-    --archives hdfs:///user/${USER}/Python.zip#Python2.7.12,mnist/mnist.zip#mnist \
-    --conf spark.executorEnv.LD_LIBRARY_PATH="lib64:/usr/local/cuda-7.5/lib64" \
-    --driver-library-path="lib64:/usr/local/cuda-7.5/lib64" \
+    --archives hdfs:///user/${USER}/Python.zip#Python,mnist/mnist.zip#mnist \
+    --conf spark.executorEnv.LD_LIBRARY_PATH="/usr/local/cuda-7.5/lib64" \
+    --driver-library-path="/usr/local/cuda-7.5/lib64" \
     TensorFlowOnSpark/examples/mnist/mnist_data_setup.py \
     --output mnist/csv \
     --format csv
 
+    # save images and labels as TFRecords
+    ${SPARK_HOME}/bin/spark-submit \
+    --master yarn \
+    --deploy-mode cluster \
+    --queue ${QUEUE} \
+    --num-executors 4 \
+    --executor-memory 4G \
+    --archives hdfs:///user/${USER}/Python.zip#Python,mnist/mnist.zip#mnist \
+    --conf spark.executorEnv.LD_LIBRARY_PATH="/usr/local/cuda-7.5/lib64" \
+    --driver-library-path="/usr/local/cuda-7.5/lib64" \
+    TensorFlowOnSpark/examples/mnist/mnist_data_setup.py \
+    --output mnist/tfr \
+    --format tfr
+
 ### Run distributed MNIST training (using feed_dict)
 
     # for CPU mode:
-    # --conf spark.executorEnv.LD_LIBRARY_PATH="lib64" \
-    # --driver-library-path="lib64" \
+    # export QUEUE=default
+    # remove --conf spark.executorEnv.LD_LIBRARY_PATH="lib64" \
+    # remove --driver-library-path="lib64" \
     
     # hadoop fs -rm -r mnist_model
     ${SPARK_HOME}/bin/spark-submit \
@@ -140,9 +155,9 @@ Next, clone this repo and build a zip package for Spark:
     --py-files TensorFlowOnSpark/tfspark.zip,TensorFlowOnSpark/examples/mnist/spark/mnist_dist.py \
     --conf spark.dynamicAllocation.enabled=false \
     --conf spark.yarn.maxAppAttempts=1 \
-    --archives hdfs:///user/${USER}/Python.zip#Python2.7.12 \
-    --conf spark.executorEnv.LD_LIBRARY_PATH="lib64:/usr/local/cuda-7.5/lib64" \
-    --driver-library-path="lib64:/usr/local/cuda-7.5/lib64" \
+    --archives hdfs:///user/${USER}/Python.zip#Python \
+    --conf spark.executorEnv.LD_LIBRARY_PATH="/usr/local/cuda-7.5/lib64" \
+    --driver-library-path="/usr/local/cuda-7.5/lib64" \
     TensorFlowOnSpark/examples/mnist/spark/mnist_spark.py \
     --images mnist/csv/train/images \
     --labels mnist/csv/train/labels \
@@ -161,9 +176,9 @@ Next, clone this repo and build a zip package for Spark:
     --py-files TensorFlowOnSpark/tfspark.zip,TensorFlowOnSpark/examples/mnist/spark/mnist_dist.py \
     --conf spark.dynamicAllocation.enabled=false \
     --conf spark.yarn.maxAppAttempts=1 \
-    --archives hdfs:///user/${USER}/Python.zip#Python2.7.12 \
-    --conf spark.executorEnv.LD_LIBRARY_PATH="lib64:/usr/local/cuda-7.5/lib64" \
-    --driver-library-path="lib64:/usr/local/cuda-7.5/lib64" \
+    --archives hdfs:///user/${USER}/Python.zip#Python \
+    --conf spark.executorEnv.LD_LIBRARY_PATH="/usr/local/cuda-7.5/lib64" \
+    --driver-library-path="/usr/local/cuda-7.5/lib64" \
     TensorFlowOnSpark/examples/mnist/spark/mnist_spark.py \
     --images mnist/csv/test/images \
     --labels mnist/csv/test/labels \
@@ -173,9 +188,32 @@ Next, clone this repo and build a zip package for Spark:
 
 ### Run distributed MNIST training (using QueueRunners)
 
-    # for CPU mode, substitute the following:
-    # --conf spark.executorEnv.LD_LIBRARY_PATH="lib64" \
-    # --driver-library-path="lib64" \
+    # for CPU mode:
+    # export QUEUE=default
+    # remove --conf spark.executorEnv.LD_LIBRARY_PATH="lib64" \
+    # remove --driver-library-path="lib64" \
+
+    # hadoop fs -rm -r mnist_model
+    ${SPARK_HOME}/bin/spark-submit \
+    --master yarn \
+    --deploy-mode cluster \
+    --queue ${QUEUE} \
+    --num-executors 4 \
+    --executor-memory 27G \
+    --py-files tensorflow/tfspark.zip,tensorflow/examples/mnist/tf/mnist_dist.py \
+    --conf spark.dynamicAllocation.enabled=false \
+    --conf spark.yarn.maxAppAttempts=1 \
+    --archives hdfs:///user/${USER}/Python.zip#Python \
+    --conf spark.executorEnv.LD_LIBRARY_PATH="/usr/local/cuda-7.5/lib64" \
+    --driver-library-path="/usr/local/cuda-7.5/lib64" \
+    tensorflow/examples/mnist/tf/mnist_spark.py \
+    --images mnist/tfr/train \
+    --format tfr \
+    --mode train \
+    --model mnist_model
+    # to use infiniband, replace the last line with --model mnist_model --rdma
+
+### Run distributed MNIST inference (using QueueRunners)
 
     # hadoop fs -rm -r predictions
     ${SPARK_HOME}/bin/spark-submit \
@@ -187,9 +225,9 @@ Next, clone this repo and build a zip package for Spark:
     --py-files TensorFlowOnSpark/tfspark.zip,TensorFlowOnSpark/examples/mnist/tf/mnist_dist.py \
     --conf spark.dynamicAllocation.enabled=false \
     --conf spark.yarn.maxAppAttempts=1 \
-    --archives hdfs:///user/${USER}/Python.zip#Python2.7.12 \
-    --conf spark.executorEnv.LD_LIBRARY_PATH="lib64:/usr/local/cuda-7.5/lib64" \
-    --driver-library-path="lib64:/usr/local/cuda-7.5/lib64" \
+    --archives hdfs:///user/${USER}/Python.zip#Python \
+    --conf spark.executorEnv.LD_LIBRARY_PATH="/usr/local/cuda-7.5/lib64" \
+    --driver-library-path="/usr/local/cuda-7.5/lib64" \
     TensorFlowOnSpark/examples/mnist/tf/mnist_spark.py \
     --images mnist/tfr/test \
     --mode inference \
