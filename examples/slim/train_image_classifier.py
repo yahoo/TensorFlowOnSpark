@@ -599,13 +599,15 @@ def main_fun(argv, ctx):
 if __name__ == '__main__':
   import argparse
 
+  sc = SparkContext(conf=SparkConf().setAppName("train_image_classifier"))
+  num_executors = int(sc._conf.get("spark.executor.instances"))
+
   parser = argparse.ArgumentParser()
   parser.add_argument("--num_ps_tasks", help="number of PS nodes", type=int, default=0)
   parser.add_argument("--tensorboard", help="launch tensorboard process", action="store_true")
+  parser.add_argument("--cluster_size", help="number of nodes in the cluster", type=int, default=num_executors)
   (args,rem) = parser.parse_known_args()
 
-  sc = SparkContext(conf=SparkConf().setAppName("train_image_classifier"))
-  num_executors = int(sc._conf.get("spark.executor.instances"))
 
   cluster = TFCluster.reserve(sc, num_executors, args.num_ps_tasks, args.tensorboard, TFCluster.InputMode.TENSORFLOW)
   cluster.start(main_fun, sys.argv)
