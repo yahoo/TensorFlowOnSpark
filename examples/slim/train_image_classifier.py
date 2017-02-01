@@ -600,7 +600,8 @@ if __name__ == '__main__':
   import argparse
 
   sc = SparkContext(conf=SparkConf().setAppName("train_image_classifier"))
-  num_executors = int(sc._conf.get("spark.executor.instances"))
+  executors = sc._conf.get("spark.executor.instances")
+  num_executors = int(executors) if executors is not None else 1
 
   parser = argparse.ArgumentParser()
   parser.add_argument("--num_ps_tasks", help="number of PS nodes", type=int, default=0)
@@ -608,7 +609,6 @@ if __name__ == '__main__':
   parser.add_argument("--cluster_size", help="number of nodes in the cluster", type=int, default=num_executors)
   (args,rem) = parser.parse_known_args()
 
-
-  cluster = TFCluster.reserve(sc, num_executors, args.num_ps_tasks, args.tensorboard, TFCluster.InputMode.TENSORFLOW)
+  cluster = TFCluster.reserve(sc, args.cluster_size, args.num_ps_tasks, args.tensorboard, TFCluster.InputMode.TENSORFLOW)
   cluster.start(main_fun, sys.argv)
   cluster.shutdown()
