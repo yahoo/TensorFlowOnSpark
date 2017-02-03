@@ -19,7 +19,6 @@ def map_fun(args, ctx):
   import math
   import numpy
   import os
-  import pydoop.hdfs as hdfs
   import signal
   import tensorflow as tf
   import time
@@ -100,13 +99,13 @@ def map_fun(args, ctx):
       accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32), name="accuracy")
 
       saver = tf.train.Saver()
-      summary_op = tf.merge_all_summaries()
-      init_op = tf.initialize_all_variables()
+      summary_op = tf.summary.merge_all()
+      init_op = tf.global_variables_initializer()
 
     # Create a "supervisor", which oversees the training process and stores model state into HDFS
-    logdir = args.model if hdfs.path.isabs(args.model) else "hdfs://default/user/{0}/{1}".format(getpass.getuser(), args.model)
+    logdir = args.model if args.model.startswith("hdfs://") else "hdfs://default/user/{0}/{1}".format(getpass.getuser(), args.model)
     print("tensorflow model path: {0}".format(logdir))
-    summary_writer = tf.train.SummaryWriter("tensorboard_%d" %(worker_num), graph=tf.get_default_graph())
+    summary_writer = tf.summary.FileWriter("tensorboard_%d" %(worker_num), graph=tf.get_default_graph())
 
     if args.mode == "train":
       sv = tf.train.Supervisor(is_chief=(task_index == 0),

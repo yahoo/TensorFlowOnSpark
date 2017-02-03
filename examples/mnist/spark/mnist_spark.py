@@ -12,7 +12,6 @@ from pyspark.conf import SparkConf
 import argparse
 import os
 import numpy
-import pydoop.hdfs as hdfs
 import sys
 import tensorflow as tf
 import threading
@@ -73,9 +72,6 @@ cluster.start(mnist_dist.map_fun, args)
 if args.mode == "train":
   cluster.train(dataRDD, args.epochs)
 else:
-  fs = hdfs.hdfs()
-  if fs.exists(args.output):
-    fs.delete(args.output)
   labelRDD = cluster.inference(dataRDD)
   labelRDD.saveAsTextFile(args.output)
 cluster.shutdown()
