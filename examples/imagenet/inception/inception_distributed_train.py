@@ -175,7 +175,7 @@ def train(target, dataset, cluster_spec, ctx):
         depth = 3
         images = tf.cast(images, tf.float32)
         images = tf.reshape(images, shape=[FLAGS.batch_size, height, width, depth])
-        tf.image_summary('images', images)
+        tf.summary.image('images', images)
         labels = tf.reshape(labels, [FLAGS.batch_size])
       else:
         images, labels = image_processing.distorted_inputs(
@@ -279,7 +279,7 @@ def train(target, dataset, cluster_spec, ctx):
       # passing in None for summary_op to avoid a summary_thread being started.
       # Running summaries and training operations in parallel could run out of
       # GPU memory.
-      summary_writer = tf.train.SummaryWriter("tensorboard_%d" %(ctx.worker_num), graph=tf.get_default_graph())
+      summary_writer = tf.summary.FileWriter("tensorboard_%d" %(ctx.worker_num), graph=tf.get_default_graph())
       sv = tf.train.Supervisor(is_chief=is_chief,
                                logdir=FLAGS.train_dir,
                                init_op=init_op,

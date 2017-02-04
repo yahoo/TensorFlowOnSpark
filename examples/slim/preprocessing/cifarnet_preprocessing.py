@@ -45,7 +45,7 @@ def preprocess_for_train(image,
   Returns:
     A preprocessed image.
   """
-  tf.image_summary('image', tf.expand_dims(image, 0))
+  tf.summary.image('image', tf.expand_dims(image, 0))
 
   # Transform the image to floats.
   image = tf.to_float(image)
@@ -58,7 +58,7 @@ def preprocess_for_train(image,
   # Randomly flip the image horizontally.
   distorted_image = tf.image.random_flip_left_right(distorted_image)
 
-  tf.image_summary('distorted_image', tf.expand_dims(distorted_image, 0))
+  tf.summary.image('distorted_image', tf.expand_dims(distorted_image, 0))
 
   # Because these operations are not commutative, consider randomizing
   # the order their operation.
@@ -81,7 +81,7 @@ def preprocess_for_eval(image, output_height, output_width):
   Returns:
     A preprocessed image.
   """
-  tf.image_summary('image', tf.expand_dims(image, 0))
+  tf.summary.image('image', tf.expand_dims(image, 0))
   # Transform the image to floats.
   image = tf.to_float(image)
 
@@ -89,7 +89,7 @@ def preprocess_for_eval(image, output_height, output_width):
   resized_image = tf.image.resize_image_with_crop_or_pad(image,
                                                          output_width,
                                                          output_height)
-  tf.image_summary('resized_image', tf.expand_dims(resized_image, 0))
+  tf.summary.image('resized_image', tf.expand_dims(resized_image, 0))
 
   # Subtract off the mean and divide by the variance of the pixels.
   return tf.image.per_image_whitening(resized_image)

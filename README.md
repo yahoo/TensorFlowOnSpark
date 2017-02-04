@@ -11,15 +11,16 @@ TensorFlowOnSpark enables [TensorFlow](https://www.tensorflow.org) distributed t
 
 TensorFlowOnSpark provides an Spark-compatible API to help manage the TensorFlow cluster with the following steps:
 
-1. **Reservation** - reserves a port for the TensorFlow process on each executor and also starts to listen for data/control messages.
+1. **Reservation** - reserves a port for the TensorFlow process on each executor and also starts a listener for data/control messages.
 2. **Startup** - launches the Tensorflow main function on the executors.
 3. **Data ingestion**
-  a. **Feeding** - sends Spark RDD data into the TensorFlow nodes using the [feed_dict](https://www.tensorflow.org/how_tos/reading_data/#feeding) mechanism. We leverage the [Hadoop Input/Output Format](https://github.com/tensorflow/ecosystem/tree/master/hadoop) for access to TFRecords on HDFS.
-  b. **Readers & QueueRunners** - leverages TensorFlow's [Reader](https://www.tensorflow.org/how_tos/reading_data/#reading_from_files) mechanism to read data files.
-4. **Shutdown** - shutdown Tensorflow execution on executors.
+  1. **Feeding** - sends Spark RDD data into the TensorFlow nodes using the [feed_dict](https://www.tensorflow.org/how_tos/reading_data/#feeding) mechanism.  Note that we leverage the [Hadoop Input/Output Format](https://github.com/tensorflow/ecosystem/tree/master/hadoop) for access to TFRecords on HDFS.
+  2. **Readers & QueueRunners** - leverages TensorFlow's [Reader](https://www.tensorflow.org/how_tos/reading_data/#reading_from_files) mechanism to read data files directly from HDFS.
+4. **Shutdown** - shuts down the Tensorflow workers and PS nodes on the executors.
 
-We have enhanced TensorFlow to support direct access to remote GPU memory (RDMA) on Infiniband networks.  
+We have also enhanced TensorFlow to support direct access to remote GPU memory (RDMA) on Infiniband networks.
 This [enhancement](https://github.com/yahoo/tensorflow/tree/yahoo) address a [key issue](https://github.com/tensorflow/tensorflow/issues/2916)  of current TensorFlow network layer.
+
 
 ## Using TensorFlowOnSpark
 
