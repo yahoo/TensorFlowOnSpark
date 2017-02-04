@@ -466,7 +466,7 @@ def repeat_op(repetitions, inputs, op, *args, **kwargs):
     ValueError: if the op is unknown or wrong.
   """
   scope = kwargs.pop('scope', None)
-  with tf.variable_op_scope([inputs], scope, 'RepeatOp'):
+  with tf.variable_scope(scope, 'RepeatOp', [inputs]):
     tower = inputs
     for _ in range(repetitions):
       tower = op(tower, *args, **kwargs)

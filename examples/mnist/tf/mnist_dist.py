@@ -19,7 +19,6 @@ def map_fun(args, ctx):
   import math
   import numpy
   import os
-  import pydoop.hdfs as hdfs
   import signal
   import tensorflow as tf
   import time
@@ -45,12 +44,14 @@ def map_fun(args, ctx):
   def read_csv_examples(image_dir, label_dir, batch_size=100, num_epochs=None, task_index=None, num_workers=None):
     print_log(worker_num, "num_epochs: {0}".format(num_epochs))
     # Setup queue of csv image filenames
-    images = hdfs.ls(image_dir)
+    tf_record_pattern = os.path.join(image_dir, 'part-*')
+    images = tf.gfile.Glob(tf_record_pattern)
     print_log(worker_num, "images: {0}".format(images))
     image_queue = tf.train.string_input_producer(images, shuffle=False, capacity=1000, num_epochs=num_epochs, name="image_queue")
 
     # Setup queue of csv label filenames
-    labels = hdfs.ls(label_dir)
+    tf_record_pattern = os.path.join(label_dir, 'part-*')
+    labels = tf.gfile.Glob(tf_record_pattern)
     print_log(worker_num, "labels: {0}".format(labels))
     label_queue = tf.train.string_input_producer(labels, shuffle=False, capacity=1000, num_epochs=num_epochs, name="label_queue")
 
@@ -78,7 +79,8 @@ def map_fun(args, ctx):
     print_log(worker_num, "num_epochs: {0}".format(num_epochs))
 
     # Setup queue of TFRecord filenames
-    files = hdfs.ls(path)
+    tf_record_pattern = os.path.join(path, 'part-*')
+    files = tf.gfile.Glob(tf_record_pattern)
     queue_name = "file_queue"
 
     # split input files across workers, if specified
@@ -128,9 +130,12 @@ def map_fun(args, ctx):
       workers = num_workers if args.mode == "inference" else None
 
       if args.format == "csv":
-        x, y_ = read_csv_examples(args.images, args.labels, 100, num_epochs, index, workers)
+        images = args.images if args.images.startswith("hdfs://") else "hdfs://default/user/{0}/{1}".format(getpass.getuser(), args.images)
+        labels = args.labels if args.labels.startswith("hdfs://") else "hdfs://default/user/{0}/{1}".format(getpass.getuser(), args.labels)
+        x, y_ = read_csv_examples(images, labels, 100, num_epochs, index, workers)
       elif args.format == "tfr":
-        x, y_ = read_tfr_examples(args.images, 100, num_epochs, index, workers)
+        images = args.images if args.images.startswith("hdfs://") else "hdfs://default/user/{0}/{1}".format(getpass.getuser(), args.images)
+        x, y_ = read_tfr_examples(images, 100, num_epochs, index, workers)
       else:
         raise("{0} format not supported for tf input mode".format(args.format))
 
@@ -152,13 +157,13 @@ def map_fun(args, ctx):
       accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32), name="accuracy")
 
       saver = tf.train.Saver()
-      summary_op = tf.merge_all_summaries()
-      init_op = tf.initialize_all_variables()
+      summary_op = tf.summary.merge_all()
+      init_op = tf.global_variables_initializer()
 
     # Create a "supervisor", which oversees the training process and stores model state into HDFS
-    logdir = args.model if hdfs.path.isabs(args.model) else "hdfs://default/user/{0}/{1}".format(getpass.getuser(), args.model)
+    logdir = args.model if args.model.startswith("hdfs://") else "hdfs://default/user/{0}/{1}".format(getpass.getuser(), args.model)
     print("tensorflow model path: {0}".format(logdir))
-    summary_writer = tf.train.SummaryWriter("tensorboard_%d" %(worker_num), graph=tf.get_default_graph())
+    summary_writer = tf.summary.FileWriter("tensorboard_%d" %(worker_num), graph=tf.get_default_graph())
 
     if args.mode == "train":
       sv = tf.train.Supervisor(is_chief=(task_index == 0),
@@ -177,14 +182,12 @@ def map_fun(args, ctx):
                                global_step=global_step,
                                stop_grace_secs=300,
                                save_model_secs=0)
-
-    output_file = hdfs.open("{0}/part-{1:05d}".format(args.output, worker_num), mode='w')
+      output_file = tf.gfile.Open("{0}/part-{1:05d}".format(args.output, worker_num), mode='w')
 
     # The supervisor takes care of session initialization, restoring from
     # a checkpoint, and closing when done or an error occurs.
     with sv.managed_session(server.target) as sess:
       print("{0} session ready".format(datetime.now().isoformat()))
-
 
       # Loop until the supervisor shuts down or 1000000 steps have completed.
       step = 0
@@ -206,11 +209,12 @@ def map_fun(args, ctx):
           print("acc: {0}".format(acc))
           for i in range(len(labels)):
             count += 1
-            print("{0} {1}".format(labels[i], pred[i]))
+            print("Label: {0}, Prediction: {1}".format(labels[i], pred[i]))
             output_file.write("{0} {1}\n".format(labels[i], pred[i]))
           print("count: {0}".format(count))
 
-    output_file.close()
+    if args.mode == "inference":
+      output_file.close()
 
     # Ask for all the services to stop.
     print("{0} stopping supervisor".format(datetime.now().isoformat()))

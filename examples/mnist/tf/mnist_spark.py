@@ -12,7 +12,6 @@ from pyspark.conf import SparkConf
 import argparse
 import os
 import numpy
-import pydoop.hdfs as hdfs
 import sys
 import tensorflow as tf
 import threading

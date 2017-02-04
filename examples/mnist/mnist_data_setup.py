@@ -10,7 +10,6 @@ import getpass
 import numpy
 import tensorflow as tf
 from array import array
-from pydoop import hdfs
 from tensorflow.contrib.learn.python.learn.datasets import mnist
 
 def toTFExample(image, label):
@@ -41,7 +40,7 @@ def fromCSV(s):
 
 def hdfsPath(path):
   """Returns absolute path to HDFS file/dir"""
-  return path if hdfs.path.isabs(path) else "hdfs://default/user/{0}/{1}".format(getpass.getuser(), path)
+  return path if path.startswith("hdfs://") else "hdfs://default/user/{0}/{1}".format(getpass.getuser(), path)
 
 def writeMNIST(sc, input_images, input_labels, output, format, num_partitions):
   """Writes MNIST image/label vectors into parallelized files on HDFS"""

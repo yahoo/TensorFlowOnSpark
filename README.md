@@ -9,14 +9,14 @@ Please see LICENSE file in the project root for terms.
 
 TensorFlowOnSpark enables [TensorFlow](https://www.tensorflow.org) distributed training and inference on [Hadoop](http://hadoop.apache.org) clusters using [Apache Spark](http://spark.apache.org).  This framework seeks to minimize the amount of code changes required to run existing TensorFlow code on a shared grid.  It provides an Spark-compatible API to help manage the TensorFlow cluster with the following steps:
 
-1. **Reservation** - reserves a port for the TensorFlow process on each executor and also starts to listen for data/control messages.
+1. **Reservation** - reserves a port for the TensorFlow process on each executor and also starts a listener for data/control messages.
 2. **Startup** - launches the Tensorflow main function on the executors.
 3. **Data ingestion**
-  a. **Feeding** - sends Spark RDD data into the TensorFlow nodes using the [feed_dict](https://www.tensorflow.org/how_tos/reading_data/#feeding) mechanism. We leverage the [Hadoop Input/Output Format](https://github.com/tensorflow/ecosystem/tree/master/hadoop) for access to TFRecords on HDFS.
-  b. **Readers & QueueRunners** - leverages TensorFlow's [Reader](https://www.tensorflow.org/how_tos/reading_data/#reading_from_files) mechanism to read data files.
-4. **Shutdown** - shutdown Tensorflow execution on executors.
+  1. **Feeding** - sends Spark RDD data into the TensorFlow nodes using the [feed_dict](https://www.tensorflow.org/how_tos/reading_data/#feeding) mechanism.  Note that we leverage the [Hadoop Input/Output Format](https://github.com/tensorflow/ecosystem/tree/master/hadoop) for access to TFRecords on HDFS.
+  2. **Readers & QueueRunners** - leverages TensorFlow's [Reader](https://www.tensorflow.org/how_tos/reading_data/#reading_from_files) mechanism to read data files directly from HDFS.
+4. **Shutdown** - shuts down the Tensorflow workers and PS nodes on the executors.
 
-We have enhanced TensorFlow to support direct access to remote GPU memory (RDMA) on Infiniband networks.  
+We have also enhanced TensorFlow to support direct access to remote GPU memory (RDMA) on Infiniband networks.
 This [enhancement](https://github.com/yahoo/tensorflow/tree/yahoo) address a [key issue](https://github.com/tensorflow/tensorflow/issues/2916)  of current TensorFlow network layer.
 
 ## Getting Started
@@ -253,7 +253,7 @@ from datetime import datetime
 
 ### Replace the main() function
 
-Replace this line with `main_fun(argv, ctx)`, since we'll use the two arguments later.  The `argv` parameter will contain a full copy of the arguments supplied at the PySpark command line, while the `ctx` parameter will contain node metadata, like `job_name` and `task_id`.  Also, make sure that the `import tensorflow as tf` occurs within this function, since this will be executed/imported on the executors.  And, if there are any functions used by the main function, ensure that it's defined inside the `main_fun` block.
+Replace this line with `main_fun(argv, ctx)`.  The `argv` parameter will contain a full copy of the arguments supplied at the PySpark command line, while the `ctx` parameter will contain node metadata, like `job_name` and `task_id`.  Also, make sure that the `import tensorflow as tf` occurs within this function, since this will be executed/imported on the executors.  And, if there are any functions used by the main function, ensure that they are defined or imported inside the `main_fun` block.
 
 ```python
 # def main():
@@ -261,9 +261,9 @@ def main_fun(argv, ctx)
   import tensorflow as tf
 ```
 
-### Replace the tf.app.run() method
+### Replace the tf.app.run() function
 
-The is the line starts the TensorFlow main method.  Replace it with the following code to set up PySpark and launch TensorFlow on the executors.  Note that we're using `argparse` here mostly because the `tf.app.FLAGS` mechanism is currently unsupported, and we're on the Spark driver at this point.
+This line executes the TensorFlow main function.  Replace it with the following code to set up PySpark and launch TensorFlow on the executors.  Note that we're using `argparse` here mostly because the `tf.app.FLAGS` mechanism is currently not an officially supported TensorFlow API.
 
 ```python
 if __name__ == '__main__':
@@ -283,9 +283,13 @@ if __name__ == '__main__':
     cluster.shutdown()
 ```
 
-### Replace the tf.train.Server()
+### Replace the tf.train.Server() call
 
-In distributed TensorFlow apps, there is typically that extracts the addresses for the `ps` and `worker` nodes from the command line args, creates a cluster spec, and then starts the TensorFlow server.  Replace these lines as follows.
+In distributed TensorFlow apps, there is typically code that:
+1. extracts the addresses for the `ps` and `worker` nodes from the command line args
+2. creates a cluster spec
+3. starts the TensorFlow server.
+These can all be replaced as follows.
 
 ```python
     # ps_hosts = FLAGS.ps_hosts.split(',')
@@ -296,42 +300,44 @@ In distributed TensorFlow apps, there is typically that extracts the addresses f
     # server = tf.train.Server( {'ps': ps_hosts, 'worker': worker_hosts},
     #    job_name=FLAGS.job_name, task_index=FLAGS.task_id)
     cluster_spec, server = TFNode.start_cluster_server(ctx, FLAGS.num_gpus, FLAGS.rdma)
+    # or use the following for default values of num_gpus=1 and rdma=False
+    # cluster_spec, server = TFNode.start_cluster_server(ctx)
 ```
 
 ### Add TensorFlowOnSpark-specific arguments
 
-Since most TensorFlow examples use the `tf.app.FLAGS` mechanism, we leverage it here to parse our TensorFlowOnSpark-specific arguments (on the executor-side) for consistency.  If your application uses another mechanism, just add these two arguments accordingly.
+Since most TensorFlow examples use the `tf.app.FLAGS` mechanism, we leverage it here to parse our TensorFlowOnSpark-specific arguments (on the executor-side) for consistency.  If your application uses another parsing mechanism, just add these two arguments accordingly.
 
 ```python
 tf.app.flags.DEFINE_integer('num_gpus', 1, 'Number of GPUs per node.')
 tf.app.flags.DEFINE_boolean('rdma', False, 'Use RDMA between GPUs')
 ```
 
-Note: while these are required for the `TFNode.start_cluster_server()` function, your code must still be written specifically to leverage multiple GPUs (e.g. see the "tower" pattern in the CIFAR-10 example).
+Note: while these are required for the `TFNode.start_cluster_server()` function, your code must still be written specifically to leverage multiple GPUs (e.g. see the "tower" pattern in the CIFAR-10 example).  And again, if using a single GPU per node with no RDMA, you can skip this step and just use `TFNode.start_cluster_server(ctx).
 
 ### Enable TensorBoard
 
-Finally, if using TensorBoard, we need to ensure that the summaries are saved to the local disk of the "chief" worker (by convention "worker:0"), since TensorBoard currently cannot read directly from HDFS.  Locate the `tf.train.Supervisor()` call, and add a custom `summary_writer` as follows.  Note: the tensorboard process will looking in this specific directory by convention, so do not change the path.
+Finally, if using TensorBoard, ensure that the summaries are saved to the local disk of the "chief" worker (by convention "worker:0"), since TensorBoard currently cannot read directly from HDFS.  Locate the `tf.train.Supervisor()` call, and add a custom `summary_writer` as follows.  Note: the tensorboard process will looking in this specific directory by convention, so do not change the path.
 
 ```python
-  summary_writer = tf.train.SummaryWriter("tensorboard_%d" %(ctx.worker_num), graph=tf.get_default_graph())
+  summary_writer = tf.summary.FileWriter("tensorboard_%d" %(ctx.worker_num), graph=tf.get_default_graph())
   sv = tf.train.Supervisor(is_chief=is_chief,
                            logdir=FLAGS.train_dir,
                            init_op=init_op,
                            summary_op=None,
                            global_step=global_step,
-                             summary_writer=summary_writer,
-                             saver=saver,
-                             save_model_secs=FLAGS.save_interval_secs)
+                           summary_writer=summary_writer,
+                           saver=saver,
+                           save_model_secs=FLAGS.save_interval_secs)
 ```
 
 ### Try it out
 
-Using a similar PySpark command as above, you should be now able to launch your job on the grid.
+Using a similar PySpark command as the MNIST example above, you should be now able to launch your job on the grid.
 
 ## Other Examples
 
-In addition to the MNIST example provided above, we also demonstrate the conversion on several of the TensorFlow examples:
+In addition to the MNIST example, we also demonstrate the conversion process on several of the TensorFlow examples:
 
 - [CIFAR10](examples/cifar10)
 - [ImageNet/Inception](examples/imagenet/inception)
