@@ -57,6 +57,8 @@ cluster](../../wiki/GetStarted_EC2). A [Conversion
 Guide](../../wiki/Conversion) has been provided to help you convert
 your TensorFlow programs.
 
+## Mailing List
+
 Please join [TensorFlowOnSpark user group](https://groups.google.com/forum/#!forum/TensorFlowOnSpark-users) for discussions and questions.
 
 ## License
