@@ -7,25 +7,24 @@ Please see LICENSE file in the project root for terms.
 
 ## What's TensorFlowOnSpark?
 
-TensorFlowOnSpark brings scalable deep learning to Hadoop and Spark
+TensorFlowOnSpark brings scalable deep learning to [Apache Hadoop](http://hadoop.apache.org) and [Apache Spark](http://spark.apache.org)
 clusters. By combining salient features from deep learning framework
 [TensorFlow](https://www.tensorflow.org) and big-data frameworks
 Apache Spark and Apache Hadoop, TensorFlowOnSpark enables distributed
 deep learning on a cluster of GPU and CPU servers.
 
-TensorFlowOnSpark enables distributed
-[TensorFlow](https://www.tensorflow.org) training and inference on
-[Apache Spark](http://spark.apache.org) clusters.  It seeks to
-minimize the amount of code changes required to run existing
-TensorFlow programs on a shared grid.  Its Spark-compatible API helps
-manage the TensorFlow cluster with the following steps:
+TensorFlowOnSpark enables distributed TensorFlow training and
+inference on Apache Spark clusters.  It seeks to minimize the amount
+of code changes required to run existing TensorFlow programs on a
+shared grid.  Its Spark-compatible API helps manage the TensorFlow
+cluster with the following steps:
 
 1. **Reservation** - reserves a port for the TensorFlow process on each executor and also starts a listener for data/control messages.
-2. **Startup** - launches the Tensorflow main function on the executors.
-3. **Data ingestion**
+1. **Startup** - launches the Tensorflow main function on the executors.
+1. **Data ingestion**
+  1. **Readers & QueueRunners** - leverages TensorFlow's [Reader](https://www.tensorflow.org/how_tos/reading_data/#reading_from_files) mechanism to read data files directly from HDFS.
   1. **Feeding** - sends Spark RDD data into the TensorFlow nodes using the [feed_dict](https://www.tensorflow.org/how_tos/reading_data/#feeding) mechanism.  Note that we leverage the [Hadoop Input/Output Format](https://github.com/tensorflow/ecosystem/tree/master/hadoop) for access to TFRecords on HDFS.
-  2. **Readers & QueueRunners** - leverages TensorFlow's [Reader](https://www.tensorflow.org/how_tos/reading_data/#reading_from_files) mechanism to read data files directly from HDFS.
-4. **Shutdown** - shuts down the Tensorflow workers and PS nodes on the executors.
+1. **Shutdown** - shuts down the Tensorflow workers and PS nodes on the executors.
 
 We have also
 [enhanced](https://github.com/yahoo/tensorflow/tree/yahoo) TensorFlow
