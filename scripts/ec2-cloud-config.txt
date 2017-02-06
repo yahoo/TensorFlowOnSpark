@@ -1,0 +1,5 @@
+disable_root: false
+runcmd:
+  - source /root/.bash_profile
+  - sudo ln /dev/null /dev/raw1394
+
