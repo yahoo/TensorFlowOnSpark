@@ -799,7 +799,7 @@ def ssh_cluster(master_nodes, slave_nodes, opts, cmd):
 
 # Deploy configuration files and run setup scripts on a newly launched
 # or started EC2 cluster.
-def setup_cluster(conn, master_nodes, slave_nodes, opts, deploy_ssh_key, cmd):
+def setup_cluster(conn, master_nodes, slave_nodes, opts, deploy_ssh_key):
     master = get_dns_name(master_nodes[0], opts.private_ips)
     if deploy_ssh_key:
         print("Generating cluster's SSH key on master...")
@@ -862,9 +862,6 @@ def setup_cluster(conn, master_nodes, slave_nodes, opts, deploy_ssh_key, cmd):
 
     print("Running setup on master...")
     setup_spark_cluster(master, opts)
-
-    if cmd != "": 
-       ssh_cluster(master_nodes, slave_nodes, opts, cmd)
 
     print("Done!")
 
@@ -1368,7 +1365,7 @@ def real_main():
             cluster_instances=(master_nodes + slave_nodes),
             cluster_state='ssh-ready'
         )
-        setup_cluster(conn, master_nodes, slave_nodes, opts, True, "source ~/.bash_profile; pip install pydoop")
+        setup_cluster(conn, master_nodes, slave_nodes, opts, True)
 
     elif action == "destroy":
         (master_nodes, slave_nodes) = get_existing_cluster(
@@ -1523,7 +1520,7 @@ def real_main():
         opts.master_instance_type = existing_master_type
         opts.instance_type = existing_slave_type
 
-        setup_cluster(conn, master_nodes, slave_nodes, opts, False, "")
+        setup_cluster(conn, master_nodes, slave_nodes, opts, False)
 
     else:
         print("Invalid action: %s" % action, file=stderr)
