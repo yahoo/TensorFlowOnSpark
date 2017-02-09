@@ -5,8 +5,9 @@
 This module provides a high-level API to manage the TensorFlowOnSpark cluster.
 """
 
+import getpass
 import logging
-import operator
+import os
 import threading
 import time
 import TFManager
@@ -21,6 +22,7 @@ class InputMode(object):
 class TFCluster(object):
 
   sc = None
+  defaultFS = None
   nodeRDD = None
   cluster_info = None
   input_mode = None
@@ -32,7 +34,11 @@ class TFCluster(object):
       """
       logging.info("Starting TensorFlow")
       def _start():
-          self.nodeRDD.foreachPartition(TFSparkNode.start(map_fun, tf_args, self.cluster_info, background=(self.input_mode == InputMode.SPARK)))
+          self.nodeRDD.foreachPartition(TFSparkNode.start(map_fun,
+                                                          tf_args,
+                                                          self.cluster_info,
+                                                          self.defaultFS,
+                                                          background=(self.input_mode == InputMode.SPARK)))
 
       # start TF on a background thread (on Spark driver)
       t = threading.Thread(target=_start)
@@ -145,8 +151,18 @@ def reserve(sc, num_executors, num_ps, tensorboard=False, input_mode=InputMode.T
             nodes.append(i)
             spec['worker'] = nodes
 
+    # determine the hadoop defaultFS and adjust to default working dir
+    defaultFS = sc._jsc.hadoopConfiguration().get("fs.defaultFS")
+    if defaultFS.startswith("file:///"):
+        defaultFS = defaultFS + os.getcwd()[1:]
+    elif defaultFS.startswith("hdfs://"):
+        defaultFS = "{0}/user/{1}".format(defaultFS, getpass.getuser())
+    else:
+        logging.warn("Unknown defaultFS: {0}".format(defaultFS))
+
     cluster = TFCluster()
     cluster.sc = sc
+    cluster.defaultFS = defaultFS
     cluster.nodeRDD = sc.parallelize(range(num_executors), num_executors)
     cluster.cluster_info = cluster.nodeRDD.mapPartitions(TFSparkNode.reserve(spec, tensorboard, queues)).collect()
     cluster.input_mode = input_mode

@@ -15,11 +15,8 @@ def print_log(worker_num, arg):
 def map_fun(args, ctx):
   from com.yahoo.ml.tf import TFNode
   from datetime import datetime
-  import getpass
   import math
   import numpy
-  import os
-  import signal
   import tensorflow as tf
   import time
 
@@ -103,7 +100,7 @@ def map_fun(args, ctx):
       init_op = tf.global_variables_initializer()
 
     # Create a "supervisor", which oversees the training process and stores model state into HDFS
-    logdir = args.model if args.model.startswith("hdfs://") else "hdfs://default/user/{0}/{1}".format(getpass.getuser(), args.model)
+    logdir = TFNode.hdfs_path(ctx, args.model)
     print("tensorflow model path: {0}".format(logdir))
     summary_writer = tf.summary.FileWriter("tensorboard_%d" %(worker_num), graph=tf.get_default_graph())
 
@@ -153,7 +150,9 @@ def map_fun(args, ctx):
               print("{0} step: {1} accuracy: {2}".format(datetime.now().isoformat(), step, sess.run(accuracy,{x: batch_xs, y_: batch_ys})))
           else: # args.mode == "inference"
               label, pred, acc = sess.run([y_, prediction, accuracy], feed_dict=feed)
-              TFNode.batch_results(ctx.mgr, pred)
+
+              results = ["{0} Label: {1}, Prediction: {2}".format(datetime.now().isoformat(), l, p) for l,p in zip(label,pred)]
+              TFNode.batch_results(ctx.mgr, results)
               print("pred.shape: {0}".format(pred.shape))
               print("batch_xs.shape: {0}".format(batch_xs.shape))
               print("label: {0}, pred: {1}".format(label, pred))

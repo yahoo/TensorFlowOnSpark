@@ -130,11 +130,11 @@ def map_fun(args, ctx):
       workers = num_workers if args.mode == "inference" else None
 
       if args.format == "csv":
-        images = args.images if args.images.startswith("hdfs://") else "hdfs://default/user/{0}/{1}".format(getpass.getuser(), args.images)
-        labels = args.labels if args.labels.startswith("hdfs://") else "hdfs://default/user/{0}/{1}".format(getpass.getuser(), args.labels)
+        images = TFNode.hdfs_path(ctx, args.images)
+        labels = TFNode.hdfs_path(ctx, args.labels)
         x, y_ = read_csv_examples(images, labels, 100, num_epochs, index, workers)
       elif args.format == "tfr":
-        images = args.images if args.images.startswith("hdfs://") else "hdfs://default/user/{0}/{1}".format(getpass.getuser(), args.images)
+        images = TFNode.hdfs_path(ctx, args.images)
         x, y_ = read_tfr_examples(images, 100, num_epochs, index, workers)
       else:
         raise("{0} format not supported for tf input mode".format(args.format))
@@ -161,7 +161,7 @@ def map_fun(args, ctx):
       init_op = tf.global_variables_initializer()
 
     # Create a "supervisor", which oversees the training process and stores model state into HDFS
-    logdir = args.model if args.model.startswith("hdfs://") else "hdfs://default/user/{0}/{1}".format(getpass.getuser(), args.model)
+    logdir = TFNode.hdfs_path(ctx, args.model)
     print("tensorflow model path: {0}".format(logdir))
     summary_writer = tf.summary.FileWriter("tensorboard_%d" %(worker_num), graph=tf.get_default_graph())
 
@@ -182,7 +182,8 @@ def map_fun(args, ctx):
                                global_step=global_step,
                                stop_grace_secs=300,
                                save_model_secs=0)
-      output_file = tf.gfile.Open("{0}/part-{1:05d}".format(args.output, worker_num), mode='w')
+      output_dir = TFNode.hdfs_path(ctx, args.output)
+      output_file = tf.gfile.Open("{0}/part-{1:05d}".format(output_dir, worker_num), mode='w')
 
     # The supervisor takes care of session initialization, restoring from
     # a checkpoint, and closing when done or an error occurs.

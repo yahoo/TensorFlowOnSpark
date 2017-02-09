@@ -493,9 +493,9 @@ def main_fun(argv, ctx):
         if 'AuxLogits' in end_points:
           slim.losses.softmax_cross_entropy(
               end_points['AuxLogits'], labels,
-              label_smoothing=FLAGS.label_smoothing, weight=0.4, scope='aux_loss')
+              label_smoothing=FLAGS.label_smoothing, weights=0.4, scope='aux_loss')
         slim.losses.softmax_cross_entropy(
-            logits, labels, label_smoothing=FLAGS.label_smoothing, weight=1.0)
+            logits, labels, label_smoothing=FLAGS.label_smoothing, weights=1.0)
         return end_points
 
       # Gather initial summaries.
@@ -539,8 +539,7 @@ def main_fun(argv, ctx):
       with tf.device(deploy_config.optimizer_device()):
         learning_rate = _configure_learning_rate(dataset.num_samples, global_step)
         optimizer = _configure_optimizer(learning_rate)
-        summaries.add(tf.summary.scalar('learning_rate', learning_rate,
-                                        name='learning_rate'))
+        summaries.add(tf.summary.scalar('learning_rate', learning_rate))
 
       if FLAGS.sync_replicas:
         # If sync_replicas is enabled, the averaging will be done in the chief
@@ -565,8 +564,7 @@ def main_fun(argv, ctx):
           optimizer,
           var_list=variables_to_train)
       # Add total_loss to summary.
-      summaries.add(tf.summary.scalar('total_loss', total_loss,
-                                      name='total_loss'))
+      summaries.add(tf.summary.scalar('total_loss', total_loss))
 
       # Create gradient updates.
       grad_updates = optimizer.apply_gradients(clones_gradients,
@@ -583,7 +581,7 @@ def main_fun(argv, ctx):
                                          first_clone_scope))
 
       # Merge all summaries together.
-      summary_op = tf.merge_summary(list(summaries), name='summary_op')
+      summary_op = tf.summary.merge(list(summaries), name='summary_op')
 
 
       ###########################
