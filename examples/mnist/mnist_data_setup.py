@@ -6,7 +6,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import getpass
 import numpy
 import tensorflow as tf
 from array import array
@@ -37,10 +36,6 @@ def toCSV(vec):
 def fromCSV(s):
   """Converts a CSV string to a vector/array"""
   return [float(x) for x in s.split(',') if len(s) > 0]
-
-def hdfsPath(path):
-  """Returns absolute path to HDFS file/dir"""
-  return path if path.startswith("hdfs://") else "hdfs://default/user/{0}/{1}".format(getpass.getuser(), path)
 
 def writeMNIST(sc, input_images, input_labels, output, format, num_partitions):
   """Writes MNIST image/label vectors into parallelized files on HDFS"""
@@ -78,7 +73,7 @@ def writeMNIST(sc, input_images, input_labels, output, format, num_partitions):
 #  Note: this creates TFRecord files w/o requiring a custom Input/Output format
 #  else: # format == "tfr":
 #    def writeTFRecords(index, iter):
-#      output_path = hdfsPath("{0}/part-{1:05d}".format(output, index))
+#      output_path = "{0}/part-{1:05d}".format(output, index)
 #      writer = tf.python_io.TFRecordWriter(output_path)
 #      for example in iter:
 #        writer.write(example)

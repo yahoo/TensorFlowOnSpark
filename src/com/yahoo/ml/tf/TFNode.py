@@ -12,6 +12,13 @@ import time
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s (%(threadName)s-%(process)d) %(message)s",)
 
+def hdfs_path(ctx, path):
+  """Convenience function to create a Tensorflow-compatible absolute HDFS path from relative paths"""
+  if path.startswith("hdfs://") or path.startswith("file://"):
+    return path
+  else:
+    return "{0}/{1}".format(ctx.defaultFS, path)
+
 def start_cluster_server(ctx, num_gpus=1, rdma=False):
   """
   Wraps creation of TensorFlow Server in a distributed cluster.  This is intended to be invoked from the TF map_fun.

@@ -35,8 +35,11 @@ def main_fun(argv, ctx):
   from inception import inception_eval
   from inception.imagenet_data import ImagenetData
 
+  print("argv:", argv)
   sys.argv = argv
+
   FLAGS = tf.app.flags.FLAGS
+  FLAGS._parse_flags()
   print("FLAGS:", FLAGS.__dict__['__flags'])
 
   dataset = ImagenetData(subset=FLAGS.subset)
