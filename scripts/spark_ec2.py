@@ -18,6 +18,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+#
+# This script is modified from https://github.com/amplab/spark-ec2/blob/branch-1.6/spark_ec2.py.
+# The modification enables us to use Hadoop 2.6 and avoid RStudio.
+#
 
 from __future__ import division, print_function, with_statement
 
