@@ -23,6 +23,7 @@ class TFCluster(object):
 
   sc = None
   defaultFS = None
+  working_dir = None
   nodeRDD = None
   cluster_info = None
   input_mode = None
@@ -38,6 +39,7 @@ class TFCluster(object):
                                                           tf_args,
                                                           self.cluster_info,
                                                           self.defaultFS,
+                                                          self.working_dir,
                                                           background=(self.input_mode == InputMode.SPARK)))
 
       # start TF on a background thread (on Spark driver)
@@ -151,18 +153,16 @@ def reserve(sc, num_executors, num_ps, tensorboard=False, input_mode=InputMode.T
             nodes.append(i)
             spec['worker'] = nodes
 
-    # determine the hadoop defaultFS and adjust to default working dir
+    # get default filesystem from spark
     defaultFS = sc._jsc.hadoopConfiguration().get("fs.defaultFS")
-    if defaultFS.startswith("file:///"):
-        defaultFS = defaultFS + os.getcwd()[1:]
-    elif defaultFS.startswith("hdfs://"):
-        defaultFS = "{0}/user/{1}".format(defaultFS, getpass.getuser())
-    else:
-        logging.warn("Unknown defaultFS: {0}".format(defaultFS))
+    # strip trailing "root" slash from "file:///" to be consistent w/ "hdfs://..."
+    if defaultFS.startswith("file://") and len(defaultFS) > 7 and defaultFS.endswith("/"):
+        defaultFS = defaultFS[:-1]
 
     cluster = TFCluster()
     cluster.sc = sc
-    cluster.defaultFS = defaultFS
+    cluster.defaultFS = sc._jsc.hadoopConfiguration().get("fs.defaultFS")
+    cluster.working_dir = os.getcwd()
     cluster.nodeRDD = sc.parallelize(range(num_executors), num_executors)
     cluster.cluster_info = cluster.nodeRDD.mapPartitions(TFSparkNode.reserve(spec, tensorboard, queues)).collect()
     cluster.input_mode = input_mode

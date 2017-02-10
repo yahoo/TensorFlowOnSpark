@@ -30,12 +30,13 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s (%(thr
 
 class TFNodeContext:
   """This encapsulates key metadata for each TF node"""
-  def __init__(self, worker_num, job_name, task_index, cluster_spec, defaultFS, mgr):
+  def __init__(self, worker_num, job_name, task_index, cluster_spec, defaultFS, working_dir, mgr):
     self.worker_num = worker_num
     self.job_name = job_name
     self.task_index = task_index
     self.cluster_spec = cluster_spec
     self.defaultFS = defaultFS
+    self.working_dir = working_dir
     self.mgr = mgr
 
 class TFSparkNode(object):
@@ -148,7 +149,7 @@ def reserve(cluster_spec, tensorboard, queues=['input', 'output']):
             return [resp]
     return _reserve
 
-def start(fn, tf_args, cluster_info, defaultFS, background):
+def start(fn, tf_args, cluster_info, defaultFS, working_dir, background):
     """
     Wraps the TensorFlow main function in a Spark mapPartitions-compatible function.
     """
@@ -178,7 +179,7 @@ def start(fn, tf_args, cluster_info, defaultFS, background):
         # figure out which executor we're on, and get the reference to the multiprocessing.Manager
         mgr = _get_manager(cluster_info, host, ppid)
 
-        ctx = TFNodeContext(worker_num, job_name, task_index, spec, defaultFS, mgr)
+        ctx = TFNodeContext(worker_num, job_name, task_index, spec, defaultFS, working_dir, mgr)
         if job_name == 'ps' or background:
             # invoke the TensorFlow main function in a background thread
             logging.info("Starting TensorFlow {0}:{1} on cluster node {2} on background thread".format(job_name, task_index, worker_num))
