@@ -126,13 +126,19 @@ class TFCluster(object):
       for node in ps_list:
           addr = node['addr']
           authkey = node['authkey']
-          print("connecting to {0}, {1}".format(addr,authkey))
           m = TFManager.connect(addr, authkey)
           q = m.get_queue('control')
           q.put(None)
+          q.join()
 
-      # wait for PS nodes to exit
-      time.sleep(10)
+      # wait for all jobs to finish
+      done = False
+      while not done:
+        time.sleep(5)
+        st = self.sc.statusTracker()
+        jobs = st.getActiveJobsIds()
+        if len(jobs) == 0:
+          break;
 
 def reserve(sc, num_executors, num_ps, tensorboard=False, input_mode=InputMode.TENSORFLOW, queues=['input','output']):
     """

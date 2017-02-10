@@ -153,9 +153,6 @@ def map_fun(args, ctx):
 
               results = ["{0} Label: {1}, Prediction: {2}".format(datetime.now().isoformat(), l, p) for l,p in zip(label,pred)]
               TFNode.batch_results(ctx.mgr, results)
-              print("pred.shape: {0}".format(pred.shape))
-              print("batch_xs.shape: {0}".format(batch_xs.shape))
-              print("label: {0}, pred: {1}".format(label, pred))
               print("acc: {0}".format(acc))
 
       if sv.should_stop() or step >= args.steps:
