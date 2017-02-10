@@ -6,6 +6,7 @@
 This module provides TensorFlow helper functions for allocating GPUs and interacting with the Spark executor.
 """
 
+import getpass
 import logging
 import os
 import time
@@ -15,9 +16,20 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s (%(thr
 def hdfs_path(ctx, path):
   """Convenience function to create a Tensorflow-compatible absolute HDFS path from relative paths"""
   if path.startswith("hdfs://") or path.startswith("file://"):
+    # absolute path w/ scheme, just return as-is
     return path
+  elif path.startswith("/"):
+    # absolute path w/o scheme, just prepend w/ defaultFS
+    return ctx.defaultFS + path
   else:
-    return "{0}/{1}".format(ctx.defaultFS, path)
+    # relative path, prepend defaultSF + standard working dir
+    if ctx.defaultFS.startswith("hdfs://"):
+      return "{0}/user/{1}/{2}".format(ctx.defaultFS, getpass.getuser(), path)
+    elif ctx.defaultFS.startswith("file://"):
+      return "{0}/{1}/{2}".format(ctx.defaultFS, ctx.working_dir[1:], path)
+    else:
+      logging.warn("Unknown scheme {0} with relative path: {1}".format(ctx.defaultFS, path))
+      return "{0}/{1}".format(ctx.defaultFS, path)
 
 def start_cluster_server(ctx, num_gpus=1, rdma=False):
   """
