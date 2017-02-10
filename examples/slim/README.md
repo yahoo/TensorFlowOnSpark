@@ -5,7 +5,7 @@ Original Source: https://github.com/tensorflow/models/tree/master/slim
 This example demonstrates the conversion of a TF-Slim image classification application.
 
 Please ensure that you have followed [these instructions](https://github.com/yahoo/TensorFlowOnSpark/wiki/GetStarted_YARN) first.
-And, you will need to [download an image dataset per the original instructions](https://github.com/tensorflow/models/tree/master/slim)
+And, you will need to [download an image dataset](https://github.com/tensorflow/models/tree/master/slim) per the original instructions.
 
 #### Package the code as a Python zip/module
 
