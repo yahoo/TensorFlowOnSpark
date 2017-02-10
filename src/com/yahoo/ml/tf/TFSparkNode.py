@@ -197,6 +197,7 @@ def start(fn, tf_args, cluster_info, defaultFS, working_dir, background):
                         logging.info("Terminating PS")
                         mgr.set('state', 'stopped')
                         done = True
+                    queue.task_done()
         else:
             # otherwise, just run TF function in the main executor/worker thread
             logging.info("Starting TensorFlow {0}:{1} on cluster node {2} on foreground thread".format(job_name, task_index, worker_num))
