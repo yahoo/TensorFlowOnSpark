@@ -17,6 +17,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+#
+# This script is cloned from https://github.com/amplab/spark-ec2/blob/branch-1.6/spark-ec2.
+#
 
 # Preserve the user's CWD so that relative paths are passed correctly to 
 #+ the underlying Python script.
