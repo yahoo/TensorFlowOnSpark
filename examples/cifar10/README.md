@@ -2,17 +2,17 @@
 
 Original Source: https://github.com/tensorflow/tensorflow/blob/eaceadc3c421bb41cfbf607ca832b3b9b2ad2507/tensorflow/g3doc/tutorials/deep_cnn/index.md
 
-The following is the Multi-GPU CNN Tutorial, adapted for TensorFlowOnSpark. This example demonstrates how to use multiple GPU cards on a single node. Note: since YARN currently cannot allocate GPU resources directly, we currently use RAM as a proxy, so in our case, 1GPU == 27GB.  You may need to adjust this for your grid.  Also note the single-GPU example is also available in the cifar10_train.py file.
+The following is the Multi-GPU CNN Tutorial, adapted for TensorFlowOnSpark. This example demonstrates how to use multiple GPU cards on a single node. Note: since YARN currently cannot allocate GPU resources directly, we currently use RAM as a proxy, so in our case, 1GPU == 27GB.  You may need to adjust this for your grid.
 
 Please ensure that you have followed [these instructions](https://github.com/yahoo/TensorFlowOnSpark/wiki/GetStarted_YARN) first.
 
 Also, you will need to download the CIFAR-10 dataset per the [original example](https://github.com/tensorflow/tensorflow/blob/eaceadc3c421bb41cfbf607ca832b3b9b2ad2507/tensorflow/g3doc/tutorials/deep_cnn/index.md).
 
-##### Package the code as a Python zip/module
+#### Package the code as a Python zip/module
 
     pushd ~/tensorflow/examples/cifar10; zip -r ~/cifar10.zip .; popd
 
-##### Run Multi-GPU CNN on Spark
+#### Run Multi-GPU CNN on Spark
 
     # set environment variables (if not already done)
     export PYTHON_ROOT=~/Python

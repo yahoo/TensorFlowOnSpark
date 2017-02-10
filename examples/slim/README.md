@@ -7,11 +7,11 @@ This example demonstrates the conversion of a TF-Slim image classification appli
 Please ensure that you have followed [these instructions](https://github.com/yahoo/TensorFlowOnSpark/wiki/GetStarted_YARN) first.
 And, you will need to [download an image dataset per the original instructions](https://github.com/tensorflow/models/tree/master/slim)
 
-##### Package the code as a Python zip/module
+#### Package the code as a Python zip/module
 
     pushd ~/tensorflow/examples/slim; zip -r ~/slim.zip .; popd
 
-##### Train TF-Slim Classifier
+#### Train TF-Slim Classifier
 
     # set environment variables (if not already done)
     export PYTHON_ROOT=~/Python
@@ -51,7 +51,7 @@ And, you will need to [download an image dataset per the original instructions](
     --batch_size 32 \
     --num_ps_tasks 1
 
-##### Evaluate TF-Slim Classifier
+#### Evaluate TF-Slim Classifier
 
     # hadoop fs -rm -r slim_eval
     ${SPARK_HOME}/bin/spark-submit --master yarn --deploy-mode cluster \

@@ -3,17 +3,17 @@
 Original Source: https://github.com/tensorflow/models/tree/master/inception
 
 In this example, we leave the code largely untouched, leveraging TensorFlowOnSpark to launch the cluster in the Hadoop grid.
-To view the differences, you can compare the original imagenet_distributed_train.py with the version here.
+To view the differences, you can compare the original `imagenet_distributed_train.py` with the version here.
 
 These instructions are intended for a Spark/YARN grid, so please ensure that you have followed [these instructions](https://github.com/yahoo/TensorFlowOnSpark/wiki/GetStarted_YARN) first.
 
 Also, you will need to [download the Imagenet dataset per the original example](https://github.com/tensorflow/models/tree/master/inception#getting-started).
 
-##### Package the inception code as a Python zip/module
+#### Package the inception code as a Python zip/module
 
     pushd ~/tensorflow/examples/imagenet; zip -r ~/inception.zip inception; popd
 
-##### Run distributed CNN on Spark
+#### Run distributed CNN on Spark
 
     # set environment variables (if not already done)
     export PYTHON_ROOT=~/Python
@@ -48,7 +48,7 @@ Also, you will need to [download the Imagenet dataset per the original example](
     --subset train
     # to use infiniband, replace the last line with --subset train --rdma
 
-##### Run evaluation job on Spark
+#### Run evaluation job on Spark
 
 To evaluate the model, run the following job after the training has completed.  This will calculate the "precision @ 1" metric for the trained model.  Note: since we only trained for 1000 steps, the reported metric will be very poor.  So, to train a better model, you can increase the `--max_steps` above, and then run the evaluation job in parallel by removing the `--run_once` argument.  This will periodically calculate the metric while training is in progress.  You can terminate training and/or eval at any time using the standard `yarn application -kill <applicationId>` command, and the latest model will be stored in your `imagenet_train` HDFS directory.
 
