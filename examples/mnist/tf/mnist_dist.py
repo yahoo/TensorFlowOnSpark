@@ -210,7 +210,6 @@ def map_fun(args, ctx):
           print("acc: {0}".format(acc))
           for i in range(len(labels)):
             count += 1
-            print("Label: {0}, Prediction: {1}".format(labels[i], pred[i]))
             output_file.write("{0} {1}\n".format(labels[i], pred[i]))
           print("count: {0}".format(count))
 
