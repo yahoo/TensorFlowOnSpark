@@ -149,9 +149,9 @@ def map_fun(args, ctx):
             if (step % 100 == 0):
               print("{0} step: {1} accuracy: {2}".format(datetime.now().isoformat(), step, sess.run(accuracy,{x: batch_xs, y_: batch_ys})))
           else: # args.mode == "inference"
-              label, pred, acc = sess.run([y_, prediction, accuracy], feed_dict=feed)
+              labels, preds, acc = sess.run([label, prediction, accuracy], feed_dict=feed)
 
-              results = ["{0} Label: {1}, Prediction: {2}".format(datetime.now().isoformat(), l, p) for l,p in zip(label,pred)]
+              results = ["{0} Label: {1}, Prediction: {2}".format(datetime.now().isoformat(), l, p) for l,p in zip(labels,preds)]
               TFNode.batch_results(ctx.mgr, results)
               print("acc: {0}".format(acc))
 
