@@ -61,11 +61,11 @@ class TFCluster(object):
       # if num_epochs unspecified, pick an arbitrarily "large" number for now
       # TODO: calculate via dataRDD.count() / batch_size / max_steps
       if num_epochs == 0:
-        num_epochs = 10
+          num_epochs = 10
 
       rdds = []
       for i in range(num_epochs):
-        rdds.append(dataRDD)
+          rdds.append(dataRDD)
 
       unionRDD = self.sc.union(rdds)
       unionRDD.foreachPartition(TFSparkNode.train(self.cluster_info, qname))
@@ -93,36 +93,35 @@ class TFCluster(object):
           else:
               worker_list.append(node)
 
-      if self.input_mode == InputMode.SPARK:
-        # in SPARK mode, the "shutdown" job will queue up behind the "data feeding" job and insert markers into data queues
-        # to terminate their readers.
-        workers = len(worker_list)
-        workerRDD = self.sc.parallelize(range(workers), workers)
-        workerRDD.foreachPartition(TFSparkNode.shutdown(self.cluster_info, self.queues))
-      else:
-        # in TENSORFLOW mode, there is no "data feeding" job, only a "start" job, so we must wait for the TensorFlow workers
-        # to complete all tasks, while accounting for any PS nodes which currently run indefinitely.
-        count = 0
-        done = False
-        if len(ps_list) > 0:
+      # in TENSORFLOW mode, there is no "data feeding" job, only a "start" job, so we must wait for the TensorFlow workers
+      # to complete all tasks, while accounting for any PS tasks which run indefinitely.
+      if self.input_mode == InputMode.TENSORFLOW:
+          count = 0
+          done = False
           while not done:
-            st = self.sc.statusTracker()
-            jobs = st.getActiveJobsIds()
-            if len(jobs) > 0:
-              stages = st.getActiveStageIds()
-              for i in stages:
-                si = st.getStageInfo(i)
-                if si.numActiveTasks == len(ps_list):
-                  # if we only have PS tasks left, check that we see this condition a couple times
-                  count += 1
-                  done = (count >= 3)
-                  time.sleep(5)
-            else:
-              # should never happen, unless PS nodes somehow terminated
-              logging.warn("PS node exited?")
-              done = True
+              st = self.sc.statusTracker()
+              jobs = st.getActiveJobsIds()
+              if len(jobs) > 0:
+                  stages = st.getActiveStageIds()
+                  for i in stages:
+                      si = st.getStageInfo(i)
+                      if si.numActiveTasks == len(ps_list):
+                          # if we only have PS tasks left, check that we see this condition a couple times
+                          count += 1
+                          done = (count >= 3)
+                          time.sleep(5)
+              else:
+                  done = True
 
-      # stop all PS nodes via control queues (skipped if no PS nodes)
+      # shutdown queues and managers for "worker" executors.
+      # note: in SPARK mode, this job will immediately queue up behind the "data feeding" job.
+      # in TENSORFLOW mode, this will only run after all workers have finished.
+      workers = len(worker_list)
+      workerRDD = self.sc.parallelize(range(workers), workers)
+      workerRDD.foreachPartition(TFSparkNode.shutdown(self.cluster_info, self.queues))
+
+      # shutdown queues and manageres for "PS" executors.
+      # note: we have to connect/shutdown from the spark driver, because these executors are "busy" and won't accept any other tasks.
       for node in ps_list:
           addr = node['addr']
           authkey = node['authkey']
