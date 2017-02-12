@@ -168,7 +168,7 @@ def start(fn, tf_args, cluster_info, defaultFS, working_dir, background):
         task_index = -1
 
         for node in cluster_info:
-            logging.info("node: {0}".format(node))
+            logging.debug("node: {0}".format(node))
             (njob, nhost, nport, nppid) = (node['job_name'], node['host'], node['port'], node['ppid'])
             hosts = [] if njob not in spec else spec[njob]
             hosts.append("{0}:{1}".format(nhost, nport))

@@ -175,7 +175,7 @@ def reserve(sc, num_executors, num_ps, tensorboard=False, input_mode=InputMode.T
 
     tb_url = None
     for node in cluster.cluster_info:
-      print(node)
+      logging.debug(node)
       if node['tb_port'] != 0:
         tb_url = "http://{0}:{1}".format(node['host'], node['tb_port'])
 
