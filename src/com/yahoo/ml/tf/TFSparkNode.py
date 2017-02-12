@@ -104,6 +104,7 @@ def reserve(cluster_spec, tensorboard, queues=['input', 'output']):
             TFSparkNode.mgr.set('ppid', ppid)
 
             # start TensorBoard if requested
+            tb_pid = 0
             tb_port = 0
             if tensorboard and job_name == 'worker' and task_index == 0:
                 tb_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -121,6 +122,7 @@ def reserve(cluster_spec, tensorboard, queues=['input', 'output']):
                 else:
                   # system-installed Python & tensorboard
                   tb_proc = subprocess.Popen(["tensorboard", "--logdir=%s"%logdir, "--port=%d"%tb_port, "--debug"])
+                tb_pid = tb_proc.pid
 
             # find a free port for TF
             # TODO: bind to port until TF server start
@@ -141,6 +143,7 @@ def reserve(cluster_spec, tensorboard, queues=['input', 'output']):
                 'job_name': job_name,
                 'task_index': task_index,
                 'port': port,
+                'tb_pid': tb_pid,
                 'tb_port': tb_port,
                 'addr': addr,
                 'authkey': authkey
@@ -168,7 +171,7 @@ def start(fn, tf_args, cluster_info, defaultFS, working_dir, background):
         task_index = -1
 
         for node in cluster_info:
-            logging.debug("node: {0}".format(node))
+            logging.info("node: {0}".format(node))
             (njob, nhost, nport, nppid) = (node['job_name'], node['host'], node['port'], node['ppid'])
             hosts = [] if njob not in spec else spec[njob]
             hosts.append("{0}:{1}".format(nhost, nport))
@@ -278,9 +281,21 @@ def shutdown(cluster_info, queues=['input']):
         """
         Stops all TensorFlow nodes by feeding None into the multiprocessing.Queues.
         """
-        # reconnect to shared queue, only if needed
-        mgr = _get_manager(cluster_info, socket.gethostname(), os.getppid())
+        host = socket.gethostname()
+        ppid = os.getppid()
 
+        # reconnect to shared queue
+        mgr = _get_manager(cluster_info, host, ppid)
+
+        # send SIGTERM to Tensorboard proc (if running)
+        for node in cluster_info:
+           if node['host'] == host and node['ppid'] == ppid:
+              tb_pid = node['tb_pid']
+              if tb_pid != 0:
+                  logging.info("Stopping tensorboard (pid={0})".format(tb_pid))
+                  subprocess.Popen(["kill", str(tb_pid)])
+
+        # terminate any listening queues
         logging.info("Stopping all queues")
         for q in queues:
             queue = mgr.get_queue(q)
