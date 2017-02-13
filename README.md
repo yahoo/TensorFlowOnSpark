@@ -38,7 +38,7 @@ deep learning on our Hadoop clusters in Yahoo's private cloud.
 ## Why TensorFlowOnSpark?
 
 TensorFlowOnSpark provides some important benefits (see [our
-blog](https://docs.google.com/a/yahoo-inc.com/document/d/16IqUa7A3mRc868D6jH82Wos4cqYg7wg-P_1cC7o23Qs/edit?usp=sharing))
+blog](http://yahoohadoop.tumblr.com/post/157196317141/open-sourcing-tensorflowonspark-distributed-deep))
 over alternative deep learning solutions.
    * Easily migrate all existing TensorFlow programs with <10 lines of code change;
    * Support all TensorFlow functionalities: synchronous/asynchronous training, model/data parallelism, inferencing and TensorBoard;
