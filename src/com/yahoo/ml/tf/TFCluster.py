@@ -148,15 +148,8 @@ def reserve(sc, num_executors, num_ps, tensorboard=False, input_mode=InputMode.T
 
     # build a cluster_spec template using worker_nums
     spec = {}
-    for i in range(num_executors):
-        if i < num_ps:
-            nodes = [] if 'ps' not in spec else spec['ps']
-            nodes.append(i)
-            spec['ps'] = nodes
-        else:
-            nodes = [] if 'worker' not in spec else spec['worker']
-            nodes.append(i)
-            spec['worker'] = nodes
+    spec['ps'] = range(0, num_ps)
+    spec['worker'] = range(num_ps, num_executors)
 
     # get default filesystem from spark
     defaultFS = sc._jsc.hadoopConfiguration().get("fs.defaultFS")
