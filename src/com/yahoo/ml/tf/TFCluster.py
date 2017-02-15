@@ -139,6 +139,16 @@ class TFCluster(object):
         if len(jobs) == 0:
           break;
 
+  def tensorboard_url(self):
+      """
+      Utility function to get Tensorboard URL
+      """
+      tb_url = None
+      for node in self.cluster_info:
+        if node['tb_port'] != 0:
+          tb_url = "http://{0}:{1}".format(node['host'], node['tb_port'])
+      return tb_url
+
 def reserve(sc, num_executors, num_ps, tensorboard=False, input_mode=InputMode.TENSORFLOW, queues=['input','output']):
     """
     Reserves ports, starts a multiprocessing.Manager per executor, and starts TensorBoard on worker/0 if requested.
@@ -148,8 +158,15 @@ def reserve(sc, num_executors, num_ps, tensorboard=False, input_mode=InputMode.T
 
     # build a cluster_spec template using worker_nums
     spec = {}
-    spec['ps'] = range(0, num_ps)
-    spec['worker'] = range(num_ps, num_executors)
+    for i in range(num_executors):
+        if i < num_ps:
+            nodes = [] if 'ps' not in spec else spec['ps']
+            nodes.append(i)
+            spec['ps'] = nodes
+        else:
+            nodes = [] if 'worker' not in spec else spec['worker']
+            nodes.append(i)
+            spec['worker'] = nodes
 
     # get default filesystem from spark
     defaultFS = sc._jsc.hadoopConfiguration().get("fs.defaultFS")
@@ -168,7 +185,7 @@ def reserve(sc, num_executors, num_ps, tensorboard=False, input_mode=InputMode.T
 
     tb_url = None
     for node in cluster.cluster_info:
-      logging.debug(node)
+      print(node)
       if node['tb_port'] != 0:
         tb_url = "http://{0}:{1}".format(node['host'], node['tb_port'])
 
