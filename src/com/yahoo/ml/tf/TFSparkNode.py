@@ -17,6 +17,7 @@ nodes block on startup, they will not receive any RDD partitions.
 
 import logging
 import os
+import platform
 import random
 import socket
 import subprocess
@@ -183,6 +184,17 @@ def start(fn, tf_args, cluster_info, defaultFS, working_dir, background):
         mgr = _get_manager(cluster_info, host, ppid)
 
         ctx = TFNodeContext(worker_num, job_name, task_index, spec, defaultFS, working_dir, mgr)
+
+        # Background mode relies reuse of python worker in Spark.
+        if background:
+            # However, reuse of python worker can't work on Windows, we need to check if the current
+            # script runs on Windows or not.
+            if os.name == 'nt' or platform.system() == 'Windows':
+                raise Exception("Background mode is not supported on Windows.")
+            # Check if the config of reuse python worker is enabled on Spark.
+            if not os.environ.get("SPARK_REUSE_WORKER"):
+                raise Exception("Background mode relies reuse of python worker on Spark. This config 'spark.python.worker.reuse' is not enabled on Spark. Please enable it before using background.")
+
         if job_name == 'ps' or background:
             # invoke the TensorFlow main function in a background thread
             logging.info("Starting TensorFlow {0}:{1} on cluster node {2} on background thread".format(job_name, task_index, worker_num))
