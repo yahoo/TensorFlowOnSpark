@@ -10,6 +10,7 @@ import getpass
 import logging
 import os
 import time
+from six.moves.queue import Queue, Empty
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s (%(threadName)s-%(process)d) %(message)s",)
 
@@ -122,9 +123,12 @@ def terminate(mgr, qname='input'):
     # drop remaining items in the queue
     queue = mgr.get_queue(qname)
     count = 0
-    while not queue.empty():
-        queue.get()
-        queue.task_done()
-        count += 1
-    logging.info("dropped {0} items from queue".format(count))
-
+    done = False
+    while not done:
+        try:
+            queue.get(block=True, timeout=5)
+            queue.task_done()
+            count += 1
+        except Empty:
+            logging.info("dropped {0} items from queue".format(count))
+            done = True

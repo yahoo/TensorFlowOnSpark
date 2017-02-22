@@ -185,6 +185,12 @@ def start(fn, tf_args, cluster_info, defaultFS, working_dir, background):
 
         ctx = TFNodeContext(worker_num, job_name, task_index, spec, defaultFS, working_dir, mgr)
 
+        # expand Hadoop classpath wildcards for JNI (Spark 2.x)
+        if 'HADOOP_PREFIX' in os.environ:
+            classpath = os.environ['CLASSPATH']
+            hadoop_classpath = subprocess.check_output(['hadoop', 'classpath', '--glob'])
+            os.environ['CLASSPATH'] = classpath + os.pathsep + hadoop_classpath
+
         # Background mode relies reuse of python worker in Spark.
         if background:
             # However, reuse of python worker can't work on Windows, we need to check if the current
