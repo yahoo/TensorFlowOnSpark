@@ -46,6 +46,7 @@ class TFSparkNode(object):
     per executor, so these module functions will reconnect to the "singleton", if needed.
     """
     mgr = None
+    cluster_id = None
 
 def _get_manager(cluster_info, host, ppid):
     """
@@ -60,7 +61,7 @@ def _get_manager(cluster_info, host, ppid):
     logging.info("Connected to TFSparkNode.mgr on {0}, ppid={1}, state={2}".format(host, ppid, str(TFSparkNode.mgr.get('state'))))
     return TFSparkNode.mgr
 
-def reserve(cluster_spec, tensorboard, queues=['input', 'output']):
+def reserve(cluster_spec, tensorboard, cluster_id, queues=['input', 'output']):
     """
     Allocates a port for Tensorflow on this node, starts TensorBoard if requested, and starts a multiprocessing.Manager to listen for data/control msgs.
     """
@@ -83,74 +84,80 @@ def reserve(cluster_spec, tensorboard, queues=['input', 'output']):
         host = socket.gethostname()
         ppid = os.getppid()
 
-        # start a TFManager and get a free port
+        # check for existing TFManagers
         if TFSparkNode.mgr is not None and str(TFSparkNode.mgr.get('state')) != "'stopped'":
-            # raise an exception to force Spark to retry this "reservation" task on another executor
-            raise Exception("TFManager already started on {0}, ppid={1}, state={2}".format(host, ppid, str(TFSparkNode.mgr.get("state"))))
-        else:
-            # use a random uuid as the authkey
-            authkey = uuid.uuid4()
-            addr = None
-            if job_name == 'ps':
-                # PS nodes must be remotely accessible in order to shutdown from Spark driver.
-                TFSparkNode.mgr = TFManager.start(authkey, ['control'], 'remote')
-                addr = (host, TFSparkNode.mgr.address[1])
+            if TFSparkNode.cluster_id == cluster_id:
+                # raise an exception to force Spark to retry this "reservation" task on another executor
+                raise Exception("TFManager already started on {0}, ppid={1}, state={2}".format(host, ppid, str(TFSparkNode.mgr.get("state"))))
             else:
-                # worker nodes only need to be locally accessible within the executor for data feeding
-                TFSparkNode.mgr = TFManager.start(authkey, queues)
-                addr = TFSparkNode.mgr.address
+                # old state, just continue with creating new manager
+                logging.warn("Ignoring old TFManager with cluster_id {0}, requested cluster_id {1}".format(TFSparkNode.cluster_id, cluster_id))
 
-            # initialize mgr state
-            TFSparkNode.mgr.set('state', 'running')
-            TFSparkNode.mgr.set('ppid', ppid)
+        # start a TFManager and get a free port
+        # use a random uuid as the authkey
+        authkey = uuid.uuid4()
+        addr = None
+        if job_name == 'ps':
+            # PS nodes must be remotely accessible in order to shutdown from Spark driver.
+            TFSparkNode.mgr = TFManager.start(authkey, ['control'], 'remote')
+            addr = (host, TFSparkNode.mgr.address[1])
+        else:
+            # worker nodes only need to be locally accessible within the executor for data feeding
+            TFSparkNode.mgr = TFManager.start(authkey, queues)
+            addr = TFSparkNode.mgr.address
 
-            # start TensorBoard if requested
-            tb_pid = 0
-            tb_port = 0
-            if tensorboard and job_name == 'worker' and task_index == 0:
-                tb_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                tb_sock.bind(('',0))
-                tb_port = tb_sock.getsockname()[1]
-                tb_sock.close()
-                logdir = "tensorboard_%d" %(worker_num)
+        # initialize mgr state
+        TFSparkNode.mgr.set('state', 'running')
+        TFSparkNode.mgr.set('ppid', ppid)
+        TFSparkNode.cluster_id = cluster_id
 
-                if 'PYSPARK_PYTHON' in os.environ:
-                  # user-specified Python (typically Python.zip)
-                  pypath = os.environ['PYSPARK_PYTHON']
-                  logging.info("PYSPARK_PYTHON: {0}".format(pypath))
-                  pydir = os.path.dirname(pypath)
-                  tb_proc = subprocess.Popen([pypath, "%s/tensorboard"%pydir, "--logdir=%s"%logdir, "--port=%d"%tb_port, "--debug"])
-                else:
-                  # system-installed Python & tensorboard
-                  tb_proc = subprocess.Popen(["tensorboard", "--logdir=%s"%logdir, "--port=%d"%tb_port, "--debug"])
-                tb_pid = tb_proc.pid
+        # start TensorBoard if requested
+        tb_pid = 0
+        tb_port = 0
+        if tensorboard and job_name == 'worker' and task_index == 0:
+            tb_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            tb_sock.bind(('',0))
+            tb_port = tb_sock.getsockname()[1]
+            tb_sock.close()
+            logdir = "tensorboard_%d" %(worker_num)
 
-            # find a free port for TF
-            # TODO: bind to port until TF server start
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.bind(('',0))
-            port = s.getsockname()[1]
+            if 'PYSPARK_PYTHON' in os.environ:
+              # user-specified Python (typically Python.zip)
+              pypath = os.environ['PYSPARK_PYTHON']
+              logging.info("PYSPARK_PYTHON: {0}".format(pypath))
+              pydir = os.path.dirname(pypath)
+              tb_proc = subprocess.Popen([pypath, "%s/tensorboard"%pydir, "--logdir=%s"%logdir, "--port=%d"%tb_port, "--debug"])
+            else:
+              # system-installed Python & tensorboard
+              tb_proc = subprocess.Popen(["tensorboard", "--logdir=%s"%logdir, "--port=%d"%tb_port, "--debug"])
+            tb_pid = tb_proc.pid
 
-            # sleep a bit to force Spark to distribute the remaining reservation tasks to other/idle executors
-            time.sleep(10)
+        # find a free port for TF
+        # TODO: bind to port until TF server start
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind(('',0))
+        port = s.getsockname()[1]
 
-            s.close()
+        # sleep a bit to force Spark to distribute the remaining reservation tasks to other/idle executors
+        time.sleep(10)
 
-            # return everything we need to reconnect later
-            resp = {
-                'worker_num': worker_num,
-                'host': host,
-                'ppid': ppid,
-                'job_name': job_name,
-                'task_index': task_index,
-                'port': port,
-                'tb_pid': tb_pid,
-                'tb_port': tb_port,
-                'addr': addr,
-                'authkey': authkey
-            }
-            logging.info("TFSparkNode.reserve: {0}".format(resp))
-            return [resp]
+        s.close()
+
+        # return everything we need to reconnect later
+        resp = {
+            'worker_num': worker_num,
+            'host': host,
+            'ppid': ppid,
+            'job_name': job_name,
+            'task_index': task_index,
+            'port': port,
+            'tb_pid': tb_pid,
+            'tb_port': tb_port,
+            'addr': addr,
+            'authkey': authkey
+        }
+        logging.info("TFSparkNode.reserve: {0}".format(resp))
+        return [resp]
     return _reserve
 
 def start(fn, tf_args, cluster_info, defaultFS, working_dir, background):

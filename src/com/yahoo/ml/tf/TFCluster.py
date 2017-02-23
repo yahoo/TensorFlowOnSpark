@@ -8,6 +8,7 @@ This module provides a high-level API to manage the TensorFlowOnSpark cluster.
 import getpass
 import logging
 import os
+import random
 import threading
 import time
 import TFManager
@@ -25,6 +26,7 @@ class TFCluster(object):
   defaultFS = None
   working_dir = None
   nodeRDD = None
+  cluster_id = None
   cluster_info = None
   input_mode = None
   queues = None
@@ -174,15 +176,19 @@ def reserve(sc, num_executors, num_ps, tensorboard=False, input_mode=InputMode.T
     if defaultFS.startswith("file://") and len(defaultFS) > 7 and defaultFS.endswith("/"):
         defaultFS = defaultFS[:-1]
 
+    # create TFCluster object
+    cluster_id = random.getrandbits(64)
     cluster = TFCluster()
     cluster.sc = sc
     cluster.defaultFS = sc._jsc.hadoopConfiguration().get("fs.defaultFS")
     cluster.working_dir = os.getcwd()
     cluster.nodeRDD = sc.parallelize(range(num_executors), num_executors)
-    cluster.cluster_info = cluster.nodeRDD.mapPartitions(TFSparkNode.reserve(spec, tensorboard, queues)).collect()
+    cluster.cluster_id = cluster_id
     cluster.input_mode = input_mode
     cluster.queues = queues
+    cluster.cluster_info = cluster.nodeRDD.mapPartitions(TFSparkNode.reserve(spec, tensorboard, cluster_id, queues)).collect()
 
+    # print cluster_info and extract TensorBoard URL
     tb_url = None
     for node in cluster.cluster_info:
       print(node)
@@ -191,6 +197,16 @@ def reserve(sc, num_executors, num_ps, tensorboard=False, input_mode=InputMode.T
 
     if tb_url is not None:
       logging.info("TensorBoard running at: {0}".format(tb_url))
+
+    # since our "primary key" for each executor's TFManager is (host, ppid), sanity check for duplicates
+    # Note: this may occur if Spark retries failed Python tasks on the same executor.
+    tb_nodes = set()
+    for node in cluster.cluster_info:
+      node_id = (node['host'],node['ppid'])
+      if node_id in tb_nodes:
+        raise Exception("Duplicate cluster node id detected (host={0}, ppid={1}).  Please ensure that the number of executors >= number of TensorFlow nodes, and TFCluster.shutdown() is successfully invoked when done.".format(node_id[0], node_id[1]))
+      else:
+        tb_nodes.add(node_id)
 
     return cluster
 
