@@ -195,7 +195,8 @@ def start(fn, tf_args, cluster_info, defaultFS, working_dir, background):
         # expand Hadoop classpath wildcards for JNI (Spark 2.x)
         if 'HADOOP_PREFIX' in os.environ:
             classpath = os.environ['CLASSPATH']
-            hadoop_classpath = subprocess.check_output(['hadoop', 'classpath', '--glob'])
+            hadoop_path = os.path.join(os.environ['HADOOP_PREFIX'], 'bin', 'hadoop')
+            hadoop_classpath = subprocess.check_output([hadoop_path, 'classpath', '--glob'])
             os.environ['CLASSPATH'] = classpath + os.pathsep + hadoop_classpath
 
         # Background mode relies reuse of python worker in Spark.
