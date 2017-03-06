@@ -18,13 +18,12 @@ nodes block on startup, they will not receive any RDD partitions.
 import logging
 import os
 import platform
-import random
 import socket
 import subprocess
 import threading
 import time
 import uuid
-import Queue
+import getpass
 import TFManager
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s (%(threadName)s-%(process)d) %(message)s",)
@@ -191,6 +190,8 @@ def start(fn, tf_args, cluster_info, defaultFS, working_dir, background):
         mgr = _get_manager(cluster_info, host, ppid)
 
         ctx = TFNodeContext(worker_num, job_name, task_index, spec, defaultFS, working_dir, mgr)
+
+        os.environ['HADOOP_USER_NAME'] = getpass.getuser()
 
         # expand Hadoop classpath wildcards for JNI (Spark 2.x)
         if 'HADOOP_PREFIX' in os.environ:
