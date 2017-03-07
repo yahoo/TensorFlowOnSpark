@@ -1,7 +1,6 @@
 # Copyright 2017 Yahoo Inc.
 # Licensed under the terms of the Apache 2.0 license.
 # Please see LICENSE file in the project root for terms.
-
 """
 This module provides Spark-compatible functions to launch TensorFlow on the executors.
 
@@ -15,19 +14,21 @@ nodes block on startup, they will not receive any RDD partitions.
 4. Shutdown - sends a shutdown control message to the multiprocessing.Managers of the PS nodes.
 """
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import nested_scopes
+from __future__ import print_function
+
 import logging
 import os
 import platform
 import random
 import socket
 import subprocess
-import threading
+import multiprocessing
 import time
 import uuid
-import Queue
-import TFManager
-
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s (%(threadName)s-%(process)d) %(message)s",)
+from . import TFManager
 
 class TFNodeContext:
   """This encapsulates key metadata for each TF node"""
@@ -95,7 +96,7 @@ def reserve(cluster_spec, tensorboard, cluster_id, queues=['input', 'output']):
 
         # start a TFManager and get a free port
         # use a random uuid as the authkey
-        authkey = uuid.uuid4()
+        authkey = uuid.uuid4().bytes
         addr = None
         if job_name == 'ps':
             # PS nodes must be remotely accessible in order to shutdown from Spark driver.
@@ -178,6 +179,14 @@ def start(fn, tf_args, cluster_info, defaultFS, working_dir, background):
         job_name = ''
         task_index = -1
 
+        # expand Hadoop classpath wildcards for JNI (Spark 2.x)
+        if 'HADOOP_PREFIX' in os.environ:
+            classpath = os.environ['CLASSPATH']
+            hadoop_path = os.path.join(os.environ['HADOOP_PREFIX'], 'bin', 'hadoop')
+            hadoop_classpath = subprocess.check_output([hadoop_path, 'classpath', '--glob']).decode()
+            logging.debug("CLASSPATH: {0}".format(hadoop_classpath))
+            os.environ['CLASSPATH'] = classpath + os.pathsep + hadoop_classpath
+
         for node in cluster_info:
             logging.info("node: {0}".format(node))
             (njob, nhost, nport, nppid) = (node['job_name'], node['host'], node['port'], node['ppid'])
@@ -192,13 +201,6 @@ def start(fn, tf_args, cluster_info, defaultFS, working_dir, background):
 
         ctx = TFNodeContext(worker_num, job_name, task_index, spec, defaultFS, working_dir, mgr)
 
-        # expand Hadoop classpath wildcards for JNI (Spark 2.x)
-        if 'HADOOP_PREFIX' in os.environ:
-            classpath = os.environ['CLASSPATH']
-            hadoop_path = os.path.join(os.environ['HADOOP_PREFIX'], 'bin', 'hadoop')
-            hadoop_classpath = subprocess.check_output([hadoop_path, 'classpath', '--glob'])
-            os.environ['CLASSPATH'] = classpath + os.pathsep + hadoop_classpath
-
         # Background mode relies reuse of python worker in Spark.
         if background:
             # However, reuse of python worker can't work on Windows, we need to check if the current
@@ -211,11 +213,11 @@ def start(fn, tf_args, cluster_info, defaultFS, working_dir, background):
 
         if job_name == 'ps' or background:
             # invoke the TensorFlow main function in a background thread
-            logging.info("Starting TensorFlow {0}:{1} on cluster node {2} on background thread".format(job_name, task_index, worker_num))
-            t = threading.Thread(target=fn, args=(tf_args, ctx))
-            t.start()
+            logging.info("Starting TensorFlow {0}:{1} on cluster node {2} on background process".format(job_name, task_index, worker_num))
+            p = multiprocessing.Process(target=fn, args=(tf_args, ctx))
+            p.start()
 
-            # for ps nodes only, wait indefinitely for a "control" event (None == "stop")
+            # for ps nodes only, wait indefinitely in foreground thread for a "control" event (None == "stop")
             if job_name == 'ps':
                 queue = mgr.get_queue('control')
                 done = False

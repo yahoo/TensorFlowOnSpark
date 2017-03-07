@@ -215,6 +215,10 @@ def map_fun(args, ctx):
 
     if args.mode == "inference":
       output_file.close()
+      # Delay chief worker from shutting down supervisor during inference, since it can load model, start session,
+      # run inference and request stop before the other workers even start/sync their sessions.
+      if task_index == 0:
+        time.sleep(60)
 
     # Ask for all the services to stop.
     print("{0} stopping supervisor".format(datetime.now().isoformat()))

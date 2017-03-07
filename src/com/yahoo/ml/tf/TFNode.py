@@ -1,18 +1,20 @@
 # Copyright 2017 Yahoo Inc.
 # Licensed under the terms of the Apache 2.0 license.
 # Please see LICENSE file in the project root for terms.
-
 """
 This module provides TensorFlow helper functions for allocating GPUs and interacting with the Spark executor.
 """
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import nested_scopes
+from __future__ import print_function
 
 import getpass
 import logging
 import os
 import time
 from six.moves.queue import Queue, Empty
-
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s (%(threadName)s-%(process)d) %(message)s",)
 
 def hdfs_path(ctx, path):
   """Convenience function to create a Tensorflow-compatible absolute HDFS path from relative paths"""
@@ -37,7 +39,7 @@ def start_cluster_server(ctx, num_gpus=1, rdma=False):
   Wraps creation of TensorFlow Server in a distributed cluster.  This is intended to be invoked from the TF map_fun.
   """
   import tensorflow as tf
-  import gpu_info
+  from . import gpu_info
 
   logging.info("{0}: ======== {1}:{2} ========".format(ctx.worker_num, ctx.job_name, ctx.task_index))
   cluster_spec = ctx.cluster_spec
@@ -53,8 +55,7 @@ def start_cluster_server(ctx, num_gpus=1, rdma=False):
           num_gpus = 1
 
         # Find a free gpu(s) to use
-        free_gpus = gpu_info.get_gpus(num_gpus)[:num_gpus]
-        gpus_to_use = ','.join(free_gpus)
+        gpus_to_use = gpu_info.get_gpus(num_gpus)[:num_gpus]
         gpu_prompt = "GPU" if num_gpus == 1 else "GPUs"
         logging.info("{0}: Using {1}: {2}".format(ctx.worker_num, gpu_prompt, gpus_to_use))
 
@@ -70,7 +71,7 @@ def start_cluster_server(ctx, num_gpus=1, rdma=False):
         else:
           server = tf.train.Server(cluster, ctx.job_name, ctx.task_index)
         gpu_initialized = True
-      except Exception, e:
+      except Exception as e:
         print(e)
         logging.error("{0}: Failed to allocate GPU, trying again...".format(ctx.worker_num))
         time.sleep(10)

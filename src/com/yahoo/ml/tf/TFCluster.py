@@ -5,16 +5,19 @@
 This module provides a high-level API to manage the TensorFlowOnSpark cluster.
 """
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import nested_scopes
+from __future__ import print_function
+
 import getpass
 import logging
 import os
 import random
 import threading
 import time
-import TFManager
-import TFSparkNode
-
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s (%(threadName)s-%(process)d) %(message)s",)
+from . import TFManager
+from . import TFSparkNode
 
 class InputMode(object):
   TENSORFLOW=0

@@ -6,11 +6,11 @@
 
 from __future__ import absolute_import
 from __future__ import division
+from __future__ import nested_scopes
 from __future__ import print_function
 
 def print_log(worker_num, arg):
-  print("%d: " %worker_num, end=" ")
-  print(arg)
+  print("{0}: {1}".format(worker_num, arg))
 
 def map_fun(args, ctx):
   from com.yahoo.ml.tf import TFNode
