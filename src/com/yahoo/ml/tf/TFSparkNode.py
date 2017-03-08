@@ -222,7 +222,7 @@ def start(fn, tf_args, cluster_info, defaultFS, working_dir, background):
                 queue = mgr.get_queue('control')
                 done = False
                 while not done:
-                    msg =  queue.get(block=True)
+                    msg = queue.get(block=True)
                     logging.info("Got msg: {0}".format(msg))
                     if msg == None:
                         logging.info("Terminating PS")
@@ -246,27 +246,42 @@ def train(cluster_info, qname='input'):
     Feeds Spark partitions into the shared multiprocessing.Queue.
     """
     def _train(iter):
+        host = socket.gethostname()
+        ppid = os.getppid()
+        job_name = ''
+
+        for node in cluster_info:
+            if node['host'] == host and node['ppid'] == ppid:
+                job_name = node['job_name']
+
         # get shared queue, reconnecting if necessary
-        mgr = _get_manager(cluster_info, socket.gethostname(), os.getppid())
-        queue = mgr.get_queue(qname)
+        mgr = _get_manager(cluster_info, host, ppid)
         state = str(mgr.get('state'))
         logging.info("mgr.state={0}".format(state))
         terminating = state == "'terminating'"
-        if terminating:
-            logging.info("mgr is terminating, skipping partition")
-            count = 0
-            for item in iter:
-                count += 1
-            logging.info("Skipped {0} items from partition".format(count))
+
+        # only workers need to feed Spark partitions
+        if job_name == 'ps':
+            # raise an exception to force Spark to retry this "train" task on another executor
+            raise Exception("Skip train on TensorFlow's ps task")
         else:
-            logging.info("Feeding partition {0} into {1} queue {2}".format(iter, qname, queue))
-            count = 0
-            for item in iter:
-                count += 1
-                queue.put(item, block=True)
-            # wait for consumers to finish processing all items in queue before "finishing" this iterator
-            queue.join()
-            logging.info("Processed {0} items in partition".format(count))
+            # get queue used for feeding Spark partitions
+            queue = mgr.get_queue(qname)
+            if terminating:
+                logging.info("mgr is terminating, skipping partition")
+                count = 0
+                for item in iter:
+                    count += 1
+                logging.info("Skipped {0} items from partition".format(count))
+            else:
+                logging.info("Feeding partition {0} into {1} queue {2}".format(iter, qname, queue))
+                count = 0
+                for item in iter:
+                    count += 1
+                    queue.put(item, block=True)
+                # wait for consumers to finish processing all items in queue before "finishing" this iterator
+                queue.join()
+                logging.info("Processed {0} items in partition".format(count))
         return [terminating]
 
     return _train
@@ -276,31 +291,44 @@ def inference(cluster_info, qname='input'):
     Feeds Spark partitions into the shared multiprocessing.Queue and returns inference results.
     """
     def _inference(iter):
+        host = socket.gethostname()
+        ppid = os.getppid()
+        job_name = ''
+
+        for node in cluster_info:
+            if node['host'] == host and node['ppid'] == ppid:
+                job_name = node['job_name']
+
         # get shared queue, reconnecting if necessary
-        mgr = _get_manager(cluster_info, socket.gethostname(), os.getppid())
-        queue_in = mgr.get_queue(qname)
+        mgr = _get_manager(cluster_info, host, ppid)
 
-        logging.info("Feeding partition {0} into {1} queue {2}".format(iter, qname, queue_in))
-        count = 0
-        for item in iter:
-            count += 1
-            queue_in.put(item, block=True)
+        if job_name == 'ps':
+            # raise an exception to force Spark to retry this "inference" task on another executor
+            raise Exception("Skip inference on TensorFlow's ps task")
+        else:
+            queue_in = mgr.get_queue(qname)
 
-        # wait for consumers to finish processing all items in queue before "finishing" this iterator
-        queue_in.join()
-        logging.info("Processed {0} items in partition".format(count))
+            logging.info("Feeding partition {0} into {1} queue {2}".format(iter, qname, queue_in))
+            count = 0
+            for item in iter:
+                count += 1
+                queue_in.put(item, block=True)
 
-        # read result queue
-        results = []
-        queue_out = mgr.get_queue('output')
-        while count > 0:
-            result = queue_out.get(block=True)
-            results.append(result)
-            count -= 1
-            queue_out.task_done()
+            # wait for consumers to finish processing all items in queue before "finishing" this iterator
+            queue_in.join()
+            logging.info("Processed {0} items in partition".format(count))
 
-        logging.info("Finished processing partition")
-        return results
+            # read result queue
+            results = []
+            queue_out = mgr.get_queue('output')
+            while count > 0:
+                result = queue_out.get(block=True)
+                results.append(result)
+                count -= 1
+                queue_out.task_done()
+
+            logging.info("Finished processing partition")
+            return results
 
     return _inference
 
