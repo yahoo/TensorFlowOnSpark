@@ -285,7 +285,9 @@ def inference(cluster_info, qname='input'):
         for item in iter:
             count += 1
             queue_in.put(item, block=True)
-
+        if count == 0:
+            return []
+        queue_in.put(None, block=True)
         # wait for consumers to finish processing all items in queue before "finishing" this iterator
         queue_in.join()
         logging.info("Processed {0} items in partition".format(count))

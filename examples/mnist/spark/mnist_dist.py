@@ -139,21 +139,23 @@ def map_fun(args, ctx):
         batch_xs, batch_ys = feed_dict()
         feed = {x: batch_xs, y_: batch_ys}
 
-        if len(batch_xs) != batch_size:
-          print("done feeding")
-          break
-        else:
-          if args.mode == "train":
-            _, step = sess.run([train_op, global_step], feed_dict=feed)
-            # print accuracy and save model checkpoint to HDFS every 100 steps
-            if (step % 100 == 0):
-              print("{0} step: {1} accuracy: {2}".format(datetime.now().isoformat(), step, sess.run(accuracy,{x: batch_xs, y_: batch_ys})))
-          else: # args.mode == "inference"
-              labels, preds, acc = sess.run([label, prediction, accuracy], feed_dict=feed)
+        if args.mode == "train":
+          if len(batch_xs) != batch_size:
+            print("done feeding")
+            break
+          _, step = sess.run([train_op, global_step], feed_dict=feed)
+          # print accuracy and save model checkpoint to HDFS every 100 steps
+          if (step % 100 == 0):
+            print("{0} step: {1} accuracy: {2}".format(datetime.now().isoformat(), step, sess.run(accuracy,{x: batch_xs, y_: batch_ys})))
+        else: # args.mode == "inference"
+          if len(batch_xs) == 0:
+            print("done feeding")
+            break
+          labels, preds, acc = sess.run([label, prediction, accuracy], feed_dict=feed)
 
-              results = ["{0} Label: {1}, Prediction: {2}".format(datetime.now().isoformat(), l, p) for l,p in zip(labels,preds)]
-              TFNode.batch_results(ctx.mgr, results)
-              print("acc: {0}".format(acc))
+          results = ["{0} Label: {1}, Prediction: {2}".format(datetime.now().isoformat(), l, p) for l,p in zip(labels,preds)]
+          TFNode.batch_results(ctx.mgr, results)
+          print("acc: {0}".format(acc))
 
       if sv.should_stop() or step >= args.steps:
         TFNode.terminate(ctx.mgr)
