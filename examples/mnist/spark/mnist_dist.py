@@ -130,6 +130,10 @@ def map_fun(args, ctx):
       # Loop until the supervisor shuts down or 1000000 steps have completed.
       step = 0
       count = 0
+      task_state = 0
+      # 0: normal state
+      # 1: Partition data processing is completed. At this state, received single None(len(batch_xs)==0)
+      # indicates that inference task is finished
       while not sv.should_stop() and step < args.steps:
         # Run a training step asynchronously.
         # See `tf.train.SyncReplicasOptimizer` for additional details on how to
@@ -148,7 +152,13 @@ def map_fun(args, ctx):
           if (step % 100 == 0):
             print("{0} step: {1} accuracy: {2}".format(datetime.now().isoformat(), step, sess.run(accuracy,{x: batch_xs, y_: batch_ys})))
         else: # args.mode == "inference"
-          if len(batch_xs) == 0:
+          if len(batch_xs) == batch_size:
+            task_state = 0
+          elif len(batch_xs) > 0:
+            task_state = 1
+          elif task_state == 0:
+            task_state = 1
+          else:
             print("done feeding")
             break
           labels, preds, acc = sess.run([label, prediction, accuracy], feed_dict=feed)
