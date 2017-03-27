@@ -617,6 +617,7 @@ if __name__ == '__main__':
   (args,rem) = parser.parse_known_args()
 
   assert(num_executors > args.num_ps_tasks)
-  cluster = TFCluster.reserve(sc, args.cluster_size, args.num_ps_tasks, args.tensorboard, TFCluster.InputMode.TENSORFLOW)
-  cluster.start(main_fun, sys.argv)
+  #cluster = TFCluster.reserve(sc, args.cluster_size, args.num_ps_tasks, args.tensorboard, TFCluster.InputMode.TENSORFLOW)
+  #cluster.start(main_fun, sys.argv)
+  cluster = TFCluster.run(sc, main_fun, sys.argv, args.cluster_size, args.num_ps_tasks, args.tensorboard, TFCluster.InputMode.TENSORFLOW)
   cluster.shutdown()
