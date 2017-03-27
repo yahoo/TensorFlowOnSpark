@@ -15,6 +15,7 @@ import logging
 import os
 import time
 from six.moves.queue import Queue, Empty
+from . import marker
 
 def hdfs_path(ctx, path):
   """Convenience function to create a Tensorflow-compatible absolute HDFS path from relative paths"""
@@ -92,6 +93,7 @@ def next_batch(mgr, batch_size, qname='input'):
     """
     Invoked from the user-supplied TensorFlow main function, which should have been launched as a background thread in the start() method
     with a multiprocessing.Manager as an argument.  This Manager and a unique queue name must be supplied to this function.
+    DEPRECATED: Use TFNode class instead.
     """
     logging.debug("next_batch() invoked")
     queue = mgr.get_queue(qname)
@@ -102,6 +104,11 @@ def next_batch(mgr, batch_size, qname='input'):
             logging.info("next_batch() got None")
             queue.task_done()
             break;
+        elif type(item) is marker.EndPartition:
+            logging.info("next_batch() got EndPartition")
+            queue.task_done()
+            if len(batch) > 0:
+                break
         else:
             # logging.info("next_batch() got {0}".format(item))
             batch.append(item)
@@ -111,6 +118,7 @@ def next_batch(mgr, batch_size, qname='input'):
     return batch
 
 def batch_results(mgr, results, qname='output'):
+    """DEPRECATED: Use TFNode class instead"""
     logging.debug("batch_results() invoked")
     queue = mgr.get_queue(qname)
     for item in results:
@@ -118,6 +126,7 @@ def batch_results(mgr, results, qname='output'):
     logging.debug("batch_results() returning data")
 
 def terminate(mgr, qname='input'):
+    """DEPRECATED: Use TFNode class instead"""
     logging.info("terminate() invoked")
     mgr.set('state','terminating')
 
@@ -133,3 +142,66 @@ def terminate(mgr, qname='input'):
         except Empty:
             logging.info("dropped {0} items from queue".format(count))
             done = True
+
+class DataFeed(object):
+    def __init__(self, mgr, train_mode=True, qname_in='input', qname_out='output'):
+        self.mgr = mgr
+        self.train_mode = train_mode
+        self.qname_in = qname_in
+        self.qname_out = qname_out
+        self.done_feeding = False
+
+    def next_batch(self, batch_size):
+        """
+        Invoked from the user-supplied TensorFlow main function, which should have been launched as a background thread in the start() method
+        with a multiprocessing.Manager as an argument.  This Manager and a unique queue name must be supplied to this function.
+        """
+        logging.debug("next_batch() invoked")
+        queue = self.mgr.get_queue(self.qname_in)
+        batch = []
+        while len(batch) < batch_size:
+            item = queue.get(block=True)
+            if item is None:
+                logging.info("next_batch() got None")
+                queue.task_done()
+                self.done_feeding = True
+                break
+            elif type(item) is marker.EndPartition:
+                logging.info("next_batch() got EndPartition")
+                queue.task_done()
+                if not self.train_mode and len(batch) > 0:
+                    break
+            else:
+                # logging.info("next_batch() got {0}".format(item))
+                batch.append(item)
+                queue.task_done()
+        logging.debug("next_batch() returning {0} items".format(len(batch)))
+        return batch
+
+    def should_stop(self):
+        """Check if the feed process was told to stop."""
+        return self.done_feeding
+
+    def batch_results(self, results):
+        logging.debug("batch_results() invoked")
+        queue = self.mgr.get_queue(self.qname_out)
+        for item in results:
+            queue.put(item, block=True)
+        logging.debug("batch_results() returning data")
+
+    def terminate(self):
+        logging.info("terminate() invoked")
+        self.mgr.set('state', 'terminating')
+
+        # drop remaining items in the queue
+        queue = self.mgr.get_queue(self.qname_in)
+        count = 0
+        done = False
+        while not done:
+            try:
+                queue.get(block=True, timeout=5)
+                queue.task_done()
+                count += 1
+            except Empty:
+                logging.info("dropped {0} items from queue".format(count))
+                done = True
