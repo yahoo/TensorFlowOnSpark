@@ -30,6 +30,7 @@ import time
 import uuid
 from . import TFManager
 from . import reservation
+from . import marker
 
 class TFNodeContext:
   """This encapsulates key metadata for each TF node"""
@@ -456,6 +457,13 @@ def inference(cluster_info, qname='input'):
         for item in iter:
             count += 1
             queue_in.put(item, block=True)
+
+        # signal "end of partition"
+        queue_in.put(marker.EndPartition())
+
+        # skip empty partitions
+        if count == 0:
+            return []
 
         # wait for consumers to finish processing all items in queue before "finishing" this iterator
         queue_in.join()

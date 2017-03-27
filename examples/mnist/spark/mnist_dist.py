@@ -33,15 +33,12 @@ def map_fun(args, ctx):
 
   # Parameters
   hidden_units = 128
-  batch_size   = 100
+  batch_size   = args.batch_size
 
   # Get TF cluster and server instances
   cluster, server = TFNode.start_cluster_server(ctx, 1, args.rdma)
 
-  def feed_dict():
-    # Get a batch of examples from spark data feeder job
-    batch = TFNode.next_batch(ctx.mgr, 100)
-
+  def feed_dict(batch):
     # Convert from [(images, labels)] to two numpy arrays of the proper type
     images = []
     labels = []
@@ -129,34 +126,31 @@ def map_fun(args, ctx):
 
       # Loop until the supervisor shuts down or 1000000 steps have completed.
       step = 0
-      count = 0
-      while not sv.should_stop() and step < args.steps:
+      tf_feed = TFNode.DataFeed(ctx.mgr, args.mode == "train")
+      while not sv.should_stop() and not tf_feed.should_stop() and step < args.steps:
         # Run a training step asynchronously.
         # See `tf.train.SyncReplicasOptimizer` for additional details on how to
         # perform *synchronous* training.
 
         # using feed_dict
-        batch_xs, batch_ys = feed_dict()
+        batch_xs, batch_ys = feed_dict(tf_feed.next_batch(batch_size))
         feed = {x: batch_xs, y_: batch_ys}
 
-        if len(batch_xs) != batch_size:
-          print("done feeding")
-          break
-        else:
+        if len(batch_xs) > 0:
           if args.mode == "train":
             _, step = sess.run([train_op, global_step], feed_dict=feed)
             # print accuracy and save model checkpoint to HDFS every 100 steps
             if (step % 100 == 0):
               print("{0} step: {1} accuracy: {2}".format(datetime.now().isoformat(), step, sess.run(accuracy,{x: batch_xs, y_: batch_ys})))
           else: # args.mode == "inference"
-              labels, preds, acc = sess.run([label, prediction, accuracy], feed_dict=feed)
+            labels, preds, acc = sess.run([label, prediction, accuracy], feed_dict=feed)
 
-              results = ["{0} Label: {1}, Prediction: {2}".format(datetime.now().isoformat(), l, p) for l,p in zip(labels,preds)]
-              TFNode.batch_results(ctx.mgr, results)
-              print("acc: {0}".format(acc))
+            results = ["{0} Label: {1}, Prediction: {2}".format(datetime.now().isoformat(), l, p) for l,p in zip(labels,preds)]
+            tf_feed.batch_results(results)
+            print("acc: {0}".format(acc))
 
       if sv.should_stop() or step >= args.steps:
-        TFNode.terminate(ctx.mgr)
+        tf_feed.terminate()
 
     # Ask for all the services to stop.
     print("{0} stopping supervisor".format(datetime.now().isoformat()))

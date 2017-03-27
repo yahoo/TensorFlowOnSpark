@@ -27,6 +27,7 @@ num_executors = int(executors) if executors is not None else 1
 num_ps = 1
 
 parser = argparse.ArgumentParser()
+parser.add_argument("-b", "--batch_size", help="number of records per batch", type=int, default=100)
 parser.add_argument("-e", "--epochs", help="number of epochs", type=int, default=1)
 parser.add_argument("-f", "--format", help="example format: (csv|pickle|tfr)", choices=["csv","pickle","tfr"], default="csv")
 parser.add_argument("-i", "--images", help="HDFS path to MNIST images in parallelized format")
