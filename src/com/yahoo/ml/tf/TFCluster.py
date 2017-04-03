@@ -276,7 +276,11 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
         tb_url = "http://{0}:{1}".format(node['host'], node['tb_port'])
 
     if tb_url is not None:
-      logging.info("TensorBoard running at: {0}".format(tb_url))
+      logging.info("========================================================================================")
+      logging.info("")
+      logging.info("TensorBoard running at:       {0}".format(tb_url))
+      logging.info("")
+      logging.info("========================================================================================")
 
     # since our "primary key" for each executor's TFManager is (host, ppid), sanity check for duplicates
     # Note: this may occur if Spark retries failed Python tasks on the same executor.
