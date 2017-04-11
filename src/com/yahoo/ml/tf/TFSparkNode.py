@@ -19,6 +19,7 @@ from __future__ import division
 from __future__ import nested_scopes
 from __future__ import print_function
 
+import getpass
 import logging
 import os
 import platform
@@ -180,6 +181,8 @@ def start(fn, tf_args, cluster_info, defaultFS, working_dir, background):
         ppid = os.getppid()
         job_name = ''
         task_index = -1
+
+        os.environ['HADOOP_USER_NAME'] = getpass.getuser()
 
         # expand Hadoop classpath wildcards for JNI (Spark 2.x)
         if 'HADOOP_PREFIX' in os.environ:
@@ -362,6 +365,8 @@ def run(fn, tf_args, cluster_meta, tensorboard, queues, background):
             hosts = [] if njob not in spec else spec[njob]
             hosts.append("{0}:{1}".format(nhost, nport))
             spec[njob] = hosts
+
+        os.environ['HADOOP_USER_NAME'] = getpass.getuser()
 
         # expand Hadoop classpath wildcards for JNI (Spark 2.x)
         if 'HADOOP_PREFIX' in os.environ:
