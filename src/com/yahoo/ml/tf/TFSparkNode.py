@@ -316,7 +316,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, queues, background):
               tb_proc = subprocess.Popen([pypath, "%s/tensorboard"%pydir, "--logdir=%s"%logdir, "--port=%d"%tb_port, "--debug"])
             else:
               # system-installed Python & tensorboard
-              python_path = os.environ['PYTHONPATH'].split(":")
+              python_path = os.environ['PYTHONPATH'].split(os.pathsep)
               for path in python_path:
                   os.environ['PATH'] = os.environ['PATH'] + os.pathsep + os.path.dirname(path)
               tb_proc = subprocess.Popen(["tensorboard", "--logdir=%s"%logdir, "--port=%d"%tb_port, "--debug"])
