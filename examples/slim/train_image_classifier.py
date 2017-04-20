@@ -131,8 +131,6 @@ def main_fun(argv, ctx):
       'momentum', 0.9,
       'The momentum for the MomentumOptimizer and RMSPropOptimizer.')
 
-  tf.app.flags.DEFINE_float('rmsprop_momentum', 0.9, 'Momentum.')
-
   tf.app.flags.DEFINE_float('rmsprop_decay', 0.9, 'Decay term for RMSProp.')
 
   #######################
@@ -321,7 +319,7 @@ def main_fun(argv, ctx):
       optimizer = tf.train.RMSPropOptimizer(
           learning_rate,
           decay=FLAGS.rmsprop_decay,
-          momentum=FLAGS.rmsprop_momentum,
+          momentum=FLAGS.momentum,
           epsilon=FLAGS.opt_epsilon)
     elif FLAGS.optimizer == 'sgd':
       optimizer = tf.train.GradientDescentOptimizer(learning_rate)
