@@ -47,3 +47,23 @@ Also, you will need to download the CIFAR-10 dataset per the [original example](
     --train_dir hdfs://default/user/${USER}/cifar10_train \
     --max_steps 1000 \
     --num_gpus ${NUM_GPU}
+
+### Run evaluation on Spark
+
+    ${SPARK_HOME}/bin/spark-submit \
+    --master yarn \
+    --deploy-mode cluster \
+    --queue ${QUEUE} \
+    --num-executors 1 \
+    --executor-memory 27G \
+    --py-files tensorflow/tfspark.zip,cifar10.zip \
+    --conf spark.dynamicAllocation.enabled=false \
+    --conf spark.yarn.maxAppAttempts=1 \
+    --archives hdfs:///user/${USER}/Python.zip#Python \
+    --conf spark.executorEnv.LD_LIBRARY_PATH="lib64:/usr/local/cuda-7.5/lib64:$JAVA_HOME/jre/lib/amd64/server" \
+    --driver-library-path="lib64:/usr/local/cuda-7.5/lib64" \
+    tensorflow/examples/cifar10/cifar10_eval.py \
+    --data_dir hdfs://default/user/${USER}/cifar10_data \
+    --checkpoint_dir hdfs://default/user/${USER}/cifar10_train \
+    --eval_dir hdfs://default/user/${USER}/cifar10_eval \
+    --run_once

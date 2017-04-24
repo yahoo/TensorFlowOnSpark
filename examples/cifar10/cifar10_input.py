@@ -84,13 +84,13 @@ def read_cifar10(filename_queue):
 
   # The first bytes represent the label, which we convert from uint8->int32.
   result.label = tf.cast(
-      tf.strided_slice(record_bytes, [0], [label_bytes], [1]), tf.int32)
+      tf.strided_slice(record_bytes, [0], [label_bytes]), tf.int32)
 
   # The remaining bytes after the label represent the image, which we reshape
   # from [depth * height * width] to [depth, height, width].
   depth_major = tf.reshape(
       tf.strided_slice(record_bytes, [label_bytes],
-                       [label_bytes + image_bytes], [1]),
+                       [label_bytes + image_bytes]),
       [result.depth, result.height, result.width])
   # Convert from [depth, height, width] to [height, width, depth].
   result.uint8image = tf.transpose(depth_major, [1, 2, 0])
@@ -237,7 +237,7 @@ def inputs(eval_data, data_dir, batch_size):
   # Image processing for evaluation.
   # Crop the central [height, width] of the image.
   resized_image = tf.image.resize_image_with_crop_or_pad(reshaped_image,
-                                                         width, height)
+                                                         height, width)
 
   # Subtract off the mean and divide by the variance of the pixels.
   float_image = tf.image.per_image_standardization(resized_image)

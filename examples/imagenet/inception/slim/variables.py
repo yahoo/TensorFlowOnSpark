@@ -33,7 +33,7 @@ Usage:
 
   biases = variables.variable('biases',
                               shape=[100],
-                              initializer=tf.zeros_initializer,
+                              initializer=tf.zeros_initializer(),
                               device='/cpu:0')
 
   # More complex example.
@@ -240,7 +240,7 @@ def global_step(device=''):
     # Get the device for the variable.
     with tf.device(variable_device(device, 'global_step')):
       return tf.get_variable('global_step', shape=[], dtype=tf.int64,
-                             initializer=tf.zeros_initializer,
+                             initializer=tf.zeros_initializer(),
                              trainable=False, collections=collections)
 
 
