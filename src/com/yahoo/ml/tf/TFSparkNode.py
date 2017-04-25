@@ -19,6 +19,7 @@ from __future__ import division
 from __future__ import nested_scopes
 from __future__ import print_function
 
+import getpass
 import logging
 import os
 import platform
@@ -181,6 +182,8 @@ def start(fn, tf_args, cluster_info, defaultFS, working_dir, background):
         job_name = ''
         task_index = -1
 
+        os.environ['HADOOP_USER_NAME'] = getpass.getuser()
+
         # expand Hadoop classpath wildcards for JNI (Spark 2.x)
         if 'HADOOP_PREFIX' in os.environ:
             classpath = os.environ['CLASSPATH']
@@ -313,6 +316,9 @@ def run(fn, tf_args, cluster_meta, tensorboard, queues, background):
               tb_proc = subprocess.Popen([pypath, "%s/tensorboard"%pydir, "--logdir=%s"%logdir, "--port=%d"%tb_port, "--debug"])
             else:
               # system-installed Python & tensorboard
+              python_path = os.environ['PYTHONPATH'].split(os.pathsep)
+              for path in python_path:
+                  os.environ['PATH'] = os.environ['PATH'] + os.pathsep + os.path.dirname(path)
               tb_proc = subprocess.Popen(["tensorboard", "--logdir=%s"%logdir, "--port=%d"%tb_port, "--debug"])
             tb_pid = tb_proc.pid
 
@@ -362,6 +368,8 @@ def run(fn, tf_args, cluster_meta, tensorboard, queues, background):
             hosts = [] if njob not in spec else spec[njob]
             hosts.append("{0}:{1}".format(nhost, nport))
             spec[njob] = hosts
+
+        os.environ['HADOOP_USER_NAME'] = getpass.getuser()
 
         # expand Hadoop classpath wildcards for JNI (Spark 2.x)
         if 'HADOOP_PREFIX' in os.environ:

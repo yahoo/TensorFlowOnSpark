@@ -78,7 +78,7 @@ def start_cluster_server(ctx, num_gpus=1, rdma=False):
         time.sleep(10)
   else:
     # CPU
-    os.environ['CUDA_VISIBLE-DEVICES'] = ''
+    os.environ['CUDA_VISIBLE_DEVICES'] = ''
     logging.info("{0}: Using CPU".format(ctx.worker_num))
 
     # Create a cluster from the parameter server and worker hosts.
