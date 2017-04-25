@@ -48,7 +48,7 @@ def main_fun(argv, ctx):
     tf.gfile.DeleteRecursively(FLAGS.eval_dir)
   tf.gfile.MakeDirs(FLAGS.eval_dir)
 
-  cluster_spec, server = TFNode.start_cluster_server(ctx, 1, FLAGS.rdma)
+  cluster_spec, server = TFNode.start_cluster_server(ctx)
 
   inception_eval.evaluate(dataset)
 

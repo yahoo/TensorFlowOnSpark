@@ -33,9 +33,6 @@ from inception import inception_model as inception
 
 FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_boolean('rdma', False,
-                           """Whether to use rdma.""")
-
 tf.app.flags.DEFINE_string('eval_dir', '/tmp/imagenet_eval',
                            """Directory where to write event logs.""")
 tf.app.flags.DEFINE_string('checkpoint_dir', '/tmp/imagenet_train',
@@ -68,13 +65,14 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op):
   with tf.Session() as sess:
     ckpt = tf.train.get_checkpoint_state(FLAGS.checkpoint_dir)
     if ckpt and ckpt.model_checkpoint_path:
+      print("ckpt.model_checkpoint_path: {0}".format(ckpt.model_checkpoint_path))
       saver.restore(sess, ckpt.model_checkpoint_path)
 
       # Assuming model_checkpoint_path looks something like:
       #   /my-favorite-path/imagenet_train/model.ckpt-0,
       # extract global_step from it.
       global_step = ckpt.model_checkpoint_path.split('/')[-1].split('-')[-1]
-      print('Succesfully loaded model from %s at step=%s.' %
+      print('Successfully loaded model from %s at step=%s.' %
             (ckpt.model_checkpoint_path, global_step))
     else:
       print('No checkpoint file found')

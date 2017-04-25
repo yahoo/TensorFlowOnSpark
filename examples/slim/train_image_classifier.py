@@ -425,8 +425,10 @@ def main_fun(argv, ctx):
           num_ps_tasks=FLAGS.num_ps_tasks)
 
       # Create global_step
-      with tf.device(deploy_config.variables_device()):
-        global_step = slim.create_global_step()
+      #with tf.device(deploy_config.variables_device()):
+      #  global_step = slim.create_global_step()
+      with tf.device("/job:ps/task:0"):
+        global_step = tf.Variable(0, name="global_step")
 
       ######################
       # Select the dataset #
