@@ -131,8 +131,6 @@ def main_fun(argv, ctx):
       'momentum', 0.9,
       'The momentum for the MomentumOptimizer and RMSPropOptimizer.')
 
-  tf.app.flags.DEFINE_float('rmsprop_momentum', 0.9, 'Momentum.')
-
   tf.app.flags.DEFINE_float('rmsprop_decay', 0.9, 'Decay term for RMSProp.')
 
   #######################
@@ -321,7 +319,7 @@ def main_fun(argv, ctx):
       optimizer = tf.train.RMSPropOptimizer(
           learning_rate,
           decay=FLAGS.rmsprop_decay,
-          momentum=FLAGS.rmsprop_momentum,
+          momentum=FLAGS.momentum,
           epsilon=FLAGS.opt_epsilon)
     elif FLAGS.optimizer == 'sgd':
       optimizer = tf.train.GradientDescentOptimizer(learning_rate)
@@ -405,7 +403,7 @@ def main_fun(argv, ctx):
     return variables_to_train
 
   # main
-  cluster_spec, server = TFNode.start_cluster_server(ctx, FLAGS.num_gpus)
+  cluster_spec, server = TFNode.start_cluster_server(ctx=ctx, num_gpus=FLAGS.num_gpus, rdma=FLAGS.rdma)
   if ctx.job_name == 'ps':
     # `ps` jobs wait for incoming connections from the workers.
     server.join()
@@ -416,9 +414,9 @@ def main_fun(argv, ctx):
 
     tf.logging.set_verbosity(tf.logging.INFO)
     with tf.Graph().as_default():
-      ######################
-      # Config model_deploy#
-      ######################
+      #######################
+      # Config model_deploy #
+      #######################
       deploy_config = model_deploy.DeploymentConfig(
           num_clones=FLAGS.num_clones,
           clone_on_cpu=FLAGS.clone_on_cpu,
@@ -436,9 +434,9 @@ def main_fun(argv, ctx):
       dataset = dataset_factory.get_dataset(
           FLAGS.dataset_name, FLAGS.dataset_split_name, FLAGS.dataset_dir)
 
-      ####################
+      ######################
       # Select the network #
-      ####################
+      ######################
       network_fn = nets_factory.get_network_fn(
           FLAGS.model_name,
           num_classes=(dataset.num_classes - FLAGS.labels_offset),
@@ -491,11 +489,12 @@ def main_fun(argv, ctx):
         # Specify the loss function #
         #############################
         if 'AuxLogits' in end_points:
-          slim.losses.softmax_cross_entropy(
-              end_points['AuxLogits'], labels,
+          tf.losses.softmax_cross_entropy(
+              logits=end_points['AuxLogits'], onehot_labels=labels,
               label_smoothing=FLAGS.label_smoothing, weights=0.4, scope='aux_loss')
-        slim.losses.softmax_cross_entropy(
-            logits, labels, label_smoothing=FLAGS.label_smoothing, weights=1.0)
+        tf.losses.softmax_cross_entropy(
+            logits=logits, onehot_labels=labels,
+            label_smoothing=FLAGS.label_smoothing, weights=1.0)
         return end_points
 
       # Gather initial summaries.
