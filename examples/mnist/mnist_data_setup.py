@@ -44,7 +44,10 @@ def writeMNIST(sc, input_images, input_labels, output, format, num_partitions):
     images = numpy.array(mnist.extract_images(f))
 
   with open(input_labels, 'rb') as f:
-    labels = numpy.array(mnist.extract_labels(f, one_hot=True))
+    if format == "csv2":
+      labels = numpy.array(mnist.extract_labels(f, one_hot=False))
+    else:
+      labels = numpy.array(mnist.extract_labels(f, one_hot=True))
 
   shape = images.shape
   print("images.shape: {0}".format(shape))          # 60000 x 28 x 28
@@ -64,6 +67,8 @@ def writeMNIST(sc, input_images, input_labels, output, format, num_partitions):
   elif format == "csv":
     imageRDD.map(toCSV).saveAsTextFile(output_images)
     labelRDD.map(toCSV).saveAsTextFile(output_labels)
+  elif format == "csv2":
+    imageRDD.map(toCSV).zip(labelRDD).map(lambda x: str(x[1]) + "|" + x[0]).saveAsTextFile(output)
   else: # format == "tfr":
     tfRDD = imageRDD.zip(labelRDD).map(lambda x: (bytearray(toTFExample(x[0], x[1])), None))
     # requires: --jars tensorflow-hadoop-1.0-SNAPSHOT.jar
@@ -116,7 +121,7 @@ if __name__ == "__main__":
   from pyspark.conf import SparkConf
 
   parser = argparse.ArgumentParser()
-  parser.add_argument("-f", "--format", help="output format", choices=["csv","pickle","tf","tfr"], default="csv")
+  parser.add_argument("-f", "--format", help="output format", choices=["csv","csv2","pickle","tf","tfr"], default="csv")
   parser.add_argument("-n", "--num-partitions", help="Number of output partitions", type=int, default=10)
   parser.add_argument("-o", "--output", help="HDFS directory to save examples in parallelized format", default="mnist_data")
   parser.add_argument("-r", "--read", help="read previously saved examples", action="store_true")
