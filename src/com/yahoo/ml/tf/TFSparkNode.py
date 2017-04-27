@@ -34,15 +34,15 @@ from . import reservation
 from . import marker
 
 class TFNodeContext:
-  """This encapsulates key metadata for each TF node"""
-  def __init__(self, worker_num, job_name, task_index, cluster_spec, defaultFS, working_dir, mgr):
-    self.worker_num = worker_num
-    self.job_name = job_name
-    self.task_index = task_index
-    self.cluster_spec = cluster_spec
-    self.defaultFS = defaultFS
-    self.working_dir = working_dir
-    self.mgr = mgr
+    """This encapsulates key metadata for each TF node"""
+    def __init__(self, worker_num, job_name, task_index, cluster_spec, defaultFS, working_dir, mgr):
+        self.worker_num = worker_num
+        self.job_name = job_name
+        self.task_index = task_index
+        self.cluster_spec = cluster_spec
+        self.defaultFS = defaultFS
+        self.working_dir = working_dir
+        self.mgr = mgr
 
 class TFSparkNode(object):
     """
@@ -126,14 +126,14 @@ def reserve(cluster_spec, tensorboard, cluster_id, queues=['input', 'output']):
             logdir = "tensorboard_%d" %(worker_num)
 
             if 'PYSPARK_PYTHON' in os.environ:
-              # user-specified Python (typically Python.zip)
-              pypath = os.environ['PYSPARK_PYTHON']
-              logging.info("PYSPARK_PYTHON: {0}".format(pypath))
-              pydir = os.path.dirname(pypath)
-              tb_proc = subprocess.Popen([pypath, "%s/tensorboard"%pydir, "--logdir=%s"%logdir, "--port=%d"%tb_port, "--debug"])
+                # user-specified Python (typically Python.zip)
+                pypath = os.environ['PYSPARK_PYTHON']
+                logging.info("PYSPARK_PYTHON: {0}".format(pypath))
+                pydir = os.path.dirname(pypath)
+                tb_proc = subprocess.Popen([pypath, "%s/tensorboard"%pydir, "--logdir=%s"%logdir, "--port=%d"%tb_port, "--debug"])
             else:
-              # system-installed Python & tensorboard
-              tb_proc = subprocess.Popen(["tensorboard", "--logdir=%s"%logdir, "--port=%d"%tb_port, "--debug"])
+                # system-installed Python & tensorboard
+                tb_proc = subprocess.Popen(["tensorboard", "--logdir=%s"%logdir, "--port=%d"%tb_port, "--debug"])
             tb_pid = tb_proc.pid
 
         # find a free port for TF
@@ -325,6 +325,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, queues, background):
         # check server to see if this task is being retried (i.e. already reserved)
         client = reservation.Client(cluster_meta['server_addr'])
         cluster_info = client.get_reservations()
+        tmp_sock = None
         node_meta = None
         for node in cluster_info:
             (nhost, nppid) = (node['host'], node['ppid'])
@@ -332,14 +333,14 @@ def run(fn, tf_args, cluster_meta, tensorboard, queues, background):
               node_meta = node
               port = node['port']
 
-        # find a free port for TF
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.bind(('',port))
-        port = s.getsockname()[1]
-
         # if not already done, register everything we need to set up the cluster
         if node_meta is None:
+          # first, find a free port for TF
+          tmp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          tmp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          tmp_sock.bind(('',port))
+          port = tmp_sock.getsockname()[1]
+
           node_meta = {
               'worker_num': worker_num,
               'host': host,
@@ -383,7 +384,8 @@ def run(fn, tf_args, cluster_meta, tensorboard, queues, background):
         ctx = TFNodeContext(worker_num, job_name, task_index, spec, cluster_meta['default_fs'], cluster_meta['working_dir'], TFSparkNode.mgr)
 
         # release port reserved for TF as late as possible
-        s.close()
+        if tmp_sock is not None:
+          tmp_sock.close()
 
         # Background mode relies reuse of python worker in Spark.
         if background:
@@ -421,7 +423,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, queues, background):
 
     return _mapfn
 
-def train(cluster_info, qname='input'):
+def train(cluster_info, cluster_meta, qname='input'):
     """
     Feeds Spark partitions into the shared multiprocessing.Queue.
     """
@@ -438,6 +440,7 @@ def train(cluster_info, qname='input'):
             for item in iter:
                 count += 1
             logging.info("Skipped {0} items from partition".format(count))
+
         else:
             logging.info("Feeding partition {0} into {1} queue {2}".format(iter, qname, queue))
             count = 0
@@ -447,6 +450,19 @@ def train(cluster_info, qname='input'):
             # wait for consumers to finish processing all items in queue before "finishing" this iterator
             queue.join()
             logging.info("Processed {0} items in partition".format(count))
+
+        # check if TF is terminating feed after this partition
+        state = str(mgr.get('state'))
+        terminating = state == "'terminating'"
+        if terminating:
+            try:
+                logging.info("TFSparkNode: requesting stop")
+                client = reservation.Client(cluster_meta['server_addr'])
+                client.request_stop()
+                client.close()
+            except Exception as e:
+                # ignore any errors while requesting stop
+                logging.debug("Error while requesting stop: {0}".format(e))
         return [terminating]
 
     return _train

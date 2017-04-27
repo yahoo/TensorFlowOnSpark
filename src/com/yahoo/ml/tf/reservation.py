@@ -88,16 +88,20 @@ class Server(MessageSocket):
   def handle_message(self, sock, msg):
     logging.debug("received: {0}".format(msg))
     msg_type = msg['type']
-    if msg_type == "REG":
+    if msg_type == 'REG':
       self.reservations.add(msg['data'])
-      MessageSocket.send(self, sock, "OK")
-    elif msg_type == "QUERY":
+      MessageSocket.send(self, sock, 'OK')
+    elif msg_type == 'QUERY':
       MessageSocket.send(self, sock, self.reservations.done())
-    elif msg_type == "QINFO":
+    elif msg_type == 'QINFO':
       rinfo = self.reservations.get()
       MessageSocket.send(self, sock, rinfo)
+    elif msg_type == 'STOP':
+      logging.info("setting server.done")
+      MessageSocket.send(self, sock, 'OK')
+      self.done = True
     else:
-      MessageSocket.send(self, sock, "ERR")
+      MessageSocket.send(self, sock, 'ERR')
 
   def start(self):
     """Start listener in a background thread"""
@@ -174,13 +178,18 @@ class Client(MessageSocket):
 
   def get_reservations(self):
     """Get current list of reservations"""
-    cluster_info = self._request("QINFO")
+    cluster_info = self._request('QINFO')
     return cluster_info
 
   def await_reservations(self):
     """Poll until all reservations completed, then return cluster_info"""
     done = False
     while not done:
-      done = self._request("QUERY")
+      done = self._request('QUERY')
       time.sleep(1)
     return self.get_reservations()
+
+  def request_stop(self):
+    resp = self._request('STOP')
+    return resp
+
