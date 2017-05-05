@@ -132,7 +132,7 @@ def main_fun(argv, ctx):
         grads.append(expanded_g)
 
       # Average over the 'tower' dimension.
-      grad = tf.concat_v2(grads, 0)
+      grad = tf.concat(axis=0, values=grads)
       grad = tf.reduce_mean(grad, 0)
 
       # Keep in mind that the Variables are redundant because they are shared
@@ -170,25 +170,26 @@ def main_fun(argv, ctx):
 
       # Calculate the gradients for each model tower.
       tower_grads = []
-      for i in xrange(FLAGS.num_gpus):
-        with tf.device('/gpu:%d' % i):
-          with tf.name_scope('%s_%d' % (cifar10.TOWER_NAME, i)) as scope:
-            # Calculate the loss for one tower of the CIFAR model. This function
-            # constructs the entire CIFAR model but shares the variables across
-            # all towers.
-            loss = tower_loss(scope)
+      with tf.variable_scope(tf.get_variable_scope()):
+        for i in xrange(FLAGS.num_gpus):
+          with tf.device('/gpu:%d' % i):
+            with tf.name_scope('%s_%d' % (cifar10.TOWER_NAME, i)) as scope:
+              # Calculate the loss for one tower of the CIFAR model. This function
+              # constructs the entire CIFAR model but shares the variables across
+              # all towers.
+              loss = tower_loss(scope)
 
-            # Reuse variables for the next tower.
-            tf.get_variable_scope().reuse_variables()
+              # Reuse variables for the next tower.
+              tf.get_variable_scope().reuse_variables()
 
-            # Retain the summaries from the final tower.
-            summaries = tf.get_collection(tf.GraphKeys.SUMMARIES, scope)
+              # Retain the summaries from the final tower.
+              summaries = tf.get_collection(tf.GraphKeys.SUMMARIES, scope)
 
-            # Calculate the gradients for the batch of data on this CIFAR tower.
-            grads = opt.compute_gradients(loss)
+              # Calculate the gradients for the batch of data on this CIFAR tower.
+              grads = opt.compute_gradients(loss)
 
-            # Keep track of the gradients across all towers.
-            tower_grads.append(grads)
+              # Keep track of the gradients across all towers.
+              tower_grads.append(grads)
 
       # We must calculate the mean of each gradient. Note that this is the
       # synchronization point across all towers.
@@ -200,8 +201,7 @@ def main_fun(argv, ctx):
       # Add histograms for gradients.
       for grad, var in grads:
         if grad is not None:
-          summaries.append(
-              tf.summary.histogram(var.op.name + '/gradients', grad))
+          summaries.append(tf.summary.histogram(var.op.name + '/gradients', grad))
 
       # Apply the gradients to adjust the shared variables.
       apply_gradient_op = opt.apply_gradients(grads, global_step=global_step)
@@ -278,6 +278,7 @@ if __name__ == '__main__':
   num_executors = int(sc._conf.get("spark.executor.instances"))
   num_ps = 0
 
-  cluster = TFCluster.reserve(sc, num_executors, num_ps, False, TFCluster.InputMode.TENSORFLOW)
-  cluster.start(main_fun, sys.argv)
+  #cluster = TFCluster.reserve(sc, num_executors, num_ps, False, TFCluster.InputMode.TENSORFLOW)
+  #cluster.start(main_fun, sys.argv)
+  cluster = TFCluster.run(sc, main_fun, sys.argv, num_executors, num_ps, False, TFCluster.InputMode.TENSORFLOW)
   cluster.shutdown()

@@ -26,6 +26,7 @@ import sys
 
 def main_fun(argv, ctx):
   import math
+  import six
   import tensorflow as tf
 
   from datasets import dataset_factory
@@ -97,7 +98,8 @@ def main_fun(argv, ctx):
 
   tf.logging.set_verbosity(tf.logging.INFO)
   with tf.Graph().as_default():
-    tf_global_step = slim.get_or_create_global_step()
+    #tf_global_step = slim.get_or_create_global_step()
+    tf_global_step = tf.Variable(0, name="global_step")
 
     ######################
     # Select the dataset #
@@ -162,12 +164,12 @@ def main_fun(argv, ctx):
     # Define the metrics:
     names_to_values, names_to_updates = slim.metrics.aggregate_metric_map({
         'Accuracy': slim.metrics.streaming_accuracy(predictions, labels),
-        'Recall@5': slim.metrics.streaming_recall_at_k(
+        'Recall_5': slim.metrics.streaming_recall_at_k(
             logits, labels, 5),
     })
 
     # Print the summaries to screen.
-    for name, value in names_to_values.iteritems():
+    for name, value in six.iteritems(names_to_values):
       summary_name = 'eval/%s' % name
       op = tf.summary.scalar(summary_name, value, collections=[])
       op = tf.Print(op, [value], summary_name)
@@ -192,13 +194,14 @@ def main_fun(argv, ctx):
         checkpoint_path=checkpoint_path,
         logdir=FLAGS.eval_dir,
         num_evals=num_batches,
-        eval_op=names_to_updates.values(),
+        eval_op=list(names_to_updates.values()),
         variables_to_restore=variables_to_restore)
 
 
 if __name__ == '__main__':
   sc = SparkContext(conf=SparkConf().setAppName("eval_image_classifier"))
   num_executors = int(sc._conf.get("spark.executor.instances"))
-  cluster = TFCluster.reserve(sc, num_executors, 0, False, TFCluster.InputMode.TENSORFLOW)
-  cluster.start(main_fun, sys.argv)
+  #cluster = TFCluster.reserve(sc, num_executors, 0, False, TFCluster.InputMode.TENSORFLOW)
+  #cluster.start(main_fun, sys.argv)
+  cluster = TFCluster.run(sc, main_fun, sys.argv, num_executors, 0, False, TFCluster.InputMode.TENSORFLOW)
   cluster.shutdown()

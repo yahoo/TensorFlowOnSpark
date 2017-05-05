@@ -2,6 +2,11 @@
 # Licensed under the terms of the Apache 2.0 license.
 # Please see LICENSE file in the project root for terms.
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import nested_scopes
+from __future__ import print_function
+
 import ctypes as ct
 import logging
 import platform
@@ -37,7 +42,11 @@ def get_gpus(num_gpu=1):
   """Returns list of free GPUs according to nvidia-smi"""
   try:
     # get list of gpus (index, uuid)
-    gpus = [ x for x in subprocess.check_output(["nvidia-smi", "--list-gpus"]).split('\n') if len(x) > 0 ]
+    list_gpus = subprocess.check_output(["nvidia-smi", "--list-gpus"]).decode()
+    logging.debug("all GPUs:\n{0}".format(list_gpus))
+
+    # parse index and guid
+    gpus = [ x for x in list_gpus.split('\n') if len(x) > 0 ]
     def parse_gpu(gpu_str):
       cols = gpu_str.split(' ')
       return cols[5].split(')')[0], cols[1].split(':')[0]
@@ -49,7 +58,8 @@ def get_gpus(num_gpu=1):
     free_gpus = []
     retries = 0
     while len(free_gpus) < num_gpu and retries < MAX_RETRIES:
-      smi_output = subprocess.check_output(["nvidia-smi", "--format=csv,noheader,nounits", "--query-compute-apps=gpu_uuid"])
+      smi_output = subprocess.check_output(["nvidia-smi", "--format=csv,noheader,nounits", "--query-compute-apps=gpu_uuid"]).decode()
+      logging.debug("busy GPUs:\n{0}".format(smi_output))
       busy_uuids = [x for x in smi_output.split('\n') if len(x) > 0 ]
       for uuid, index in gpu_list:
         if not uuid in busy_uuids:
@@ -62,19 +72,21 @@ def get_gpus(num_gpu=1):
         time.sleep(30*retries)
         free_gpus = []
 
+    # if still can't find GPUs, raise exception
     if len(free_gpus) < num_gpu:
-      smi_output = subprocess.check_output(["nvidia-smi", "--format=csv", "--query-compute-apps=gpu_uuid,pid,process_name,used_gpu_memory"])
-      logging.error("Unable to find free GPU:\n" + smi_output)
+      smi_output = subprocess.check_output(["nvidia-smi", "--format=csv", "--query-compute-apps=gpu_uuid,pid,process_name,used_gpu_memory"]).decode()
+      logging.info(": {0}".format(smi_output))
+      raise Exception("Unable to find free GPU:\n{0}".format(smi_output))
 
-    return free_gpus
-  except subprocess.CalledProcessError, e:
+    return ','.join(free_gpus[:num_gpu])
+  except subprocess.CalledProcessError as e:
     print ("nvidia-smi error", e.output)
 
 # Function to get the gpu information
 def get_free_gpu(max_gpu_utilization=40, min_free_memory=0.5, num_gpu=1):
   def get_gpu_info():
     # Get the gpu information
-    gpu_info = subprocess.check_output(["nvidia-smi", "--format=csv,noheader,nounits", "--query-gpu=index,memory.total,memory.free,memory.used,utilization.gpu"])
+    gpu_info = subprocess.check_output(["nvidia-smi", "--format=csv,noheader,nounits", "--query-gpu=index,memory.total,memory.free,memory.used,utilization.gpu"]).decode()
     gpu_info = gpu_info.split('\n')
 
     gpu_info_array = []

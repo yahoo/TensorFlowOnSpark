@@ -48,7 +48,7 @@ def main_fun(argv, ctx):
     tf.gfile.DeleteRecursively(FLAGS.eval_dir)
   tf.gfile.MakeDirs(FLAGS.eval_dir)
 
-  cluster_spec, server = TFNode.start_cluster_server(ctx, 1, FLAGS.rdma)
+  cluster_spec, server = TFNode.start_cluster_server(ctx)
 
   inception_eval.evaluate(dataset)
 
@@ -58,6 +58,7 @@ if __name__ == '__main__':
   num_executors = int(sc._conf.get("spark.executor.instances"))
   num_ps = 0
 
-  cluster = TFCluster.reserve(sc, num_executors, num_ps, False, TFCluster.InputMode.TENSORFLOW)
-  cluster.start(main_fun, sys.argv)
+  #cluster = TFCluster.reserve(sc, num_executors, num_ps, False, TFCluster.InputMode.TENSORFLOW)
+  #cluster.start(main_fun, sys.argv)
+  cluster = TFCluster.run(sc, main_fun, sys.argv, num_executors, num_ps, False, TFCluster.InputMode.TENSORFLOW)
   cluster.shutdown()

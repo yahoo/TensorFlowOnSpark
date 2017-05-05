@@ -44,8 +44,9 @@ print("args:",args)
 
 print("{0} ===== Start".format(datetime.now().isoformat()))
 
-cluster = TFCluster.reserve(sc, args.cluster_size, num_ps, args.tensorboard, TFCluster.InputMode.TENSORFLOW)
-cluster.start(mnist_dist.map_fun, args)
+#cluster = TFCluster.reserve(sc, args.cluster_size, num_ps, args.tensorboard, TFCluster.InputMode.TENSORFLOW)
+#cluster.start(mnist_dist.map_fun, args)
+cluster = TFCluster.run(sc, mnist_dist.map_fun, args, args.cluster_size, num_ps, args.tensorboard, TFCluster.InputMode.TENSORFLOW)
 cluster.shutdown()
 
 print("{0} ===== Stop".format(datetime.now().isoformat()))

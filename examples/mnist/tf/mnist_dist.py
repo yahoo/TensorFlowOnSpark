@@ -118,11 +118,13 @@ def map_fun(args, ctx):
       hid_w = tf.Variable(tf.truncated_normal([IMAGE_PIXELS * IMAGE_PIXELS, hidden_units],
                               stddev=1.0 / IMAGE_PIXELS), name="hid_w")
       hid_b = tf.Variable(tf.zeros([hidden_units]), name="hid_b")
+      tf.summary.histogram("hidden_weights", hid_w)
 
       # Variables of the softmax layer
       sm_w = tf.Variable(tf.truncated_normal([hidden_units, 10],
                               stddev=1.0 / math.sqrt(hidden_units)), name="sm_w")
       sm_b = tf.Variable(tf.zeros([10]), name="sm_b")
+      tf.summary.histogram("softmax_weights", sm_w)
 
       # Placeholders or QueueRunner/Readers for input data
       num_epochs = 1 if args.mode == "inference" else None if args.epochs == 0 else args.epochs
@@ -139,6 +141,9 @@ def map_fun(args, ctx):
       else:
         raise("{0} format not supported for tf input mode".format(args.format))
 
+      x_img = tf.reshape(x, [-1, IMAGE_PIXELS, IMAGE_PIXELS, 1])
+      tf.summary.image("x_img", x_img)
+
       hid_lin = tf.nn.xw_plus_b(x, hid_w, hid_b)
       hid = tf.nn.relu(hid_lin)
 
@@ -147,6 +152,7 @@ def map_fun(args, ctx):
       global_step = tf.Variable(0)
 
       loss = -tf.reduce_sum(y_ * tf.log(tf.clip_by_value(y, 1e-10, 1.0)))
+      tf.summary.scalar("loss", loss)
       train_op = tf.train.AdagradOptimizer(0.01).minimize(
           loss, global_step=global_step)
 
@@ -155,6 +161,7 @@ def map_fun(args, ctx):
       prediction = tf.argmax(y, 1,name="prediction")
       correct_prediction = tf.equal(prediction, label)
       accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32), name="accuracy")
+      tf.summary.scalar("acc", accuracy)
 
       saver = tf.train.Saver()
       summary_op = tf.summary.merge_all()
@@ -169,15 +176,15 @@ def map_fun(args, ctx):
       sv = tf.train.Supervisor(is_chief=(task_index == 0),
                                logdir=logdir,
                                init_op=init_op,
-                               summary_op=summary_op,
+                               summary_op=None,
                                saver=saver,
                                global_step=global_step,
-                               summary_writer=summary_writer,
                                stop_grace_secs=300,
                                save_model_secs=10)
     else:
       sv = tf.train.Supervisor(is_chief=(task_index == 0),
                                logdir=logdir,
+                               summary_op=None,
                                saver=saver,
                                global_step=global_step,
                                stop_grace_secs=300,
@@ -203,7 +210,8 @@ def map_fun(args, ctx):
           if (step % 100 == 0):
             print("{0} step: {1} accuracy: {2}".format(datetime.now().isoformat(), step, sess.run(accuracy)))
           _, summary, step = sess.run([train_op, summary_op, global_step])
-          summary_writer.add_summary(summary, step)
+          if sv.is_chief:
+            summary_writer.add_summary(summary, step)
         else: # args.mode == "inference"
           labels, pred, acc = sess.run([label, prediction, accuracy])
           #print("label: {0}, pred: {1}".format(labels, pred))
@@ -215,6 +223,10 @@ def map_fun(args, ctx):
 
     if args.mode == "inference":
       output_file.close()
+      # Delay chief worker from shutting down supervisor during inference, since it can load model, start session,
+      # run inference and request stop before the other workers even start/sync their sessions.
+      if task_index == 0:
+        time.sleep(60)
 
     # Ask for all the services to stop.
     print("{0} stopping supervisor".format(datetime.now().isoformat()))

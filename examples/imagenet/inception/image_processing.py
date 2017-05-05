@@ -142,11 +142,12 @@ def decode_jpeg(image_buffer, scope=None):
 
   Args:
     image_buffer: scalar string Tensor.
-    scope: Optional scope for op_scope.
+    scope: Optional scope for name_scope.
   Returns:
     3-D float Tensor with values ranging from [0, 1).
   """
-  with tf.name_scope(scope, 'decode_jpeg', [image_buffer]):
+  with tf.name_scope(values=[image_buffer], name=scope,
+                     default_name='decode_jpeg'):
     # Decode the string as an RGB JPEG.
     # Note that the resulting image contains an unknown height and width
     # that is set dynamically by decode_jpeg. In other words, the height
@@ -171,11 +172,11 @@ def distort_color(image, thread_id=0, scope=None):
   Args:
     image: Tensor containing single image.
     thread_id: preprocessing thread ID.
-    scope: Optional scope for op_scope.
+    scope: Optional scope for name_scope.
   Returns:
     color-distorted image
   """
-  with tf.name_scope(scope, 'distort_color', [image]):
+  with tf.name_scope(values=[image], name=scope, default_name='distort_color'):
     color_ordering = thread_id % 2
 
     if color_ordering == 0:
@@ -209,11 +210,12 @@ def distort_image(image, height, width, bbox, thread_id=0, scope=None):
       where each coordinate is [0, 1) and the coordinates are arranged
       as [ymin, xmin, ymax, xmax].
     thread_id: integer indicating the preprocessing thread.
-    scope: Optional scope for op_scope.
+    scope: Optional scope for name_scope.
   Returns:
     3-D float Tensor of distorted image used for training.
   """
-  with tf.name_scope(scope, 'distort_image', [image, height, width, bbox]):
+  with tf.name_scope(values=[image, height, width, bbox], name=scope,
+                     default_name='distort_image'):
     # Each bounding box has shape [1, num_boxes, box coords] and
     # the coordinates are ordered [ymin, xmin, ymax, xmax].
 
@@ -281,11 +283,12 @@ def eval_image(image, height, width, scope=None):
     image: 3-D float Tensor
     height: integer
     width: integer
-    scope: Optional scope for op_scope.
+    scope: Optional scope for name_scope.
   Returns:
     3-D float Tensor of prepared image.
   """
-  with tf.name_scope(scope, 'eval_image', [image, height, width]):
+  with tf.name_scope(values=[image, height, width], name=scope,
+                     default_name='eval_image'):
     # Crop the central region of the image with an area containing 87.5% of
     # the original image.
     image = tf.image.central_crop(image, central_fraction=0.875)
@@ -328,8 +331,8 @@ def image_preprocessing(image_buffer, bbox, train, thread_id=0):
     image = eval_image(image, height, width)
 
   # Finally, rescale to [-1,1] instead of [0, 1)
-  image = tf.sub(image, 0.5)
-  image = tf.mul(image, 2.0)
+  image = tf.subtract(image, 0.5)
+  image = tf.multiply(image, 2.0)
   return image
 
 
@@ -394,7 +397,7 @@ def parse_example_proto(example_serialized):
   ymax = tf.expand_dims(features['image/object/bbox/ymax'].values, 0)
 
   # Note that we impose an ordering of (y, x) just to make life difficult.
-  bbox = tf.concat(0, [ymin, xmin, ymax, xmax])
+  bbox = tf.concat(axis=0, values=[ymin, xmin, ymax, xmax])
 
   # Force the variable number of bounding boxes into the shape
   # [1, num_boxes, coords].
