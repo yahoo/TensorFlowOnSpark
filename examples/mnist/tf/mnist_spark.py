@@ -17,7 +17,7 @@ import tensorflow as tf
 import threading
 from datetime import datetime
 
-from com.yahoo.ml.tf import TFCluster
+from tensorflowonspark import TFCluster
 import mnist_dist
 
 sc = SparkContext(conf=SparkConf().setAppName("mnist_tf"))
@@ -43,9 +43,6 @@ print("args:",args)
 
 
 print("{0} ===== Start".format(datetime.now().isoformat()))
-
-#cluster = TFCluster.reserve(sc, args.cluster_size, num_ps, args.tensorboard, TFCluster.InputMode.TENSORFLOW)
-#cluster.start(mnist_dist.map_fun, args)
 cluster = TFCluster.run(sc, mnist_dist.map_fun, args, args.cluster_size, num_ps, args.tensorboard, TFCluster.InputMode.TENSORFLOW)
 cluster.shutdown()
 

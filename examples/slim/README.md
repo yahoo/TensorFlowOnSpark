@@ -20,7 +20,7 @@ And, you will need to [download an image dataset](https://github.com/tensorflow/
     export SPARK_YARN_USER_ENV="PYSPARK_PYTHON=Python/bin/python"
     export PATH=${PYTHON_ROOT}/bin/:$PATH
     export QUEUE=gpu
-    # export DATASET_DIR=<HDFS path to your downloaded files>
+    export DATASET_DIR=<HDFS path to your downloaded files>
 
     # for CPU mode:
     # export QUEUE=default
@@ -42,7 +42,7 @@ And, you will need to [download an image dataset](https://github.com/tensorflow/
     --conf spark.executorEnv.LD_LIBRARY_PATH="/usr/local/cuda-7.5/lib64:$JAVA_HOME/jre/lib/amd64/server" \
     --driver-library-path="/usr/local/cuda-7.5/lib64" \
     ${TFoS_HOME}/examples/slim/train_image_classifier.py \
-    --dataset_dir $DATASET_DIR \
+    --dataset_dir ${DATASET_DIR} \
     --train_dir hdfs://default/user/${USER}/slim_train \
     --dataset_name imagenet \
     --dataset_split_name train \
@@ -68,7 +68,7 @@ And, you will need to [download an image dataset](https://github.com/tensorflow/
     --conf spark.executorEnv.LD_LIBRARY_PATH="/usr/local/cuda-7.5/lib64:$JAVA_HOME/jre/lib/amd64/server" \
     --driver-library-path="/usr/local/cuda-7.5/lib64" \
     ${TFoS_HOME}/examples/slim/eval_image_classifier.py \
-    --dataset_dir $DATASET_DIR \
+    --dataset_dir ${DATASET_DIR} \
     --dataset_name imagenet \
     --dataset_split_name validation \
     --model_name inception_v3 \

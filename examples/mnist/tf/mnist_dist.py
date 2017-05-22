@@ -13,7 +13,7 @@ def print_log(worker_num, arg):
   print(arg)
 
 def map_fun(args, ctx):
-  from com.yahoo.ml.tf import TFNode
+  from tensorflowonspark import TFNode
   from datetime import datetime
   import getpass
   import math
