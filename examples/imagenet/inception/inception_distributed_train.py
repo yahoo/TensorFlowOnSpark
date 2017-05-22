@@ -31,7 +31,7 @@ from inception import image_processing
 from inception import inception_model as inception
 from inception.slim import slim
 
-from com.yahoo.ml.tf import TFNode
+from tensorflowonspark import TFNode
 
 FLAGS = tf.app.flags.FLAGS
 

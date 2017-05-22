@@ -23,7 +23,7 @@ from __future__ import print_function
 
 from pyspark.context import SparkContext
 from pyspark.conf import SparkConf
-from com.yahoo.ml.tf import TFCluster, TFNode
+from tensorflowonspark import TFCluster, TFNode
 from datetime import datetime
 
 import os
@@ -87,8 +87,6 @@ if __name__ == '__main__':
   num_executors = int(sc._conf.get("spark.executor.instances"))
   num_ps = 1
 
-  #cluster = TFCluster.reserve(sc, num_executors, num_ps, args.tensorboard, input_mode)
-  #cluster.start(main_fun, sys.argv)
   cluster = TFCluster.run(sc, main_fun, sys.argv, num_executors, num_ps, args.tensorboard, input_mode)
   if input_mode == TFCluster.InputMode.SPARK:
     dataRDD = sc.newAPIHadoopFile(args.input_data, "org.tensorflow.hadoop.io.TFRecordFileInputFormat",

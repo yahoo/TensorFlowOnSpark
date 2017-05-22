@@ -27,7 +27,7 @@ from __future__ import print_function
 
 from pyspark.context import SparkContext
 from pyspark.conf import SparkConf
-from com.yahoo.ml.tf import TFCluster, TFNode
+from tensorflowonspark import TFCluster, TFNode
 import sys
 
 def main_fun(argv, ctx):
@@ -58,7 +58,5 @@ if __name__ == '__main__':
   num_executors = int(sc._conf.get("spark.executor.instances"))
   num_ps = 0
 
-  #cluster = TFCluster.reserve(sc, num_executors, num_ps, False, TFCluster.InputMode.TENSORFLOW)
-  #cluster.start(main_fun, sys.argv)
   cluster = TFCluster.run(sc, main_fun, sys.argv, num_executors, num_ps, False, TFCluster.InputMode.TENSORFLOW)
   cluster.shutdown()

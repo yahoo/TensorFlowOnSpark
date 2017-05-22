@@ -18,7 +18,7 @@ import threading
 import time
 from datetime import datetime
 
-from com.yahoo.ml.tf import TFCluster
+from tensorflowonspark import TFCluster
 import mnist_dist
 
 sc = SparkContext(conf=SparkConf().setAppName("mnist_spark"))
@@ -67,8 +67,6 @@ else:
   print("zipping images and labels")
   dataRDD = images.zip(labels)
 
-#cluster = TFCluster.reserve(sc, args.cluster_size, num_ps, args.tensorboard, TFCluster.InputMode.SPARK)
-#cluster.start(mnist_dist.map_fun, args)
 cluster = TFCluster.run(sc, mnist_dist.map_fun, args, args.cluster_size, num_ps, args.tensorboard, TFCluster.InputMode.SPARK)
 if args.mode == "train":
   cluster.train(dataRDD, args.epochs)

@@ -43,7 +43,7 @@ Also, you will need to [download the Imagenet dataset per the original example](
     --conf spark.executorEnv.LD_LIBRARY_PATH="/usr/local/cuda-7.5/lib64:$JAVA_HOME/jre/lib/amd64/server" \
     --driver-library-path="/usr/local/cuda-7.5/lib64" \
     ${TFoS_HOME}/examples/imagenet/inception/imagenet_distributed_train.py \
-    --data_dir $IMAGENET_DATA \
+    --data_dir ${IMAGENET_DATA} \
     --train_dir hdfs://default/user/${USER}/imagenet_train \
     --max_steps 1000 \
     --subset train
@@ -72,7 +72,7 @@ To evaluate the model, run the following job after the training has completed.  
     --conf spark.executorEnv.LD_LIBRARY_PATH="/usr/local/cuda-7.5/lib64:$JAVA_HOME/jre/lib/amd64/server" \
     --driver-library-path="/usr/local/cuda-7.5/lib64" \
     ${TFoS_HOME}/examples/imagenet/inception/imagenet_eval.py \
-    --data_dir $IMAGENET_DATA \
+    --data_dir ${IMAGENET_DATA} \
     --checkpoint_dir hdfs://default/user/${USER}/imagenet_train \
     --eval_dir hdfs://default/user/${USER}/imagenet_eval \
     --subset validation \

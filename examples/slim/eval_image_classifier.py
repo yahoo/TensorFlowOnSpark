@@ -20,7 +20,7 @@ from __future__ import print_function
 
 from pyspark.context import SparkContext
 from pyspark.conf import SparkConf
-from com.yahoo.ml.tf import TFCluster, TFNode
+from tensorflowonspark import TFCluster, TFNode
 from datetime import datetime
 import sys
 
@@ -201,7 +201,5 @@ def main_fun(argv, ctx):
 if __name__ == '__main__':
   sc = SparkContext(conf=SparkConf().setAppName("eval_image_classifier"))
   num_executors = int(sc._conf.get("spark.executor.instances"))
-  #cluster = TFCluster.reserve(sc, num_executors, 0, False, TFCluster.InputMode.TENSORFLOW)
-  #cluster.start(main_fun, sys.argv)
   cluster = TFCluster.run(sc, main_fun, sys.argv, num_executors, 0, False, TFCluster.InputMode.TENSORFLOW)
   cluster.shutdown()

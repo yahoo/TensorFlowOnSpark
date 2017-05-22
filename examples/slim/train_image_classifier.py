@@ -20,7 +20,7 @@ from __future__ import print_function
 
 from pyspark.context import SparkContext
 from pyspark.conf import SparkConf
-from com.yahoo.ml.tf import TFCluster, TFNode
+from tensorflowonspark import TFCluster, TFNode
 from datetime import datetime
 import sys
 
@@ -618,7 +618,5 @@ if __name__ == '__main__':
   (args,rem) = parser.parse_known_args()
 
   assert(num_executors > args.num_ps_tasks)
-  #cluster = TFCluster.reserve(sc, args.cluster_size, args.num_ps_tasks, args.tensorboard, TFCluster.InputMode.TENSORFLOW)
-  #cluster.start(main_fun, sys.argv)
   cluster = TFCluster.run(sc, main_fun, sys.argv, args.cluster_size, args.num_ps_tasks, args.tensorboard, TFCluster.InputMode.TENSORFLOW)
   cluster.shutdown()
