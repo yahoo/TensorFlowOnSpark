@@ -25,11 +25,6 @@ cluster with the following steps:
    - **Feeding** - sends Spark RDD data into the TensorFlow nodes using the [feed_dict](https://www.tensorflow.org/how_tos/reading_data/#feeding) mechanism.  Note that we leverage the [Hadoop Input/Output Format](https://github.com/tensorflow/ecosystem/tree/master/hadoop) for access to TFRecords on HDFS.
 1. **Shutdown** - shuts down the Tensorflow workers and PS nodes on the executors.
 
-We have also
-[enhanced](https://github.com/yahoo/tensorflow/tree/yahoo) TensorFlow
-to support direct access to remote memory (RDMA) on Infiniband
-networks.
-
 TensorFlowOnSpark was developed by Yahoo for large-scale distributed
 deep learning on our Hadoop clusters in Yahoo's private cloud. 
 
