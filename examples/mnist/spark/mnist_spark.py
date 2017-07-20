@@ -6,8 +6,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from pyspark.context import SparkContext
 from pyspark.conf import SparkConf
+from pyspark.context import SparkContext
+from pyspark.ml.param.shared import *
+from pyspark.ml.pipeline import Estimator, Model, Pipeline
+from pyspark.sql import SparkSession
 
 import argparse
 import os
@@ -22,6 +25,8 @@ from tensorflowonspark import TFCluster
 import mnist_dist
 
 sc = SparkContext(conf=SparkConf().setAppName("mnist_spark"))
+spark = SparkSession(sc)
+
 executors = sc._conf.get("spark.executor.instances")
 num_executors = int(executors) if executors is not None else 1
 num_ps = 1
@@ -42,6 +47,36 @@ parser.add_argument("-X", "--mode", help="train|inference", default="train")
 parser.add_argument("-c", "--rdma", help="use rdma connection", default=False)
 args = parser.parse_args()
 print("args:",args)
+
+class HasArgs(Params):
+  args = Param(Params._dummy(), "args", "args", typeConverter=TypeConverters.toListString)
+  def __init__(self):
+    super(HasArgs, self).__init__()
+  def setArgs(self, value):
+    return self._set(args=value)
+  def getArgs(self):
+    return self.getOrDefault(self.args)
+
+class TFEstimator(Estimator, HasArgs):
+  def _fit(self, dataset):
+    args = parser.parse_args(self.getArgs())
+    args.mode = 'train'
+    print("===== train args: {0}".format(args))
+    cluster = TFCluster.run(sc, mnist_dist.map_fun, args, args.cluster_size, num_ps, args.tensorboard, TFCluster.InputMode.SPARK)
+    cluster.train(dataset.rdd, args.epochs)
+    cluster.shutdown()
+    return TFModel().setArgs(self.getArgs())
+
+class TFModel(Model, HasArgs):
+  def _transform(self, dataset):
+    args = parser.parse_args(self.getArgs())
+    args.mode = 'inference'
+    print("===== inference args: {0}".format(args))
+    cluster = TFCluster.run(sc, mnist_dist.map_fun, args, args.cluster_size, num_ps, args.tensorboard, TFCluster.InputMode.SPARK)
+    preds = cluster.inference(dataset.rdd)
+    # cluster.shutdown()
+    result = spark.createDataFrame(preds, "string")
+    return result
 
 print("{0} ===== Start".format(datetime.now().isoformat()))
 
@@ -67,13 +102,17 @@ else:
   print("zipping images and labels")
   dataRDD = images.zip(labels)
 
-cluster = TFCluster.run(sc, mnist_dist.map_fun, args, args.cluster_size, num_ps, args.tensorboard, TFCluster.InputMode.SPARK)
-if args.mode == "train":
-  cluster.train(dataRDD, args.epochs)
-else:
-  labelRDD = cluster.inference(dataRDD)
-  labelRDD.saveAsTextFile(args.output)
-cluster.shutdown()
+# Pipeline API
+df = spark.createDataFrame(dataRDD)
+
+print("{0} ===== Estimator.fit()".format(datetime.now().isoformat()))
+estimator = TFEstimator().setArgs(sys.argv[1:])
+model = estimator.fit(df)
+
+print("{0} ===== Model.transform()".format(datetime.now().isoformat()))
+model = TFModel().setArgs(sys.argv[1:])
+preds = model.transform(df)
+preds.write.text(args.output)
 
 print("{0} ===== Stop".format(datetime.now().isoformat()))
 
