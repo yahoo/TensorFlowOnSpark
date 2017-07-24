@@ -22,6 +22,7 @@ import time
 from datetime import datetime
 
 from tensorflowonspark import TFCluster
+import mnist
 import mnist_dist
 
 sc = SparkContext(conf=SparkConf().setAppName("mnist_spark"))
@@ -72,11 +73,13 @@ class TFModel(Model, HasArgs):
     args = parser.parse_args(self.getArgs())
     args.mode = 'inference'
     print("===== inference args: {0}".format(args))
-    cluster = TFCluster.run(sc, mnist_dist.map_fun, args, args.cluster_size, num_ps, args.tensorboard, TFCluster.InputMode.SPARK)
-    preds = cluster.inference(dataset.rdd)
-    # cluster.shutdown()
-    result = spark.createDataFrame(preds, "string")
-    return result
+#    cluster = TFCluster.run(sc, mnist_dist.map_fun, args, args.cluster_size, num_ps, args.tensorboard, TFCluster.InputMode.SPARK)
+#    preds = cluster.inference(dataset.rdd)
+#    # cluster.shutdown()
+#    result = spark.createDataFrame(preds, "string")
+#    return result
+    rdd_out = dataset.rdd.mapPartitions(lambda it: mnist.map_fun(args, it))
+    return spark.createDataFrame(rdd_out, "string")
 
 print("{0} ===== Start".format(datetime.now().isoformat()))
 
@@ -110,7 +113,7 @@ estimator = TFEstimator().setArgs(sys.argv[1:])
 model = estimator.fit(df)
 
 print("{0} ===== Model.transform()".format(datetime.now().isoformat()))
-model = TFModel().setArgs(sys.argv[1:])
+#model = TFModel().setArgs(sys.argv[1:])
 preds = model.transform(df)
 preds.write.text(args.output)
 
