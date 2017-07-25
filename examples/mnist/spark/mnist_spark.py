@@ -8,8 +8,6 @@ from __future__ import print_function
 
 from pyspark.conf import SparkConf
 from pyspark.context import SparkContext
-from pyspark.ml.param.shared import *
-from pyspark.ml.pipeline import Estimator, Model, Pipeline
 from pyspark.sql import SparkSession
 
 import argparse
@@ -22,6 +20,7 @@ import time
 from datetime import datetime
 
 from tensorflowonspark import TFCluster
+from TFPipeline import TFEstimator, TFModel
 import mnist
 import mnist_dist
 
@@ -33,53 +32,22 @@ num_executors = int(executors) if executors is not None else 1
 num_ps = 1
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-b", "--batch_size", help="number of records per batch", type=int, default=100)
-parser.add_argument("-e", "--epochs", help="number of epochs", type=int, default=1)
-parser.add_argument("-f", "--format", help="example format: (csv|pickle|tfr)", choices=["csv","pickle","tfr"], default="csv")
-parser.add_argument("-i", "--images", help="HDFS path to MNIST images in parallelized format")
-parser.add_argument("-l", "--labels", help="HDFS path to MNIST labels in parallelized format")
-parser.add_argument("-m", "--model", help="HDFS path to save/load model during train/inference", default="mnist_model")
-parser.add_argument("-n", "--cluster_size", help="number of nodes in the cluster", type=int, default=num_executors)
-parser.add_argument("-o", "--output", help="HDFS path to save test/inference output", default="predictions")
-parser.add_argument("-r", "--readers", help="number of reader/enqueue threads", type=int, default=1)
-parser.add_argument("-s", "--steps", help="maximum number of steps", type=int, default=1000)
-parser.add_argument("-tb", "--tensorboard", help="launch tensorboard process", action="store_true")
-parser.add_argument("-X", "--mode", help="train|inference", default="train")
-parser.add_argument("-c", "--rdma", help="use rdma connection", default=False)
+parser.add_argument("--batch_size", help="number of records per batch", type=int, default=100)
+parser.add_argument("--cluster_size", help="number of nodes in the cluster", type=int, default=num_executors)
+parser.add_argument("--epochs", help="number of epochs", type=int, default=1)
+parser.add_argument("--format", help="example format: (csv|pickle|tfr)", choices=["csv","pickle","tfr"], default="csv")
+parser.add_argument("--images", help="HDFS path to MNIST images in parallelized format")
+parser.add_argument("--labels", help="HDFS path to MNIST labels in parallelized format")
+parser.add_argument("--mode", help="train|inference", default="train")
+parser.add_argument("--model", help="HDFS path to save/load model during train/inference", default="mnist_model")
+parser.add_argument("--num_ps", help="number of PS nodes in cluster", type=int, default=1)
+parser.add_argument("--output", help="HDFS path to save test/inference output", default="predictions")
+parser.add_argument("--rdma", help="use rdma connection", action="store_true")
+parser.add_argument("--readers", help="number of reader/enqueue threads", type=int, default=1)
+parser.add_argument("--steps", help="maximum number of steps", type=int, default=1000)
+parser.add_argument("--tensorboard", help="launch tensorboard process", action="store_true")
 args = parser.parse_args()
 print("args:",args)
-
-class HasArgs(Params):
-  args = Param(Params._dummy(), "args", "args", typeConverter=TypeConverters.toListString)
-  def __init__(self):
-    super(HasArgs, self).__init__()
-  def setArgs(self, value):
-    return self._set(args=value)
-  def getArgs(self):
-    return self.getOrDefault(self.args)
-
-class TFEstimator(Estimator, HasArgs):
-  def _fit(self, dataset):
-    args = parser.parse_args(self.getArgs())
-    args.mode = 'train'
-    print("===== train args: {0}".format(args))
-    cluster = TFCluster.run(sc, mnist_dist.map_fun, args, args.cluster_size, num_ps, args.tensorboard, TFCluster.InputMode.SPARK)
-    cluster.train(dataset.rdd, args.epochs)
-    cluster.shutdown()
-    return TFModel().setArgs(self.getArgs())
-
-class TFModel(Model, HasArgs):
-  def _transform(self, dataset):
-    args = parser.parse_args(self.getArgs())
-    args.mode = 'inference'
-    print("===== inference args: {0}".format(args))
-#    cluster = TFCluster.run(sc, mnist_dist.map_fun, args, args.cluster_size, num_ps, args.tensorboard, TFCluster.InputMode.SPARK)
-#    preds = cluster.inference(dataset.rdd)
-#    # cluster.shutdown()
-#    result = spark.createDataFrame(preds, "string")
-#    return result
-    rdd_out = dataset.rdd.mapPartitions(lambda it: mnist.map_fun(args, it))
-    return spark.createDataFrame(rdd_out, "string")
 
 print("{0} ===== Start".format(datetime.now().isoformat()))
 
@@ -109,11 +77,11 @@ else:
 df = spark.createDataFrame(dataRDD)
 
 print("{0} ===== Estimator.fit()".format(datetime.now().isoformat()))
-estimator = TFEstimator().setArgs(sys.argv[1:])
+estimator = TFEstimator(mnist_dist.map_fun, mnist.map_fun, args, TFCluster.InputMode.SPARK)
 model = estimator.fit(df)
 
 print("{0} ===== Model.transform()".format(datetime.now().isoformat()))
-#model = TFModel().setArgs(sys.argv[1:])
+#model = TFModel(args)
 preds = model.transform(df)
 preds.write.text(args.output)
 
