@@ -32,6 +32,7 @@ import uuid
 from . import TFManager
 from . import reservation
 from . import marker
+from . import util
 
 class TFNodeContext:
     """This encapsulates key metadata for each TF node"""
@@ -85,7 +86,7 @@ def reserve(cluster_spec, tensorboard, cluster_id, queues=['input', 'output']):
                break;
 
         # get unique id (hostname,ppid) for this executor's JVM
-        host = socket.gethostname()
+        host = util.get_ip_address()
         ppid = os.getppid()
 
         # check for existing TFManagers
@@ -177,7 +178,7 @@ def start(fn, tf_args, cluster_info, defaultFS, working_dir, background):
         # construct a TensorFlow clusterspec from supplied cluster_info AND get node info for this executor
         # Note: we could compute the clusterspec outside this function, but it's just a subset of cluster_info...
         spec = {}
-        host = socket.gethostname()
+        host = util.get_ip_address()
         ppid = os.getppid()
         job_name = ''
         task_index = -1
@@ -268,7 +269,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, queues, background):
                break;
 
         # get unique id (hostname,ppid) for this executor's JVM
-        host = socket.gethostname()
+        host = util.get_ip_address()
         ppid = os.getppid()
         port = 0
 
@@ -429,7 +430,7 @@ def train(cluster_info, cluster_meta, qname='input'):
     """
     def _train(iter):
         # get shared queue, reconnecting if necessary
-        mgr = _get_manager(cluster_info, socket.gethostname(), os.getppid())
+        mgr = _get_manager(cluster_info, util.get_ip_address(), os.getppid())
         queue = mgr.get_queue(qname)
         state = str(mgr.get('state'))
         logging.info("mgr.state={0}".format(state))
@@ -473,7 +474,7 @@ def inference(cluster_info, qname='input'):
     """
     def _inference(iter):
         # get shared queue, reconnecting if necessary
-        mgr = _get_manager(cluster_info, socket.gethostname(), os.getppid())
+        mgr = _get_manager(cluster_info, util.get_ip_address(), os.getppid())
         queue_in = mgr.get_queue(qname)
 
         logging.info("Feeding partition {0} into {1} queue {2}".format(iter, qname, queue_in))
@@ -512,7 +513,7 @@ def shutdown(cluster_info, queues=['input']):
         """
         Stops all TensorFlow nodes by feeding None into the multiprocessing.Queues.
         """
-        host = socket.gethostname()
+        host = util.get_ip_address()
         ppid = os.getppid()
 
         # reconnect to shared queue
