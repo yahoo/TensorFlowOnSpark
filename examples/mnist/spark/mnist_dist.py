@@ -150,24 +150,14 @@ def map_fun(args, ctx):
         tf_feed.terminate()
 
       if sv.is_chief:
-        # export saved_model
-        sess.graph._unsafe_unfinalize()           # https://github.com/tensorflow/serving/issues/363
         print("{0} exporting saved_model to: {1}".format(datetime.now().isoformat(), args.export_dir))
-        builder = tf.saved_model.builder.SavedModelBuilder(args.export_dir)
-        tensor_info_x = tf.saved_model.utils.build_tensor_info(x)
-        tensor_info_y = tf.saved_model.utils.build_tensor_info(prediction)
-        prediction_signature = tf.saved_model.signature_def_utils.build_signature_def(
-                      inputs={'images': tensor_info_x},
-                      outputs={'scores': tensor_info_y},
-                      method_name='predict')
-        builder.add_meta_graph_and_variables(sess,
-                                        args.tag_set.split(','),
-                                        signature_def_map={
-                                          args.signature_def_key: prediction_signature
-                                        },
-                                        clear_devices=True)
-        sess.graph.finalize()
-        builder.save()
+        TFNode.export_saved_model(sess,
+                                  args.export_dir,
+                                  {args.tensor_in: x},
+                                  {args.tensor_out: prediction},
+                                  args.method_name,
+                                  args.signature_def_key,
+                                  args.tag_set)
 
     # Ask for all the services to stop.
     print("{0} stopping supervisor".format(datetime.now().isoformat()))

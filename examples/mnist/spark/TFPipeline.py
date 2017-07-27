@@ -46,12 +46,11 @@ class TFModel(Model):
     self.args.mode = 'inference'
     print("===== inference args: {0}".format(self.args))
     spark = SparkSession.builder.getOrCreate()
-    rdd_out = dataset.rdd.mapPartitions(lambda it: run_saved_model(it, self.args))
+    rdd_out = dataset.rdd.mapPartitions(lambda it: _run_saved_model(it, self.args))
     return spark.createDataFrame(rdd_out, "string")
 
 # Based on https://github.com/tensorflow/tensorflow/blob/master/tensorflow/python/tools/saved_model_cli.py#L233
-# With the restriction of one input and one output tensor.
-def run_saved_model(iterator, args):
+def _run_saved_model(iterator, args):
   print("===== loading meta_graph_def")
   meta_graph_def = get_meta_graph_def(args.export_dir, args.tag_set)
   inputs_tensor_info = signature_def_utils.get_signature_def_by_key(meta_graph_def, args.signature_def_key).inputs
@@ -64,28 +63,26 @@ def run_saved_model(iterator, args):
     print("===== loading saved_model")
     loader.load(sess, args.tag_set.split(','), args.export_dir)
     print("===== running saved_model")
-    batch = []
-    for item in iterator:
-      batch.append(item._1)                               # !!LWY: strip off label for inferencing
-      if len(batch) >= args.batch_size:
-        inputs_feed_dict = {
-          inputs_tensor_info['images'].name: batch
-        }
-        output_tensor_names = [outputs_tensor_info['scores'].name]
-        output_tensors = sess.run(output_tensor_names, feed_dict=inputs_feed_dict)
-        outputs = [int(x) for x in output_tensors[0]]     # !!LWY: need to convert to standard python types
-        result.extend(outputs)
-        batch = []
-
-    if len(batch) > 0:
+    for batch in yield_batch(iterator, args.batch_size):
+      # batch type must match the input_tensor type
       inputs_feed_dict = {
-        inputs_tensor_info['images'].name: batch
+        inputs_tensor_info[args.tensor_in].name: batch
       }
-      output_tensor_name = [outputs_tensor_info['scores'].name]
+      output_tensor_names = [outputs_tensor_info[args.tensor_out].name]
       output_tensors = sess.run(output_tensor_names, feed_dict=inputs_feed_dict)
-      outputs = [int(x) for x in output_tensors[0]]       # !!LWY: need to convert to standard python types
+      outputs = [x.item() for x in output_tensors[0]]               # convert from numpy to standard python types
       result.extend(outputs)
   return result
+
+def yield_batch(iterable, batch_size):
+    batch = []
+    for item in iterable:
+        batch.append(item)
+        if len(batch) >= batch_size:
+            yield batch
+            batch = []
+    if len(batch) > 0:
+        yield batch
 
 def get_meta_graph_def(saved_model_dir, tag_set):
   saved_model = reader.read_saved_model(saved_model_dir)

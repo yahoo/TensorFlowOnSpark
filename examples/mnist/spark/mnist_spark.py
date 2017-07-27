@@ -47,12 +47,13 @@ parser.add_argument("--rdma", help="use rdma connection", action="store_true")
 parser.add_argument("--readers", help="number of reader/enqueue threads", type=int, default=1)
 parser.add_argument("--steps", help="maximum number of steps", type=int, default=1000)
 parser.add_argument("--tensorboard", help="launch tensorboard process", action="store_true")
-# inference
+# inference via saved_model
 parser.add_argument("--export_dir", help="HDFS path to write saved_model", default="mnist_export")
-parser.add_argument("--signature_def_key", help="signature key for predict API", default="predict")
-parser.add_argument("--tag_set", help="comma-delimited list of saved model metagraph tags", default="default")
-parser.add_argument("--tensor_in", help="input tensor name to map to input RDD", default="images")
-parser.add_argument("--tensor_out", help="output tensor name to map to output RDD", default="scores")
+parser.add_argument("--method_name", help="method name for signature", default=tf.saved_model.signature_constants.PREDICT_METHOD_NAME)
+parser.add_argument("--signature_def_key", help="signature key for predict API", default=tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY)
+parser.add_argument("--tag_set", help="comma-delimited list of saved model metagraph tags", default=tf.saved_model.tag_constants.SERVING)
+parser.add_argument("--tensor_in", help="input tensor name to map to input RDD", default=tf.saved_model.signature_constants.PREDICT_INPUTS)
+parser.add_argument("--tensor_out", help="output tensor name to map to output RDD", default=tf.saved_model.signature_constants.PREDICT_OUTPUTS)
 args = parser.parse_args()
 print("args:",args)
 
@@ -89,7 +90,8 @@ model = estimator.fit(df)
 
 print("{0} ===== Model.transform()".format(datetime.now().isoformat()))
 #model = TFModel(args)
-preds = model.transform(df)
+test_data = spark.createDataFrame(images)
+preds = model.transform(test_data)
 preds.write.text(args.output)
 
 print("{0} ===== Stop".format(datetime.now().isoformat()))

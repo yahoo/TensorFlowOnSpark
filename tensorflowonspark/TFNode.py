@@ -117,6 +117,27 @@ def next_batch(mgr, batch_size, qname='input'):
     logging.debug("next_batch() returning data")
     return batch
 
+def export_saved_model(sess, export_dir, input_map, output_map, method_name, signature_def_key, tag_set):
+    """Convenience function to export a saved_model using provided arguments"""
+    import tensorflow as tf
+    sess.graph._unsafe_unfinalize()           # https://github.com/tensorflow/serving/issues/363
+    builder = tf.saved_model.builder.SavedModelBuilder(export_dir)
+    inputs = { name:tf.saved_model.utils.build_tensor_info(tensor) for name, tensor in input_map.items() }
+    outputs = { name:tf.saved_model.utils.build_tensor_info(tensor) for name, tensor in output_map.items() }
+    signature = tf.saved_model.signature_def_utils.build_signature_def(
+                  inputs=inputs,
+                  outputs=outputs,
+                  method_name=method_name)
+    builder.add_meta_graph_and_variables(sess,
+                  tag_set.split(','),
+                  signature_def_map={
+                    signature_def_key: signature
+                  },
+                  clear_devices=True)
+    sess.graph.finalize()
+    builder.save()
+
+
 def batch_results(mgr, results, qname='output'):
     """DEPRECATED: Use TFNode class instead"""
     logging.debug("batch_results() invoked")
