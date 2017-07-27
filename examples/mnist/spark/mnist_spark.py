@@ -32,6 +32,7 @@ num_executors = int(executors) if executors is not None else 1
 num_ps = 1
 
 parser = argparse.ArgumentParser()
+# training
 parser.add_argument("--batch_size", help="number of records per batch", type=int, default=100)
 parser.add_argument("--cluster_size", help="number of nodes in the cluster", type=int, default=num_executors)
 parser.add_argument("--epochs", help="number of epochs", type=int, default=1)
@@ -46,6 +47,12 @@ parser.add_argument("--rdma", help="use rdma connection", action="store_true")
 parser.add_argument("--readers", help="number of reader/enqueue threads", type=int, default=1)
 parser.add_argument("--steps", help="maximum number of steps", type=int, default=1000)
 parser.add_argument("--tensorboard", help="launch tensorboard process", action="store_true")
+# inference
+parser.add_argument("--export_dir", help="HDFS path to write saved_model", default="mnist_export")
+parser.add_argument("--signature_def_key", help="signature key for predict API", default="predict")
+parser.add_argument("--tag_set", help="comma-delimited list of saved model metagraph tags", default="default")
+parser.add_argument("--tensor_in", help="input tensor name to map to input RDD", default="images")
+parser.add_argument("--tensor_out", help="output tensor name to map to output RDD", default="scores")
 args = parser.parse_args()
 print("args:",args)
 
@@ -77,7 +84,7 @@ else:
 df = spark.createDataFrame(dataRDD)
 
 print("{0} ===== Estimator.fit()".format(datetime.now().isoformat()))
-estimator = TFEstimator(mnist_dist.map_fun, mnist.map_fun, args, TFCluster.InputMode.SPARK)
+estimator = TFEstimator(mnist_dist.map_fun, args, TFCluster.InputMode.SPARK)
 model = estimator.fit(df)
 
 print("{0} ===== Model.transform()".format(datetime.now().isoformat()))

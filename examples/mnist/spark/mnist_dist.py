@@ -110,23 +110,14 @@ def map_fun(args, ctx):
     print("tensorflow model path: {0}".format(logdir))
     summary_writer = tf.summary.FileWriter("tensorboard_%d" %(worker_num), graph=tf.get_default_graph())
 
-    if args.mode == "train":
-      sv = tf.train.Supervisor(is_chief=(task_index == 0),
-                               logdir=logdir,
-                               init_op=init_op,
-                               summary_op=None,
-                               saver=saver,
-                               global_step=global_step,
-                               stop_grace_secs=300,
-                               save_model_secs=10)
-    else:
-      sv = tf.train.Supervisor(is_chief=(task_index == 0),
-                               logdir=logdir,
-                               summary_op=None,
-                               saver=saver,
-                               global_step=global_step,
-                               stop_grace_secs=300,
-                               save_model_secs=0)
+    sv = tf.train.Supervisor(is_chief=(task_index == 0),
+                             logdir=logdir,
+                             init_op=init_op,
+                             summary_op=None,
+                             saver=saver,
+                             global_step=global_step,
+                             stop_grace_secs=300,
+                             save_model_secs=10)
 
     # The supervisor takes care of session initialization, restoring from
     # a checkpoint, and closing when done or an error occurs.
@@ -154,15 +145,29 @@ def map_fun(args, ctx):
 
             if sv.is_chief:
               summary_writer.add_summary(summary, step)
-          else: # args.mode == "inference"
-            labels, preds, acc = sess.run([label, prediction, accuracy], feed_dict=feed)
-
-            results = ["{0} Label: {1}, Prediction: {2}".format(datetime.now().isoformat(), l, p) for l,p in zip(labels,preds)]
-            tf_feed.batch_results(results)
-            print("acc: {0}".format(acc))
 
       if sv.should_stop() or step >= args.steps:
         tf_feed.terminate()
+
+      if sv.is_chief:
+        # export saved_model
+        sess.graph._unsafe_unfinalize()           # https://github.com/tensorflow/serving/issues/363
+        print("{0} exporting saved_model to: {1}".format(datetime.now().isoformat(), args.export_dir))
+        builder = tf.saved_model.builder.SavedModelBuilder(args.export_dir)
+        tensor_info_x = tf.saved_model.utils.build_tensor_info(x)
+        tensor_info_y = tf.saved_model.utils.build_tensor_info(prediction)
+        prediction_signature = tf.saved_model.signature_def_utils.build_signature_def(
+                      inputs={'images': tensor_info_x},
+                      outputs={'scores': tensor_info_y},
+                      method_name='predict')
+        builder.add_meta_graph_and_variables(sess,
+                                        args.tag_set.split(','),
+                                        signature_def_map={
+                                          args.signature_def_key: prediction_signature
+                                        },
+                                        clear_devices=True)
+        sess.graph.finalize()
+        builder.save()
 
     # Ask for all the services to stop.
     print("{0} stopping supervisor".format(datetime.now().isoformat()))
