@@ -21,7 +21,6 @@ from datetime import datetime
 
 from tensorflowonspark import TFCluster
 from TFPipeline import TFEstimator, TFModel
-import mnist
 import mnist_dist
 
 sc = SparkContext(conf=SparkConf().setAppName("mnist_spark"))
@@ -54,6 +53,8 @@ parser.add_argument("--signature_def_key", help="signature key for predict API",
 parser.add_argument("--tag_set", help="comma-delimited list of saved model metagraph tags", default=tf.saved_model.tag_constants.SERVING)
 parser.add_argument("--tensor_in", help="input tensor name to map to input RDD", default=tf.saved_model.signature_constants.PREDICT_INPUTS)
 parser.add_argument("--tensor_out", help="output tensor name to map to output RDD", default=tf.saved_model.signature_constants.PREDICT_OUTPUTS)
+# https://github.com/tensorflow/serving/blob/master/tensorflow_serving/g3doc/signature_defs.md
+
 args = parser.parse_args()
 print("args:",args)
 
