@@ -20,7 +20,7 @@ import time
 from datetime import datetime
 
 from tensorflowonspark import TFCluster
-from TFPipeline import TFEstimator, TFModel
+from tensorflowonspark.pipeline import TFEstimator, TFModel
 import mnist_dist
 
 sc = SparkContext(conf=SparkConf().setAppName("mnist_spark"))
