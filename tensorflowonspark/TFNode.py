@@ -137,7 +137,6 @@ def export_saved_model(sess, export_dir, input_map, output_map, method_name, sig
     sess.graph.finalize()
     builder.save()
 
-
 def batch_results(mgr, results, qname='output'):
     """DEPRECATED: Use TFNode class instead"""
     logging.debug("batch_results() invoked")
@@ -226,3 +225,4 @@ class DataFeed(object):
             except Empty:
                 logging.info("dropped {0} items from queue".format(count))
                 done = True
+
