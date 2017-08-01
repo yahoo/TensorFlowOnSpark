@@ -106,27 +106,18 @@ def map_fun(args, ctx):
       init_op = tf.global_variables_initializer()
 
     # Create a "supervisor", which oversees the training process and stores model state into HDFS
-    logdir = TFNode.hdfs_path(ctx, args.model)
+    logdir = TFNode.hdfs_path(ctx, args.model_dir)
     print("tensorflow model path: {0}".format(logdir))
     summary_writer = tf.summary.FileWriter("tensorboard_%d" %(worker_num), graph=tf.get_default_graph())
 
-    if args.mode == "train":
-      sv = tf.train.Supervisor(is_chief=(task_index == 0),
-                               logdir=logdir,
-                               init_op=init_op,
-                               summary_op=None,
-                               saver=saver,
-                               global_step=global_step,
-                               stop_grace_secs=300,
-                               save_model_secs=10)
-    else:
-      sv = tf.train.Supervisor(is_chief=(task_index == 0),
-                               logdir=logdir,
-                               summary_op=None,
-                               saver=saver,
-                               global_step=global_step,
-                               stop_grace_secs=300,
-                               save_model_secs=0)
+    sv = tf.train.Supervisor(is_chief=(task_index == 0),
+                             logdir=logdir,
+                             init_op=init_op,
+                             summary_op=None,
+                             saver=saver,
+                             global_step=global_step,
+                             stop_grace_secs=300,
+                             save_model_secs=10)
 
     # The supervisor takes care of session initialization, restoring from
     # a checkpoint, and closing when done or an error occurs.
@@ -135,7 +126,7 @@ def map_fun(args, ctx):
 
       # Loop until the supervisor shuts down or 1000000 steps have completed.
       step = 0
-      tf_feed = TFNode.DataFeed(ctx.mgr, args.mode == "train")
+      tf_feed = TFNode.DataFeed(ctx.mgr)
       while not sv.should_stop() and not tf_feed.should_stop() and step < args.steps:
         # Run a training step asynchronously.
         # See `tf.train.SyncReplicasOptimizer` for additional details on how to
@@ -146,23 +137,26 @@ def map_fun(args, ctx):
         feed = {x: batch_xs, y_: batch_ys}
 
         if len(batch_xs) > 0:
-          if args.mode == "train":
-            _, summary, step = sess.run([train_op, summary_op, global_step], feed_dict=feed)
-            # print accuracy and save model checkpoint to HDFS every 100 steps
-            if (step % 100 == 0):
-              print("{0} step: {1} accuracy: {2}".format(datetime.now().isoformat(), step, sess.run(accuracy,{x: batch_xs, y_: batch_ys})))
+          _, summary, step = sess.run([train_op, summary_op, global_step], feed_dict=feed)
+          # print accuracy and save model checkpoint to HDFS every 100 steps
+          if (step % 100 == 0):
+            print("{0} step: {1} accuracy: {2}".format(datetime.now().isoformat(), step, sess.run(accuracy,{x: batch_xs, y_: batch_ys})))
 
-            if sv.is_chief:
-              summary_writer.add_summary(summary, step)
-          else: # args.mode == "inference"
-            labels, preds, acc = sess.run([label, prediction, accuracy], feed_dict=feed)
-
-            results = ["{0} Label: {1}, Prediction: {2}".format(datetime.now().isoformat(), l, p) for l,p in zip(labels,preds)]
-            tf_feed.batch_results(results)
-            print("acc: {0}".format(acc))
+          if sv.is_chief:
+            summary_writer.add_summary(summary, step)
 
       if sv.should_stop() or step >= args.steps:
         tf_feed.terminate()
+
+      if sv.is_chief:
+        print("{0} exporting saved_model to: {1}".format(datetime.now().isoformat(), args.export_dir))
+        TFNode.export_saved_model(sess,
+                                  args.export_dir,
+                                  {args.tensor_in: x},
+                                  {args.tensor_out: prediction},
+                                  args.method_name,
+                                  args.signature_def_key,
+                                  args.tag_set)
 
     # Ask for all the services to stop.
     print("{0} stopping supervisor".format(datetime.now().isoformat()))

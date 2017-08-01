@@ -6,9 +6,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from pyspark.conf import SparkConf
 from pyspark.context import SparkContext
-from pyspark.sql import SparkSession
+from pyspark.conf import SparkConf
 
 import argparse
 import os
@@ -20,39 +19,27 @@ import time
 from datetime import datetime
 
 from tensorflowonspark import TFCluster
-from tensorflowonspark.pipeline import TFEstimator, TFModel
 import mnist_dist
 
 sc = SparkContext(conf=SparkConf().setAppName("mnist_spark"))
-spark = SparkSession(sc)
-
 executors = sc._conf.get("spark.executor.instances")
 num_executors = int(executors) if executors is not None else 1
 num_ps = 1
 
 parser = argparse.ArgumentParser()
-
-######## PARAMS ########
-
-## TFoS/cluster
-parser.add_argument("--batch_size", help="number of records per batch", type=int, default=100)
-parser.add_argument("--epochs", help="number of epochs", type=int, default=1)
-parser.add_argument("--model_dir", help="HDFS path to save/load model during train/inference", default="mnist_model")
-parser.add_argument("--export_dir", help="HDFS path to export model", default="mnist_export")
-parser.add_argument("--cluster_size", help="number of nodes in the cluster", type=int, default=num_executors)
-parser.add_argument("--num_ps", help="number of PS nodes in cluster", type=int, default=1)
-parser.add_argument("--rdma", help="use rdma connection", action="store_true")
-parser.add_argument("--steps", help="maximum number of steps", type=int, default=1000)
-parser.add_argument("--tensorboard", help="launch tensorboard process", action="store_true")
-
-######## ARGS ########
-
-# Spark input/output
-parser.add_argument("--format", help="example format: (csv|pickle|tfr)", choices=["csv","pickle","tfr"], default="csv")
-parser.add_argument("--images", help="HDFS path to MNIST images in parallelized format")
-parser.add_argument("--labels", help="HDFS path to MNIST labels in parallelized format")
-parser.add_argument("--output", help="HDFS path to save test/inference output", default="predictions")
-
+parser.add_argument("-b", "--batch_size", help="number of records per batch", type=int, default=100)
+parser.add_argument("-e", "--epochs", help="number of epochs", type=int, default=1)
+parser.add_argument("-f", "--format", help="example format: (csv|pickle|tfr)", choices=["csv","pickle","tfr"], default="csv")
+parser.add_argument("-i", "--images", help="HDFS path to MNIST images in parallelized format")
+parser.add_argument("-l", "--labels", help="HDFS path to MNIST labels in parallelized format")
+parser.add_argument("-m", "--model", help="HDFS path to save/load model during train/inference", default="mnist_model")
+parser.add_argument("-n", "--cluster_size", help="number of nodes in the cluster", type=int, default=num_executors)
+parser.add_argument("-o", "--output", help="HDFS path to save test/inference output", default="predictions")
+parser.add_argument("-r", "--readers", help="number of reader/enqueue threads", type=int, default=1)
+parser.add_argument("-s", "--steps", help="maximum number of steps", type=int, default=1000)
+parser.add_argument("-tb", "--tensorboard", help="launch tensorboard process", action="store_true")
+parser.add_argument("-X", "--mode", help="train|inference", default="train")
+parser.add_argument("-c", "--rdma", help="use rdma connection", default=False)
 args = parser.parse_args()
 print("args:",args)
 
@@ -80,29 +67,13 @@ else:
   print("zipping images and labels")
   dataRDD = images.zip(labels)
 
-# Pipeline API
-df = spark.createDataFrame(dataRDD)
-
-print("{0} ===== Estimator.fit()".format(datetime.now().isoformat()))
-# dummy tf args (from imagenet/inception example)
-tf_args = { 'initial_learning_rate': 0.045, 'num_epochs_per_decay': 2.0, 'learning_rate_decay_factor': 0.94 }
-estimator = TFEstimator(mnist_dist.map_fun, tf_args) \
-        .setModelDir(args.model_dir) \
-        .setExportDir(args.export_dir) \
-        .setClusterSize(args.cluster_size) \
-        .setNumPS(args.num_ps) \
-        .setRDMA(args.rdma) \
-        .setTensorboard(args.tensorboard) \
-        .setEpochs(args.epochs) \
-        .setBatchSize(args.batch_size) \
-        .setSteps(args.steps)
-
-model = estimator.fit(df)
-
-print("{0} ===== Model.transform()".format(datetime.now().isoformat()))
-test_data = spark.createDataFrame(images)
-preds = model.transform(test_data)
-preds.write.text(args.output)
+cluster = TFCluster.run(sc, mnist_dist.map_fun, args, args.cluster_size, num_ps, args.tensorboard, TFCluster.InputMode.SPARK)
+if args.mode == "train":
+  cluster.train(dataRDD, args.epochs)
+else:
+  labelRDD = cluster.inference(dataRDD)
+  labelRDD.saveAsTextFile(args.output)
+cluster.shutdown()
 
 print("{0} ===== Stop".format(datetime.now().isoformat()))
 
