@@ -106,7 +106,7 @@ def map_fun(args, ctx):
       init_op = tf.global_variables_initializer()
 
     # Create a "supervisor", which oversees the training process and stores model state into HDFS
-    logdir = TFNode.hdfs_path(ctx, args.model)
+    logdir = TFNode.hdfs_path(ctx, args.model_dir)
     print("tensorflow model path: {0}".format(logdir))
     summary_writer = tf.summary.FileWriter("tensorboard_%d" %(worker_num), graph=tf.get_default_graph())
 
@@ -126,7 +126,7 @@ def map_fun(args, ctx):
 
       # Loop until the supervisor shuts down or 1000000 steps have completed.
       step = 0
-      tf_feed = TFNode.DataFeed(ctx.mgr, args.mode == "train")
+      tf_feed = TFNode.DataFeed(ctx.mgr)
       while not sv.should_stop() and not tf_feed.should_stop() and step < args.steps:
         # Run a training step asynchronously.
         # See `tf.train.SyncReplicasOptimizer` for additional details on how to
@@ -137,14 +137,13 @@ def map_fun(args, ctx):
         feed = {x: batch_xs, y_: batch_ys}
 
         if len(batch_xs) > 0:
-          if args.mode == "train":
-            _, summary, step = sess.run([train_op, summary_op, global_step], feed_dict=feed)
-            # print accuracy and save model checkpoint to HDFS every 100 steps
-            if (step % 100 == 0):
-              print("{0} step: {1} accuracy: {2}".format(datetime.now().isoformat(), step, sess.run(accuracy,{x: batch_xs, y_: batch_ys})))
+          _, summary, step = sess.run([train_op, summary_op, global_step], feed_dict=feed)
+          # print accuracy and save model checkpoint to HDFS every 100 steps
+          if (step % 100 == 0):
+            print("{0} step: {1} accuracy: {2}".format(datetime.now().isoformat(), step, sess.run(accuracy,{x: batch_xs, y_: batch_ys})))
 
-            if sv.is_chief:
-              summary_writer.add_summary(summary, step)
+          if sv.is_chief:
+            summary_writer.add_summary(summary, step)
 
       if sv.should_stop() or step >= args.steps:
         tf_feed.terminate()
