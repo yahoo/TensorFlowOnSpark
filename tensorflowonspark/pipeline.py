@@ -152,14 +152,24 @@ class HasTagSet(Params):
   def getTagSet(self):
     return self.getOrDefault(self.tag_set)
 
-class TFEstimator(Estimator, HasInputCol, HasPredictionCol,
+class TFParams(Params):
+  """Mix-in class to store args and merge params"""
+  args = None
+  def _merge_args_params(self):
+    local_args = copy.copy(self.args)
+    args_dict = vars(local_args)
+    for p in self.params:
+      args_dict[p.name] = self.getOrDefault(p.name)
+    return local_args
+
+class TFEstimator(Estimator, TFParams, HasInputCol, HasPredictionCol,
                   HasInputTensor, HasOutputTensor,
                   HasClusterSize, HasNumPS, HasRDMA, HasTensorboard, HasModelDir,
                   HasBatchSize, HasEpochs, HasSteps,
                   HasExportDir, HasMethodName, HasSignatureDefKey, HasTagSet):
   """Spark ML Pipeline Estimator which launches a TensorFlowOnSpark cluster for training"""
+
   train_fn = None
-  args = None
 
   def __init__(self, train_fn, tf_args):
     super(TFEstimator, self).__init__()
@@ -183,27 +193,20 @@ class TFEstimator(Estimator, HasInputCol, HasPredictionCol,
     sc = SparkContext.getOrCreate()
 
     logging.info("===== 1. train args: {0}".format(self.args))
-
-    # merge ML params into TF args
-    local_args = copy.copy(self.args)
-    args_dict = vars(local_args)
-    logging.info("===== params: {0}".format(self._paramMap))
-    for item in self.params:
-      args_dict[item.name] = self.getOrDefault(item.name)
-
-    logging.info("===== 2. train args: {0}".format(local_args))
+    logging.info("===== 2. train params: {0}".format(self._paramMap))
+    local_args = self._merge_args_params()
+    logging.info("===== 3. train args + params: {0}".format(local_args))
 
     cluster = TFCluster.run(sc, self.train_fn, local_args, local_args.cluster_size, local_args.num_ps, local_args.tensorboard, TFCluster.InputMode.SPARK)
     cluster.train(dataset.rdd, self.args.epochs)
     cluster.shutdown()
     return self._copyValues(TFModel(self.args))
 
-class TFModel(Model, HasInputCol, HasPredictionCol,
+class TFModel(Model, TFParams, HasInputCol, HasPredictionCol,
               HasInputTensor, HasOutputTensor,
               HasBatchSize,
               HasExportDir, HasMethodName, HasSignatureDefKey, HasTagSet):
   """Spark ML Pipeline Model which runs a TensorFlow SavedModel stored on disk."""
-  args = None
 
   def __init__(self, args):
     super(TFModel, self).__init__()
@@ -213,15 +216,9 @@ class TFModel(Model, HasInputCol, HasPredictionCol,
     spark = SparkSession.builder.getOrCreate()
 
     logging.info("===== 1. inference args: {0}".format(self.args))
-
-    # merge ML params into TF args
-    local_args = copy.copy(self.args)
-    args_dict = vars(local_args)
-    logging.info("===== params: {0}".format(self._paramMap))
-    for item in self.params:
-      args_dict[item.name] = self.getOrDefault(item.name)
-
-    logging.info("===== 2. inference args: {0}".format(local_args))
+    logging.info("===== 2. inference params: {0}".format(self._paramMap))
+    local_args = self._merge_args_params()
+    logging.info("===== 2. inference args + params: {0}".format(local_args))
 
     rdd_out = dataset.rdd.mapPartitions(lambda it: _run_saved_model(it, local_args))
     return spark.createDataFrame(rdd_out, "string")
