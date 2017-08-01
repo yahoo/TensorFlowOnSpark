@@ -53,7 +53,6 @@ parser.add_argument("--images", help="HDFS path to MNIST images in parallelized 
 parser.add_argument("--labels", help="HDFS path to MNIST labels in parallelized format")
 parser.add_argument("--output", help="HDFS path to save test/inference output", default="predictions")
 
-
 args = parser.parse_args()
 print("args:",args)
 
@@ -85,7 +84,9 @@ else:
 df = spark.createDataFrame(dataRDD)
 
 print("{0} ===== Estimator.fit()".format(datetime.now().isoformat()))
-estimator = TFEstimator(mnist_dist.map_fun, args) \
+# dummy tf args (from imagenet/inception example)
+tf_args = { 'initial_learning_rate': 0.045, 'num_epochs_per_decay': 2.0, 'learning_rate_decay_factor': 0.94 }
+estimator = TFEstimator(mnist_dist.map_fun, tf_args) \
         .setModelDir(args.model_dir) \
         .setExportDir(args.export_dir) \
         .setClusterSize(args.cluster_size) \

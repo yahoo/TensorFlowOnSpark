@@ -152,6 +152,20 @@ class HasTagSet(Params):
   def getTagSet(self):
     return self.getOrDefault(self.tag_set)
 
+class Namespace(object):
+  """
+  Utility class to convert dictionaries to Namespace-like objects
+  Based on https://docs.python.org/dev/library/types.html#types.SimpleNamespace
+  """
+  def __init__(self, d):
+    self.__dict__.update(d)
+  def __repr__(self):
+    keys = sorted(self.__dict__)
+    items = ("{}={!r}".format(k, self.__dict__[k]) for k in keys)
+    return "{}({})".format(type(self).__name__, ", ".join(items))
+  def __eq__(self, other):
+    return self.__dict__ == other.__dict__
+
 class TFParams(Params):
   """Mix-in class to store args and merge params"""
   args = None
@@ -174,16 +188,19 @@ class TFEstimator(Estimator, TFParams, HasInputCol, HasPredictionCol,
   def __init__(self, train_fn, tf_args):
     super(TFEstimator, self).__init__()
     self.train_fn = train_fn
-    self.args = tf_args
+    self.args = Namespace(tf_args) if isinstance(tf_args, dict) else tf_args
     self._setDefault(inputCol='images',
                     predictionCol='prediction',
                     tensor_in='input',
                     tensor_out='output',
                     cluster_size=1,
                     num_ps=0,
-                    tensorboard=False,
                     rdma=False,
+                    tensorboard=False,
                     model_dir='tf_model',
+                    batch_size=100,
+                    epochs=1,
+                    steps=1000,
                     export_dir='tf_export',
                     method_name=tf.saved_model.signature_constants.PREDICT_METHOD_NAME,
                     signature_def_key=tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY,
@@ -198,7 +215,7 @@ class TFEstimator(Estimator, TFParams, HasInputCol, HasPredictionCol,
     logging.info("===== 3. train args + params: {0}".format(local_args))
 
     cluster = TFCluster.run(sc, self.train_fn, local_args, local_args.cluster_size, local_args.num_ps, local_args.tensorboard, TFCluster.InputMode.SPARK)
-    cluster.train(dataset.rdd, self.args.epochs)
+    cluster.train(dataset.rdd, local_args.epochs)
     cluster.shutdown()
     return self._copyValues(TFModel(self.args))
 
