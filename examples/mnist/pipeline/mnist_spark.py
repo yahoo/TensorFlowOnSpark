@@ -99,6 +99,18 @@ estimator = TFEstimator(mnist_dist.map_fun, tf_args) \
 
 model = estimator.fit(df)
 
+# prediction
+model.setTagSet(tf.saved_model.tag_constants.SERVING) \
+      .setSignatureDefKey(tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY) \
+      .setInputTensor('input') \
+      .setOutputTensor('output')
+
+# featurize
+#model.setTagSet(tf.saved_model.tag_constants.SERVING) \
+#      .setSignatureDefKey('featurize') \
+#      .setInputTensor('images') \
+#      .setOutputTensor('features')
+
 print("{0} ===== Model.transform()".format(datetime.now().isoformat()))
 test_data = spark.createDataFrame(images)
 preds = model.transform(test_data)

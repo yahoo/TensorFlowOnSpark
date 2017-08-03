@@ -125,15 +125,6 @@ class HasExportDir(Params):
   def getExportDir(self):
     return self.getOrDefault(self.export_dir)
 
-class HasMethodName(Params):
-  method_name = Param(Params._dummy(), "method_name", "Method name for a saved_model signature", typeConverter=TypeConverters.toString)
-  def __init__(self):
-    super(HasMethodName, self).__init__()
-  def setMethodName(self, value):
-    return self._set(method_name=value)
-  def getMethodName(self):
-    return self.getOrDefault(self.method_name)
-
 class HasSignatureDefKey(Params):
   signature_def_key = Param(Params._dummy(), "signature_def_key", "Identifier for a specific saved_model signature", typeConverter=TypeConverters.toString)
   def __init__(self):
@@ -177,10 +168,9 @@ class TFParams(Params):
     return local_args
 
 class TFEstimator(Estimator, TFParams, HasInputCol, HasPredictionCol,
-                  HasInputTensor, HasOutputTensor,
                   HasClusterSize, HasNumPS, HasRDMA, HasTensorboard, HasModelDir,
                   HasBatchSize, HasEpochs, HasSteps,
-                  HasExportDir, HasMethodName, HasSignatureDefKey, HasTagSet):
+                  HasExportDir):
   """Spark ML Pipeline Estimator which launches a TensorFlowOnSpark cluster for training"""
 
   train_fn = None
@@ -191,8 +181,6 @@ class TFEstimator(Estimator, TFParams, HasInputCol, HasPredictionCol,
     self.args = Namespace(tf_args) if isinstance(tf_args, dict) else tf_args
     self._setDefault(inputCol='images',
                     predictionCol='prediction',
-                    tensor_in='input',
-                    tensor_out='output',
                     cluster_size=1,
                     num_ps=0,
                     rdma=False,
@@ -201,10 +189,7 @@ class TFEstimator(Estimator, TFParams, HasInputCol, HasPredictionCol,
                     batch_size=100,
                     epochs=1,
                     steps=1000,
-                    export_dir='tf_export',
-                    method_name=tf.saved_model.signature_constants.PREDICT_METHOD_NAME,
-                    signature_def_key=tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY,
-                    tag_set=tf.saved_model.tag_constants.SERVING)
+                    export_dir='tf_export')
 
   def _fit(self, dataset):
     sc = SparkContext.getOrCreate()
@@ -222,7 +207,7 @@ class TFEstimator(Estimator, TFParams, HasInputCol, HasPredictionCol,
 class TFModel(Model, TFParams, HasInputCol, HasPredictionCol,
               HasInputTensor, HasOutputTensor,
               HasBatchSize,
-              HasExportDir, HasMethodName, HasSignatureDefKey, HasTagSet):
+              HasExportDir, HasSignatureDefKey, HasTagSet):
   """Spark ML Pipeline Model which runs a TensorFlow SavedModel stored on disk."""
 
   def __init__(self, args):
@@ -285,7 +270,7 @@ def _run_saved_model(iterator, args):
       }
       output_tensor_names = [outputs_tensor_info[args.tensor_out].name]
       output_tensors = sess.run(output_tensor_names, feed_dict=inputs_feed_dict)
-      outputs = [x.item() for x in output_tensors[0]]               # convert from numpy to standard python types
+      outputs = output_tensors[0].tolist()              # convert from numpy to standard python types
       result.extend(outputs)
   return result
 
