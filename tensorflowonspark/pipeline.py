@@ -87,14 +87,14 @@ class HasOutputTensor(Params):
   def getOutputTensor(self):
     return self.getOrDefault(self.tensor_out)
 
-class HasRDMA(Params):
-  rdma = Param(Params._dummy(), "rdma", "Use RDMA connection", typeConverter=TypeConverters.toBoolean)
+class HasProtocol(Params):
+  protocol = Param(Params._dummy(), "protocol", "Network protocol for Tensorflow (grpc|rdma)", typeConverter=TypeConverters.toString)
   def __init__(self):
-    super(HasRDMA, self).__init__()
-  def setRDMA(self, value):
-    return self._set(rdma=value)
-  def getRDMA(self):
-    return self.getOrDefault(self.rdma)
+    super(HasProtocol, self).__init__()
+  def setProtocol(self, value):
+    return self._set(protocol=value)
+  def getProtocol(self):
+    return self.getOrDefault(self.protocol)
 
 class HasSteps(Params):
   steps = Param(Params._dummy(), "steps", "Maximum number of steps to train", typeConverter=TypeConverters.toInt)
@@ -167,8 +167,8 @@ class TFParams(Params):
       args_dict[p.name] = self.getOrDefault(p.name)
     return local_args
 
-class TFEstimator(Estimator, TFParams, HasInputCol, HasPredictionCol,
-                  HasClusterSize, HasNumPS, HasRDMA, HasTensorboard, HasModelDir,
+class TFEstimator(Estimator, TFParams, HasInputCol, HasOutputCol,
+                  HasClusterSize, HasNumPS, HasProtocol, HasTensorboard, HasModelDir,
                   HasBatchSize, HasEpochs, HasSteps,
                   HasExportDir):
   """Spark ML Pipeline Estimator which launches a TensorFlowOnSpark cluster for training"""
@@ -180,10 +180,10 @@ class TFEstimator(Estimator, TFParams, HasInputCol, HasPredictionCol,
     self.train_fn = train_fn
     self.args = Namespace(tf_args) if isinstance(tf_args, dict) else tf_args
     self._setDefault(inputCol='images',
-                    predictionCol='prediction',
+                    outputCol='prediction',
                     cluster_size=1,
                     num_ps=0,
-                    rdma=False,
+                    protocol='grpc',
                     tensorboard=False,
                     model_dir='tf_model',
                     batch_size=100,
@@ -204,7 +204,7 @@ class TFEstimator(Estimator, TFParams, HasInputCol, HasPredictionCol,
     cluster.shutdown()
     return self._copyValues(TFModel(self.args))
 
-class TFModel(Model, TFParams, HasInputCol, HasPredictionCol,
+class TFModel(Model, TFParams, HasInputCol, HasOutputCol,
               HasInputTensor, HasOutputTensor,
               HasBatchSize,
               HasExportDir, HasSignatureDefKey, HasTagSet):

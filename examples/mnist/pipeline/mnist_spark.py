@@ -41,7 +41,7 @@ parser.add_argument("--model_dir", help="HDFS path to save/load model during tra
 parser.add_argument("--export_dir", help="HDFS path to export model", default="mnist_export")
 parser.add_argument("--cluster_size", help="number of nodes in the cluster", type=int, default=num_executors)
 parser.add_argument("--num_ps", help="number of PS nodes in cluster", type=int, default=1)
-parser.add_argument("--rdma", help="use rdma connection", action="store_true")
+parser.add_argument("--protocol", help="Tensorflow network protocol (grpc|rdma)", default="grpc")
 parser.add_argument("--steps", help="maximum number of steps", type=int, default=1000)
 parser.add_argument("--tensorboard", help="launch tensorboard process", action="store_true")
 
@@ -91,7 +91,7 @@ estimator = TFEstimator(mnist_dist.map_fun, tf_args) \
         .setExportDir(args.export_dir) \
         .setClusterSize(args.cluster_size) \
         .setNumPS(args.num_ps) \
-        .setRDMA(args.rdma) \
+        .setProtocol(args.protocol) \
         .setTensorboard(args.tensorboard) \
         .setEpochs(args.epochs) \
         .setBatchSize(args.batch_size) \

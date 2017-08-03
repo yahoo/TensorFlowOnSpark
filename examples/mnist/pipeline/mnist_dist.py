@@ -36,7 +36,7 @@ def map_fun(args, ctx):
   batch_size   = args.batch_size
 
   # Get TF cluster and server instances
-  cluster, server = TFNode.start_cluster_server(ctx, 1, args.rdma)
+  cluster, server = TFNode.start_cluster_server(ctx, 1, args.protocol=='rdma')
 
   def feed_dict(batch):
     # Convert from [(images, labels)] to two numpy arrays of the proper type
