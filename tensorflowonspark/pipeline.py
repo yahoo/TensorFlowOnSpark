@@ -19,6 +19,7 @@ from . import TFCluster, gpu_info
 
 import copy
 import logging
+import numpy as np
 import os
 import subprocess
 
@@ -220,9 +221,9 @@ class TFModel(Model, TFParams, HasInputCol, HasOutputCol,
     logging.info("===== 1. inference args: {0}".format(self.args))
     logging.info("===== 2. inference params: {0}".format(self._paramMap))
     local_args = self._merge_args_params()
-    logging.info("===== 2. inference args + params: {0}".format(local_args))
+    logging.info("===== 3. inference args + params: {0}".format(local_args))
 
-    rdd_out = dataset.rdd.mapPartitions(lambda it: _run_saved_model(it, local_args))
+    rdd_out = dataset.select(self.getInputCol()).rdd.mapPartitions(lambda it: _run_saved_model(it, local_args))
     return spark.createDataFrame(rdd_out, "string")
 
 def _run_saved_model(iterator, args):
@@ -292,7 +293,7 @@ def yield_batch(iterable, batch_size):
   for item in iterable:
     batch.append(item)
     if len(batch) >= batch_size:
-      yield batch
+      yield np.array(batch).squeeze()     # remove single-dimension per item, i.e. batch.shape=(batch_size,1,N) => (batch_size,N)
       batch = []
   if len(batch) > 0:
-      yield batch
+      yield np.array(batch).squeeze()

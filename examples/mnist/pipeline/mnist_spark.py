@@ -81,7 +81,7 @@ else:
   dataRDD = images.zip(labels)
 
 # Pipeline API
-df = spark.createDataFrame(dataRDD)
+df = spark.createDataFrame(dataRDD, ['image', 'label'])
 
 print("{0} ===== Estimator.fit()".format(datetime.now().isoformat()))
 # dummy tf args (from imagenet/inception example)
@@ -101,6 +101,7 @@ model = estimator.fit(df)
 
 # prediction
 model.setTagSet(tf.saved_model.tag_constants.SERVING) \
+      .setInputCol('image') \
       .setSignatureDefKey(tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY) \
       .setInputTensor('input') \
       .setOutputTensor('output')
@@ -112,8 +113,20 @@ model.setTagSet(tf.saved_model.tag_constants.SERVING) \
 #      .setOutputTensor('features')
 
 print("{0} ===== Model.transform()".format(datetime.now().isoformat()))
-test_data = spark.createDataFrame(images)
-preds = model.transform(test_data)
+# This fails with:
+# pyspark.sql.utils.AnalysisException: "cannot resolve '`value`' given input columns: [_160, _660, _607... ]
+#df = spark.createDataFrame(images)
+#model.setInputCol('value')
+
+# This fails with:
+# ValueError: Length of object (784) does not match with length of fields (1)
+#df = spark.createDataFrame(images, 'image:array<int>')
+
+# This works:
+#df = spark.createDataFrame(images, 'array<int>')
+#model.setInputCol('value')
+
+preds = model.transform(df)
 preds.write.text(args.output)
 
 print("{0} ===== Stop".format(datetime.now().isoformat()))
