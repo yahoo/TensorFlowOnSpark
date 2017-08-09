@@ -11,6 +11,7 @@ from pyspark.context import SparkContext
 from pyspark.sql import SparkSession
 
 import argparse
+import json
 import os
 import numpy
 import sys
@@ -44,6 +45,7 @@ parser.add_argument("--num_ps", help="number of PS nodes in cluster", type=int, 
 parser.add_argument("--protocol", help="Tensorflow network protocol (grpc|rdma)", default="grpc")
 parser.add_argument("--steps", help="maximum number of steps", type=int, default=1000)
 parser.add_argument("--tensorboard", help="launch tensorboard process", action="store_true")
+parser.add_argument("--signature", help="json representation of serving signature", dest='signatures', default=[], action='append', type=json.loads)
 
 ######## ARGS ########
 
@@ -81,12 +83,13 @@ else:
   dataRDD = images.zip(labels)
 
 # Pipeline API
-df = spark.createDataFrame(dataRDD, ['image', 'label'])
+df = spark.createDataFrame(dataRDD, ['col1', 'col2'])
 
 print("{0} ===== Estimator.fit()".format(datetime.now().isoformat()))
 # dummy tf args (from imagenet/inception example)
 tf_args = { 'initial_learning_rate': 0.045, 'num_epochs_per_decay': 2.0, 'learning_rate_decay_factor': 0.94 }
-estimator = TFEstimator(mnist_dist.map_fun, tf_args) \
+estimator = TFEstimator(mnist_dist.map_fun, args) \
+        .setInputCols(['col1', 'col2']) \
         .setModelDir(args.model_dir) \
         .setExportDir(args.export_dir) \
         .setClusterSize(args.cluster_size) \
@@ -101,33 +104,24 @@ model = estimator.fit(df)
 
 # prediction
 model.setTagSet(tf.saved_model.tag_constants.SERVING) \
-      .setInputCol('image') \
       .setSignatureDefKey(tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY) \
-      .setInputTensor('input') \
-      .setOutputTensor('output')
+      .setInputCols(['col1']) \
+      .setInputTensors(['image']) \
+      .setOutputCol('prediction') \
+      .setOutputTensor('prediction')
 
 # featurize
 #model.setTagSet(tf.saved_model.tag_constants.SERVING) \
 #      .setSignatureDefKey('featurize') \
-#      .setInputTensor('images') \
-#      .setOutputTensor('features')
+#      .setInputCols(['col1', 'col2']) \
+#      .setInputTensors(['image', 'label']) \
+#      .setOutputCol('features') \
+#      .setOutputTensor('features') \
+#      .setBatchSize(3)
 
 print("{0} ===== Model.transform()".format(datetime.now().isoformat()))
-# This fails with:
-# pyspark.sql.utils.AnalysisException: "cannot resolve '`value`' given input columns: [_160, _660, _607... ]
-#df = spark.createDataFrame(images)
-#model.setInputCol('value')
-
-# This fails with:
-# ValueError: Length of object (784) does not match with length of fields (1)
-#df = spark.createDataFrame(images, 'image:array<int>')
-
-# This works:
-#df = spark.createDataFrame(images, 'array<int>')
-#model.setInputCol('value')
-
 preds = model.transform(df)
-preds.write.text(args.output)
+preds.write.json(args.output)
 
 print("{0} ===== Stop".format(datetime.now().isoformat()))
 

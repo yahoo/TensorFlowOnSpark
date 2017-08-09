@@ -9,7 +9,7 @@ from __future__ import print_function
 from pyspark.context import SparkContext
 from pyspark.ml.param.shared import *
 from pyspark.ml.pipeline import Estimator, Model, Pipeline
-from pyspark.sql import SparkSession
+from pyspark.sql import Row, SparkSession
 
 import tensorflow as tf
 from tensorflow.contrib.saved_model.python.saved_model import reader, signature_def_utils
@@ -52,14 +52,14 @@ class HasEpochs(Params):
   def getEpochs(self):
     return self.getOrDefault(self.epochs)
 
-class HasInputTensor(Params):
-  tensor_in = Param(Params._dummy(), "tensor_in", "Name of input tensor in signature def", typeConverter=TypeConverters.toString)
+class HasInputTensors(Params):
+  input_tensors = Param(Params._dummy(), "input_tensors", "List of input tensor names in signature def", typeConverter=TypeConverters.toListString)
   def __init__(self):
-    super(HasInputTensor, self).__init__()
-  def setInputTensor(self, value):
-    return self._set(tensor_in=value)
-  def getInputTensor(self):
-    return self.getOrDefault(self.tensor_in)
+    super(HasInputTensors, self).__init__()
+  def setInputTensors(self, value):
+    return self._set(input_tensors=value)
+  def getInputTensors(self):
+    return self.getOrDefault(self.input_tensors)
 
 class HasModelDir(Params):
   model_dir = Param(Params._dummy(), "model_dir", "Path to save/load model checkpoints", typeConverter=TypeConverters.toString)
@@ -80,13 +80,13 @@ class HasNumPS(Params):
     return self.getOrDefault(self.num_ps)
 
 class HasOutputTensor(Params):
-  tensor_out = Param(Params._dummy(), "tensor_out", "Name of output tensor in signature def", typeConverter=TypeConverters.toString)
+  output_tensor = Param(Params._dummy(), "output_tensor", "Name of output tensor in signature def", typeConverter=TypeConverters.toString)
   def __init__(self):
     super(HasOutputTensor, self).__init__()
   def setOutputTensor(self, value):
-    return self._set(tensor_out=value)
+    return self._set(output_tensor=value)
   def getOutputTensor(self):
-    return self.getOrDefault(self.tensor_out)
+    return self.getOrDefault(self.output_tensor)
 
 class HasProtocol(Params):
   protocol = Param(Params._dummy(), "protocol", "Network protocol for Tensorflow (grpc|rdma)", typeConverter=TypeConverters.toString)
@@ -168,10 +168,9 @@ class TFParams(Params):
       args_dict[p.name] = self.getOrDefault(p.name)
     return local_args
 
-class TFEstimator(Estimator, TFParams, HasInputCol, HasOutputCol,
-                  HasClusterSize, HasNumPS, HasProtocol, HasTensorboard, HasModelDir,
-                  HasBatchSize, HasEpochs, HasSteps,
-                  HasExportDir):
+class TFEstimator(Estimator, TFParams, HasInputCols,
+                  HasClusterSize, HasNumPS, HasProtocol, HasTensorboard, HasModelDir, HasExportDir,
+                  HasBatchSize, HasEpochs, HasSteps):
   """Spark ML Pipeline Estimator which launches a TensorFlowOnSpark cluster for training"""
 
   train_fn = None
@@ -180,9 +179,7 @@ class TFEstimator(Estimator, TFParams, HasInputCol, HasOutputCol,
     super(TFEstimator, self).__init__()
     self.train_fn = train_fn
     self.args = Namespace(tf_args) if isinstance(tf_args, dict) else tf_args
-    self._setDefault(inputCol='images',
-                    outputCol='prediction',
-                    cluster_size=1,
+    self._setDefault(cluster_size=1,
                     num_ps=0,
                     protocol='grpc',
                     tensorboard=False,
@@ -201,19 +198,20 @@ class TFEstimator(Estimator, TFParams, HasInputCol, HasOutputCol,
     logging.info("===== 3. train args + params: {0}".format(local_args))
 
     cluster = TFCluster.run(sc, self.train_fn, local_args, local_args.cluster_size, local_args.num_ps, local_args.tensorboard, TFCluster.InputMode.SPARK)
-    cluster.train(dataset.rdd, local_args.epochs)
+    cluster.train(dataset.select(self.getInputCols()).rdd, local_args.epochs)
     cluster.shutdown()
     return self._copyValues(TFModel(self.args))
 
-class TFModel(Model, TFParams, HasInputCol, HasOutputCol,
-              HasInputTensor, HasOutputTensor,
+class TFModel(Model, TFParams,
+              HasInputCols, HasOutputCol,
+              HasInputTensors, HasOutputTensor,
               HasBatchSize,
               HasExportDir, HasSignatureDefKey, HasTagSet):
   """Spark ML Pipeline Model which runs a TensorFlow SavedModel stored on disk."""
 
-  def __init__(self, args):
+  def __init__(self, tf_args):
     super(TFModel, self).__init__()
-    self.args = args
+    self.args = Namespace(tf_args) if isinstance(tf_args, dict) else tf_args
 
   def _transform(self, dataset):
     spark = SparkSession.builder.getOrCreate()
@@ -223,12 +221,13 @@ class TFModel(Model, TFParams, HasInputCol, HasOutputCol,
     local_args = self._merge_args_params()
     logging.info("===== 3. inference args + params: {0}".format(local_args))
 
-    rdd_out = dataset.select(self.getInputCol()).rdd.mapPartitions(lambda it: _run_saved_model(it, local_args))
-    return spark.createDataFrame(rdd_out, "string")
+    rdd_out = dataset.select(self.getInputCols()).rdd.mapPartitions(lambda it: _run_saved_model(it, local_args))
+    rows_out = rdd_out.map(lambda x: Row(x))
+    return spark.createDataFrame(rows_out, [self.getOutputCol()])
 
 def _run_saved_model(iterator, args):
   """
-  Run a SavedModel using a single input tensor obtained from a Spark partition iterator and return a single output tensor.
+  Run a SavedModel using input tensors obtained from a Spark partition iterator and return a single output tensor.
   Based on https://github.com/tensorflow/tensorflow/blob/8e0e8d41a3a8f2d4a6100c2ea1dc9d6c6c4ad382/tensorflow/python/tools/saved_model_cli.py#L233
   """
   # ensure expanded CLASSPATH w/o glob characters (required for Spark 2.1 + JNI)
@@ -242,10 +241,11 @@ def _run_saved_model(iterator, args):
 
   logging.info("===== loading meta_graph_def for tag_set ({0}) from {1}".format(args.tag_set, args.export_dir))
   meta_graph_def = get_meta_graph_def(args.export_dir, args.tag_set)
-  inputs_tensor_info = signature_def_utils.get_signature_def_by_key(meta_graph_def, args.signature_def_key).inputs
-  logging.debug("inputs_tensor_info: {0}".format(inputs_tensor_info))
-  outputs_tensor_info = signature_def_utils.get_signature_def_by_key(meta_graph_def, args.signature_def_key).outputs
-  logging.debug("outputs_tensor_info: {0}".format(outputs_tensor_info))
+  signature = signature_def_utils.get_signature_def_by_key(meta_graph_def, args.signature_def_key)
+  inputs_tensor_info = signature.inputs
+  logging.info("inputs_tensor_info: {0}".format(inputs_tensor_info))
+  outputs_tensor_info = signature.outputs
+  logging.info("outputs_tensor_info: {0}".format(outputs_tensor_info))
 
   logging.info("===== creating single-node session")
   if tf.test.is_built_with_cuda():
@@ -264,12 +264,11 @@ def _run_saved_model(iterator, args):
   logging.info("===== running saved_model")
   with tf.Session(graph=ops_lib.Graph()) as sess:
     loader.load(sess, args.tag_set.split(','), args.export_dir)
-    for batch in yield_batch(iterator, args.batch_size):
-      # batch type must match the input_tensor type
-      inputs_feed_dict = {
-        inputs_tensor_info[args.tensor_in].name: batch
-      }
-      output_tensor_names = [outputs_tensor_info[args.tensor_out].name]
+    for tensors in yield_batch(iterator, args.batch_size, len(args.input_tensors)):
+      inputs_feed_dict = {}
+      for i in range(len(args.input_tensors)):
+        inputs_feed_dict[inputs_tensor_info[args.input_tensors[i]].name] = tensors[i]
+      output_tensor_names = [outputs_tensor_info[args.output_tensor].name]
       output_tensors = sess.run(output_tensor_names, feed_dict=inputs_feed_dict)
       outputs = output_tensors[0].tolist()              # convert from numpy to standard python types
       result.extend(outputs)
@@ -287,13 +286,16 @@ def get_meta_graph_def(saved_model_dir, tag_set):
       return meta_graph_def
   raise RuntimeError("MetaGraphDef associated with tag-set {0} could not be found in SavedModel".format(tag_set))
 
-def yield_batch(iterable, batch_size):
+def yield_batch(iterable, batch_size, num_tensors=1):
   """Generator that yields batches of an iterator"""
-  batch = []
+  tensors = [ [] for i in range(num_tensors) ]
   for item in iterable:
-    batch.append(item)
-    if len(batch) >= batch_size:
-      yield np.array(batch).squeeze()     # remove single-dimension per item, i.e. batch.shape=(batch_size,1,N) => (batch_size,N)
-      batch = []
-  if len(batch) > 0:
-      yield np.array(batch).squeeze()
+    if item is None:
+      break
+    for i in range(num_tensors):
+      tensors[i].append(item[i])
+    if len(tensors[0]) >= batch_size:
+      yield tensors
+      tensors = [ [] for i in range(num_tensors) ]
+  if len(tensors[0]) > 0:
+      yield tensors
