@@ -89,10 +89,11 @@ df = spark.createDataFrame(dataRDD, ['col1', 'col2'])
 print("{0} ===== Estimator.fit()".format(datetime.now().isoformat()))
 # dummy tf args (from imagenet/inception example)
 tf_args = { 'initial_learning_rate': 0.045, 'num_epochs_per_decay': 2.0, 'learning_rate_decay_factor': 0.94 }
-estimator = TFEstimator(mnist_dist.map_fun, args) \
+estimator = TFEstimator(mnist_dist.map_fun, tf_args) \
         .setInputCols(['col1', 'col2']) \
         .setModelDir(args.model_dir) \
         .setExportDir(args.export_dir) \
+        .setSignatures(args.signatures) \
         .setClusterSize(args.cluster_size) \
         .setNumPS(args.num_ps) \
         .setProtocol(args.protocol) \

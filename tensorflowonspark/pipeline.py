@@ -25,13 +25,20 @@ from collections import OrderedDict
 
 ##### TensorFlowOnSpark Params
 
-#class TFTypeConverters(object):
+class TFTypeConverters(object):
 #  @staticmethod
 #  def toOrderedDict(value):
 #    if type(value) == OrderedDict:
 #      return value
 #    else:
 #      raise TypeError("Could not convert %s to OrderedDict" % value)
+#
+  @staticmethod
+  def toDict(value):
+    if type(value) == dict:
+      return value
+    else:
+      raise TypeError("Could not convert %s to OrderedDict" % value)
 
 class HasBatchSize(Params):
   batch_size = Param(Params._dummy(), "batch_size", "Number of records per batch", typeConverter=TypeConverters.toInt)
@@ -170,6 +177,15 @@ class HasExportDir(Params):
   def getExportDir(self):
     return self.getOrDefault(self.export_dir)
 
+class HasSignatures(Params):
+  signatures = Param(Params._dummy(), "signatures", "List of custom signature_def dictionaries", typeConverter=TypeConverters.toList)
+  def __init__(self):
+    super(HasSignatures, self).__init__()
+  def setSignatures(self, value):
+    return self._set(signatures=value)
+  def getSignatures(self):
+    return self.getOrDefault(self.signatures)
+
 class HasSignatureDefKey(Params):
   signature_def_key = Param(Params._dummy(), "signature_def_key", "Identifier for a specific saved_model signature", typeConverter=TypeConverters.toString)
   def __init__(self):
@@ -213,7 +229,7 @@ class TFParams(Params):
     return local_args
 
 class TFEstimator(Estimator, TFParams, HasInputCols,
-                  HasClusterSize, HasNumPS, HasProtocol, HasTensorboard, HasModelDir, HasExportDir,
+                  HasClusterSize, HasNumPS, HasProtocol, HasTensorboard, HasModelDir, HasExportDir, HasSignatures,
                   HasBatchSize, HasEpochs, HasSteps):
   """Spark ML Pipeline Estimator which launches a TensorFlowOnSpark cluster for training"""
 
