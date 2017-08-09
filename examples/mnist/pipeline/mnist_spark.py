@@ -18,6 +18,7 @@ import sys
 import tensorflow as tf
 import threading
 import time
+from collections import OrderedDict
 from datetime import datetime
 
 from tensorflowonspark import TFCluster
@@ -103,21 +104,29 @@ estimator = TFEstimator(mnist_dist.map_fun, args) \
 model = estimator.fit(df)
 
 # prediction
-model.setTagSet(tf.saved_model.tag_constants.SERVING) \
-      .setSignatureDefKey(tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY) \
-      .setInputCols(['col1']) \
-      .setInputTensors(['image']) \
-      .setOutputCol('prediction') \
-      .setOutputTensor('prediction')
+#model.setTagSet(tf.saved_model.tag_constants.SERVING) \
+#      .setSignatureDefKey(tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY) \
+#      .setInputMapping(OrderedDict([('col1', 'image')])) \
+#      .setOutputMapping(OrderedDict([('col_out', 'prediction')])) \
 
 # featurize
 #model.setTagSet(tf.saved_model.tag_constants.SERVING) \
 #      .setSignatureDefKey('featurize') \
-#      .setInputCols(['col1', 'col2']) \
-#      .setInputTensors(['image', 'label']) \
-#      .setOutputCol('features') \
-#      .setOutputTensor('features') \
-#      .setBatchSize(3)
+#      .setInputMapping(OrderedDict([('col1', 'image'), ('col2', 'label')])) \
+#      .setOutputMapping(OrderedDict([('col_out', 'features')]))
+
+# prediction
+model.setTagSet(tf.saved_model.tag_constants.SERVING) \
+      .setSignatureDefKey(tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY) \
+      .setInputMapping(['col1=image']) \
+      .setOutputMapping(['col_out=prediction']) \
+
+# featurize
+#model.setTagSet(tf.saved_model.tag_constants.SERVING) \
+#      .setSignatureDefKey('featurize') \
+#      .setInputMapping(['col1=image', 'col2=label']) \
+#      .setOutputMapping(['col_out=features'])
+
 
 print("{0} ===== Model.transform()".format(datetime.now().isoformat()))
 preds = model.transform(df)

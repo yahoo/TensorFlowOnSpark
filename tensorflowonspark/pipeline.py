@@ -19,11 +19,19 @@ from . import TFCluster, gpu_info
 
 import copy
 import logging
-import numpy as np
 import os
 import subprocess
+from collections import OrderedDict
 
 ##### TensorFlowOnSpark Params
+
+#class TFTypeConverters(object):
+#  @staticmethod
+#  def toOrderedDict(value):
+#    if type(value) == OrderedDict:
+#      return value
+#    else:
+#      raise TypeError("Could not convert %s to OrderedDict" % value)
 
 class HasBatchSize(Params):
   batch_size = Param(Params._dummy(), "batch_size", "Number of records per batch", typeConverter=TypeConverters.toInt)
@@ -52,6 +60,24 @@ class HasEpochs(Params):
   def getEpochs(self):
     return self.getOrDefault(self.epochs)
 
+#class HasInputMapping(Params):
+#  input_mapping = Param(Params._dummy(), "input_mapping", "OrderedDict of input DataFrame column to input tensor alias in signature def", typeConverter=TFTypeConverters.toOrderedDict)
+#  def __init__(self):
+#    super(HasInputMapping, self).__init__()
+#  def setInputMapping(self, value):
+#    return self._set(input_mapping=value)
+#  def getInputMapping(self):
+#    return self.getOrDefault(self.input_mapping)
+
+class HasInputMapping(Params):
+  input_mapping = Param(Params._dummy(), "input_mapping", "OrderedDict of input DataFrame column to input tensor alias in signature def", typeConverter=TypeConverters.toListString)
+  def __init__(self):
+    super(HasInputMapping, self).__init__()
+  def setInputMapping(self, value):
+    return self._set(input_mapping=value)
+  def getInputMapping(self):
+    return self.getOrDefault(self.input_mapping)
+
 class HasInputTensors(Params):
   input_tensors = Param(Params._dummy(), "input_tensors", "List of input tensor names in signature def", typeConverter=TypeConverters.toListString)
   def __init__(self):
@@ -78,6 +104,24 @@ class HasNumPS(Params):
     return self._set(num_ps=value)
   def getNumPS(self):
     return self.getOrDefault(self.num_ps)
+
+#class HasOutputMapping(Params):
+#  output_mapping = Param(Params._dummy(), "output_mapping", "OrderedDict of output DataFrame column to output tensor alias in signature def", typeConverter=TFTypeConverters.toOrderedDict)
+#  def __init__(self):
+#    super(HasOutputMapping, self).__init__()
+#  def setOutputMapping(self, value):
+#    return self._set(output_mapping=value)
+#  def getOutputMapping(self):
+#    return self.getOrDefault(self.output_mapping)
+
+class HasOutputMapping(Params):
+  output_mapping = Param(Params._dummy(), "output_mapping", "OrderedDict of output DataFrame column to output tensor alias in signature def", typeConverter=TypeConverters.toListString)
+  def __init__(self):
+    super(HasOutputMapping, self).__init__()
+  def setOutputMapping(self, value):
+    return self._set(output_mapping=value)
+  def getOutputMapping(self):
+    return self.getOrDefault(self.output_mapping)
 
 class HasOutputTensor(Params):
   output_tensor = Param(Params._dummy(), "output_tensor", "Name of output tensor in signature def", typeConverter=TypeConverters.toString)
@@ -203,8 +247,7 @@ class TFEstimator(Estimator, TFParams, HasInputCols,
     return self._copyValues(TFModel(self.args))
 
 class TFModel(Model, TFParams,
-              HasInputCols, HasOutputCol,
-              HasInputTensors, HasOutputTensor,
+              HasInputMapping, HasOutputMapping,
               HasBatchSize,
               HasExportDir, HasSignatureDefKey, HasTagSet):
   """Spark ML Pipeline Model which runs a TensorFlow SavedModel stored on disk."""
@@ -221,9 +264,14 @@ class TFModel(Model, TFParams,
     local_args = self._merge_args_params()
     logging.info("===== 3. inference args + params: {0}".format(local_args))
 
-    rdd_out = dataset.select(self.getInputCols()).rdd.mapPartitions(lambda it: _run_saved_model(it, local_args))
+#    input_cols = self.getInputMapping().keys()
+#    output_cols = self.getOutputMapping().keys()
+    input_cols = [ x.split("=")[0] for x in self.getInputMapping() ]
+    output_cols = [ x.split("=")[0] for x in self.getOutputMapping() ]
+
+    rdd_out = dataset.select(input_cols).rdd.mapPartitions(lambda it: _run_saved_model(it, local_args))
     rows_out = rdd_out.map(lambda x: Row(x))
-    return spark.createDataFrame(rows_out, [self.getOutputCol()])
+    return spark.createDataFrame(rows_out, output_cols)
 
 def _run_saved_model(iterator, args):
   """
@@ -254,21 +302,32 @@ def _run_saved_model(iterator, args):
     gpus_to_use = gpu_info.get_gpus(num_gpus)
     logging.info("Using gpu(s): {0}".format(gpus_to_use))
     os.environ['CUDA_VISIBLE_DEVICES'] = gpus_to_use
+    # Note: if there is a GPU conflict (CUDA_ERROR_INVALID_DEVICE), the entire task will fail and retry.
   else:
     # CPU
     logging.info("Using CPU")
     os.environ['CUDA_VISIBLE_DEVICES'] = ''
 
-  # Note: if there is a GPU conflict (CUDA_ERROR_INVALID_DEVICE), the entire task will fail and retry.
+  logging.info("===== input_mapping: {}".format(args.input_mapping))
+  logging.info("===== output_mapping: {}".format(args.output_mapping))
+#  input_tensor_aliases = args.input_mapping.values()
+#  output_tensor_aliases = args.output_mapping.values()
+  input_tensor_aliases = [ x.split("=")[1] for x in args.input_mapping ]
+  output_tensor_aliases = [ x.split("=")[1] for x in args.output_mapping ]
+
+  input_tensor_names = [inputs_tensor_info[t].name for t in input_tensor_aliases]
+  logging.info("===== input_tensor_names: {}".format(input_tensor_names))
+  output_tensor_names = [outputs_tensor_info[output_tensor_aliases[0]].name]
+  logging.info("===== output_tensor_names: {}".format(output_tensor_names))
+
   result = []
-  logging.info("===== running saved_model")
+  logging.info("===== running saved_model for outputs: {}".format(output_tensor_names))
   with tf.Session(graph=ops_lib.Graph()) as sess:
     loader.load(sess, args.tag_set.split(','), args.export_dir)
-    for tensors in yield_batch(iterator, args.batch_size, len(args.input_tensors)):
+    for tensors in yield_batch(iterator, args.batch_size, len(input_tensor_names)):
       inputs_feed_dict = {}
-      for i in range(len(args.input_tensors)):
-        inputs_feed_dict[inputs_tensor_info[args.input_tensors[i]].name] = tensors[i]
-      output_tensor_names = [outputs_tensor_info[args.output_tensor].name]
+      for i in range(len(input_tensor_names)):
+        inputs_feed_dict[input_tensor_names[i]] = tensors[i]
       output_tensors = sess.run(output_tensor_names, feed_dict=inputs_feed_dict)
       outputs = output_tensors[0].tolist()              # convert from numpy to standard python types
       result.extend(outputs)
