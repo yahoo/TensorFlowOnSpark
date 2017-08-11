@@ -24,6 +24,7 @@ def map_fun(args, ctx):
   job_name = ctx.job_name
   task_index = ctx.task_index
   cluster_spec = ctx.cluster_spec
+  input_tensors = [ x.split('=')[1] for x in args.input_mapping ]
 
   IMAGE_PIXELS=28
 
@@ -40,11 +41,14 @@ def map_fun(args, ctx):
 
   def feed_dict(batch):
     # Convert from [(images, labels)] to two numpy arrays of the proper type
-    images = []
-    labels = []
-    for item in batch:
-      images.append(item[0])
-      labels.append(item[1])
+#    images = []
+#    labels = []
+#    for item in batch:
+#      images.append(item[0])
+#      labels.append(item[1])
+    # Convert from dict of named arrays to two numpy arrays of the proper type
+    images = batch['foo']
+    labels = batch['bar']
     xs = numpy.array(images)
     xs = xs.astype(numpy.float32)
     xs = xs/255.0
@@ -126,7 +130,8 @@ def map_fun(args, ctx):
 
       # Loop until the supervisor shuts down or 1000000 steps have completed.
       step = 0
-      tf_feed = TFNode.DataFeed(ctx.mgr)
+      #tf_feed = TFNode.DataFeed(ctx.mgr)
+      tf_feed = TFNode.DataFeed(ctx.mgr, input_mapping=args.input_mapping)
       while not sv.should_stop() and not tf_feed.should_stop() and step < args.steps:
         # Run a training step asynchronously.
         # See `tf.train.SyncReplicasOptimizer` for additional details on how to
@@ -171,4 +176,3 @@ def map_fun(args, ctx):
     # Ask for all the services to stop.
     print("{0} stopping supervisor".format(datetime.now().isoformat()))
     sv.stop()
-

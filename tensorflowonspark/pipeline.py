@@ -21,7 +21,7 @@ import copy
 import logging
 import os
 import subprocess
-from collections import OrderedDict
+#from collections import OrderedDict
 
 ##### TensorFlowOnSpark Params
 
@@ -228,7 +228,7 @@ class TFParams(Params):
       args_dict[p.name] = self.getOrDefault(p.name)
     return local_args
 
-class TFEstimator(Estimator, TFParams, HasInputCols,
+class TFEstimator(Estimator, TFParams, HasInputMapping,
                   HasClusterSize, HasNumPS, HasProtocol, HasTensorboard, HasModelDir, HasExportDir, HasSignatures,
                   HasBatchSize, HasEpochs, HasSteps):
   """Spark ML Pipeline Estimator which launches a TensorFlowOnSpark cluster for training"""
@@ -257,8 +257,9 @@ class TFEstimator(Estimator, TFParams, HasInputCols,
     local_args = self._merge_args_params()
     logging.info("===== 3. train args + params: {0}".format(local_args))
 
+    input_cols = [ x.split('=')[0] for x in self.getInputMapping() ]
     cluster = TFCluster.run(sc, self.train_fn, local_args, local_args.cluster_size, local_args.num_ps, local_args.tensorboard, TFCluster.InputMode.SPARK)
-    cluster.train(dataset.select(self.getInputCols()).rdd, local_args.epochs)
+    cluster.train(dataset.select(input_cols).rdd, local_args.epochs)
     cluster.shutdown()
     return self._copyValues(TFModel(self.args))
 
