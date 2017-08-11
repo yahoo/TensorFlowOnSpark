@@ -14,7 +14,7 @@ import getpass
 import logging
 import os
 import time
-from six.moves.queue import Queue, Empty
+from six.moves.queue import Empty
 from . import marker
 
 def hdfs_path(ctx, path):
@@ -128,17 +128,17 @@ def sig_def(signature_args):
         for instr in sig['inputs']:                 # 'inputs' is an ordered list
             print("input: {}".format(instr))
             in_arr = instr.split('=')
-            t = in_arr*2 if len(in_arr) == 1 else in_arr
+            t = in_arr * 2 if len(in_arr) == 1 else in_arr
             if ':' not in t[1]:
               t[1] = t[1] + ':0'                    # add ':0' suffix to identify output tensor of op
-            inputs.append(tuple(t)) # split name:tensor
+            inputs.append(tuple(t))                 # split name:tensor
         sdef[name] = {}
         sdef[name]['inputs'] = inputs
         outputs = []
         for outstr in sig['outputs']:
             print("output: {}".format(outstr))
             out_arr = outstr.split('=')
-            t = out_arr*2 if len(out_arr) == 1 else out_arr
+            t = out_arr * 2 if len(out_arr) == 1 else out_arr
             if ':' not in t[1]:
               t[1] = t[1] + ':0'                    # add ':0' suffix to identify output tensor of op
             outputs.append(tuple(t))

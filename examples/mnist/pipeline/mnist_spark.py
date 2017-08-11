@@ -12,17 +12,11 @@ from pyspark.sql import SparkSession
 
 import argparse
 import json
-import os
 import numpy
-import sys
 import tensorflow as tf
-import threading
-import time
-from collections import OrderedDict
 from datetime import datetime
 
-from tensorflowonspark import TFCluster
-from tensorflowonspark.pipeline import TFEstimator, TFModel
+from tensorflowonspark.pipeline import TFEstimator
 import mnist_dist
 
 sc = SparkContext(conf=SparkConf().setAppName("mnist_spark"))
@@ -77,7 +71,7 @@ else:
   if args.format == "csv":
     images = sc.textFile(args.images).map(lambda ln: [int(x) for x in ln.split(',')])
     labels = sc.textFile(args.labels).map(lambda ln: [float(x) for x in ln.split(',')])
-  else: # args.format == "pickle":
+  else:  # args.format == "pickle":
     images = sc.pickleFile(args.images)
     labels = sc.pickleFile(args.labels)
   print("zipping images and labels")
@@ -106,18 +100,6 @@ estimator = TFEstimator(mnist_dist.map_fun, tf_args) \
 model = estimator.fit(df)
 
 # prediction
-#model.setTagSet(tf.saved_model.tag_constants.SERVING) \
-#      .setSignatureDefKey(tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY) \
-#      .setInputMapping(OrderedDict([('col1', 'image')])) \
-#      .setOutputMapping(OrderedDict([('col_out', 'prediction')])) \
-
-# featurize
-#model.setTagSet(tf.saved_model.tag_constants.SERVING) \
-#      .setSignatureDefKey('featurize') \
-#      .setInputMapping(OrderedDict([('col1', 'image'), ('col2', 'label')])) \
-#      .setOutputMapping(OrderedDict([('col_out', 'features')]))
-
-# prediction
 model.setTagSet(tf.saved_model.tag_constants.SERVING) \
       .setSignatureDefKey(tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY) \
       .setInputMapping(['col1=image']) \
@@ -128,7 +110,6 @@ model.setTagSet(tf.saved_model.tag_constants.SERVING) \
 #      .setSignatureDefKey('featurize') \
 #      .setInputMapping(['col1=image', 'col2=label']) \
 #      .setOutputMapping(['col_out=features'])
-
 
 print("{0} ===== Model.transform()".format(datetime.now().isoformat()))
 preds = model.transform(df)

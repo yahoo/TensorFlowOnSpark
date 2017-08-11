@@ -7,8 +7,8 @@ from __future__ import division
 from __future__ import print_function
 
 from pyspark.context import SparkContext
-from pyspark.ml.param.shared import *
-from pyspark.ml.pipeline import Estimator, Model, Pipeline
+from pyspark.ml.param.shared import Param, Params, TypeConverters
+from pyspark.ml.pipeline import Estimator, Model
 from pyspark.sql import Row, SparkSession
 
 import tensorflow as tf
@@ -26,13 +26,6 @@ import subprocess
 ##### TensorFlowOnSpark Params
 
 class TFTypeConverters(object):
-#  @staticmethod
-#  def toOrderedDict(value):
-#    if type(value) == OrderedDict:
-#      return value
-#    else:
-#      raise TypeError("Could not convert %s to OrderedDict" % value)
-#
   @staticmethod
   def toDict(value):
     if type(value) == dict:
@@ -66,15 +59,6 @@ class HasEpochs(Params):
     return self._set(epochs=value)
   def getEpochs(self):
     return self.getOrDefault(self.epochs)
-
-#class HasInputMapping(Params):
-#  input_mapping = Param(Params._dummy(), "input_mapping", "OrderedDict of input DataFrame column to input tensor alias in signature def", typeConverter=TFTypeConverters.toOrderedDict)
-#  def __init__(self):
-#    super(HasInputMapping, self).__init__()
-#  def setInputMapping(self, value):
-#    return self._set(input_mapping=value)
-#  def getInputMapping(self):
-#    return self.getOrDefault(self.input_mapping)
 
 class HasInputMapping(Params):
   input_mapping = Param(Params._dummy(), "input_mapping", "OrderedDict of input DataFrame column to input tensor alias in signature def", typeConverter=TypeConverters.toListString)
@@ -112,15 +96,6 @@ class HasNumPS(Params):
   def getNumPS(self):
     return self.getOrDefault(self.num_ps)
 
-#class HasOutputMapping(Params):
-#  output_mapping = Param(Params._dummy(), "output_mapping", "OrderedDict of output DataFrame column to output tensor alias in signature def", typeConverter=TFTypeConverters.toOrderedDict)
-#  def __init__(self):
-#    super(HasOutputMapping, self).__init__()
-#  def setOutputMapping(self, value):
-#    return self._set(output_mapping=value)
-#  def getOutputMapping(self):
-#    return self.getOrDefault(self.output_mapping)
-
 class HasOutputMapping(Params):
   output_mapping = Param(Params._dummy(), "output_mapping", "OrderedDict of output DataFrame column to output tensor alias in signature def", typeConverter=TypeConverters.toListString)
   def __init__(self):
@@ -129,15 +104,6 @@ class HasOutputMapping(Params):
     return self._set(output_mapping=value)
   def getOutputMapping(self):
     return self.getOrDefault(self.output_mapping)
-
-class HasOutputTensor(Params):
-  output_tensor = Param(Params._dummy(), "output_tensor", "Name of output tensor in signature def", typeConverter=TypeConverters.toString)
-  def __init__(self):
-    super(HasOutputTensor, self).__init__()
-  def setOutputTensor(self, value):
-    return self._set(output_tensor=value)
-  def getOutputTensor(self):
-    return self.getOrDefault(self.output_tensor)
 
 class HasProtocol(Params):
   protocol = Param(Params._dummy(), "protocol", "Network protocol for Tensorflow (grpc|rdma)", typeConverter=TypeConverters.toString)
@@ -281,8 +247,6 @@ class TFModel(Model, TFParams,
     local_args = self._merge_args_params()
     logging.info("===== 3. inference args + params: {0}".format(local_args))
 
-#    input_cols = self.getInputMapping().keys()
-#    output_cols = self.getOutputMapping().keys()
     input_cols = [ x.split("=")[0] for x in self.getInputMapping() ]
     output_cols = [ x.split("=")[0] for x in self.getOutputMapping() ]
 
@@ -327,15 +291,11 @@ def _run_saved_model(iterator, args):
 
   logging.info("===== input_mapping: {}".format(args.input_mapping))
   logging.info("===== output_mapping: {}".format(args.output_mapping))
-#  input_tensor_aliases = args.input_mapping.values()
-#  output_tensor_aliases = args.output_mapping.values()
   input_tensor_aliases = [ x.split("=")[1] for x in args.input_mapping ]
   output_tensor_aliases = [ x.split("=")[1] for x in args.output_mapping ]
 
   input_tensor_names = [inputs_tensor_info[t].name for t in input_tensor_aliases]
-  logging.info("===== input_tensor_names: {}".format(input_tensor_names))
   output_tensor_names = [outputs_tensor_info[output_tensor_aliases[0]].name]
-  logging.info("===== output_tensor_names: {}".format(output_tensor_names))
 
   result = []
   logging.info("===== running saved_model for outputs: {}".format(output_tensor_names))

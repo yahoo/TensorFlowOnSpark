@@ -23,10 +23,8 @@ def map_fun(args, ctx):
   worker_num = ctx.worker_num
   job_name = ctx.job_name
   task_index = ctx.task_index
-  cluster_spec = ctx.cluster_spec
-  input_tensors = [ x.split('=')[1] for x in args.input_mapping ]
 
-  IMAGE_PIXELS=28
+  IMAGE_PIXELS = 28
 
   # Delay PS nodes a bit, since workers seem to reserve GPUs more quickly/reliably (w/o conflict)
   if job_name == "ps":
@@ -37,21 +35,15 @@ def map_fun(args, ctx):
   batch_size   = args.batch_size
 
   # Get TF cluster and server instances
-  cluster, server = TFNode.start_cluster_server(ctx, 1, args.protocol=='rdma')
+  cluster, server = TFNode.start_cluster_server(ctx, 1, args.protocol == 'rdma')
 
   def feed_dict(batch):
-    # Convert from [(images, labels)] to two numpy arrays of the proper type
-#    images = []
-#    labels = []
-#    for item in batch:
-#      images.append(item[0])
-#      labels.append(item[1])
     # Convert from dict of named arrays to two numpy arrays of the proper type
     images = batch['foo']
     labels = batch['bar']
     xs = numpy.array(images)
     xs = xs.astype(numpy.float32)
-    xs = xs/255.0
+    xs = xs / 255.0
     ys = numpy.array(labels)
     ys = ys.astype(numpy.uint8)
     return (xs, ys)
@@ -112,7 +104,7 @@ def map_fun(args, ctx):
     # Create a "supervisor", which oversees the training process and stores model state into HDFS
     logdir = TFNode.hdfs_path(ctx, args.model_dir)
     print("tensorflow model path: {0}".format(logdir))
-    summary_writer = tf.summary.FileWriter("tensorboard_%d" %(worker_num), graph=tf.get_default_graph())
+    summary_writer = tf.summary.FileWriter("tensorboard_%d" % (worker_num), graph=tf.get_default_graph())
 
     sv = tf.train.Supervisor(is_chief=(task_index == 0),
                              logdir=logdir,
