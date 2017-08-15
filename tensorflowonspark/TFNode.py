@@ -172,7 +172,7 @@ class DataFeed(object):
         self.qname_in = qname_in
         self.qname_out = qname_out
         self.done_feeding = False
-        self.input_mapping = [ x.split("=")[1] for x in input_mapping ] if input_mapping is not None else None
+        self.input_tensors = [ tensor for col, tensor in sorted(input_mapping.items()) ] if input_mapping is not None else None
 
     def next_batch(self, batch_size):
         """
@@ -186,7 +186,7 @@ class DataFeed(object):
         """
         logging.debug("next_batch() invoked")
         queue = self.mgr.get_queue(self.qname_in)
-        tensors = [] if self.input_mapping is None else { t:[] for t in self.input_mapping }
+        tensors = [] if self.input_tensors is None else { tensor:[] for tensor in self.input_tensors }
         count = 0
         while count < batch_size:
             item = queue.get(block=True)
@@ -202,11 +202,11 @@ class DataFeed(object):
                     break
             else:
                 # logging.info("next_batch() got {0}".format(item))
-                if self.input_mapping is None:
+                if self.input_tensors is None:
                   tensors.append(item)
                 else:
-                  for i in range(len(self.input_mapping)):
-                    tensors[self.input_mapping[i]].append(item[i])
+                  for i in range(len(self.input_tensors)):
+                    tensors[self.input_tensors[i]].append(item[i])
                 count += 1
                 queue.task_done()
         logging.debug("next_batch() returning {0} items".format(count))
