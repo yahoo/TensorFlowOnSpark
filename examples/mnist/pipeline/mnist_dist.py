@@ -147,23 +147,23 @@ def map_fun(args, ctx):
 
       if sv.is_chief:
         print("{0} exporting saved_model to: {1}".format(datetime.now().isoformat(), args.export_dir))
-# "hard-coded" signatures defined in code
-#        signatures = {
-#          tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: {
-#            'inputs': { 'input': x },
-#            'outputs': { 'output': prediction },
-#            'method_name': tf.saved_model.signature_constants.PREDICT_METHOD_NAME
-#          },
-#          'featurize': {
-#            'inputs': { 'images': x },
-#            'outputs': { 'features': hid },
-#            'method_name': 'featurize'
-#          }
-#        }
+        # exported signatures defined in code
+        signatures = {
+          tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: {
+            'inputs': { 'image': x },
+            'outputs': { 'prediction': prediction },
+            'method_name': tf.saved_model.signature_constants.PREDICT_METHOD_NAME
+          },
+          'featurize': {
+            'inputs': { 'image': x, 'label': y_ },
+            'outputs': { 'features': hid },
+            'method_name': 'featurize'
+          }
+        }
         TFNode.export_saved_model(sess,
                                   args.export_dir,
                                   tf.saved_model.tag_constants.SERVING,
-                                  TFNode.sig_def(args.signatures))
+                                  signatures)
 
     # Ask for all the services to stop.
     print("{0} stopping supervisor".format(datetime.now().isoformat()))

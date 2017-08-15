@@ -117,34 +117,6 @@ def next_batch(mgr, batch_size, qname='input'):
     logging.debug("next_batch() returning data")
     return batch
 
-def sig_def(signature_args):
-    """Parses simplified-JSON signature_def from command-line args"""
-    sdef = {}
-    for s in signature_args:
-        name = s.keys()[0]      # each sig has one top-level key (name)
-        sig = s[name]     # where the value is the signature of inputs/outputs
-        print(name)
-        inputs = []
-        for instr in sig['inputs']:                 # 'inputs' is an ordered list
-            print("input: {}".format(instr))
-            in_arr = instr.split('=')
-            t = in_arr * 2 if len(in_arr) == 1 else in_arr
-            if ':' not in t[1]:
-              t[1] = t[1] + ':0'                    # add ':0' suffix to identify output tensor of op
-            inputs.append(tuple(t))                 # split name:tensor
-        sdef[name] = {}
-        sdef[name]['inputs'] = inputs
-        outputs = []
-        for outstr in sig['outputs']:
-            print("output: {}".format(outstr))
-            out_arr = outstr.split('=')
-            t = out_arr * 2 if len(out_arr) == 1 else out_arr
-            if ':' not in t[1]:
-              t[1] = t[1] + ':0'                    # add ':0' suffix to identify output tensor of op
-            outputs.append(tuple(t))
-        sdef[name]['outputs'] = outputs
-    return sdef
-
 def export_saved_model(sess, export_dir, tag_set, signatures):
     """Convenience function to export a saved_model using provided arguments"""
     import tensorflow as tf
@@ -156,8 +128,8 @@ def export_saved_model(sess, export_dir, tag_set, signatures):
     signature_def_map = {}
     for key, sig in signatures.items():
         signature_def_map[key] = tf.saved_model.signature_def_utils.build_signature_def(
-                  inputs={ name:tf.saved_model.utils.build_tensor_info(g.get_tensor_by_name(tensorname)) for name, tensorname in sig['inputs'] },
-                  outputs={ name:tf.saved_model.utils.build_tensor_info(g.get_tensor_by_name(tensorname)) for name, tensorname in sig['outputs'] },
+                  inputs={ name:tf.saved_model.utils.build_tensor_info(tensor) for name, tensor in sig['inputs'].items() },
+                  outputs={ name:tf.saved_model.utils.build_tensor_info(tensor) for name, tensor in sig['outputs'].items() },
                   method_name=sig['method_name'] if 'method_name' in sig else key)
     logging.info("===== signature_def_map: {}".format(signature_def_map))
     builder.add_meta_graph_and_variables(sess,

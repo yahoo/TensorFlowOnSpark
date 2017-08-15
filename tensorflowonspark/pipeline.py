@@ -61,7 +61,7 @@ class HasEpochs(Params):
     return self.getOrDefault(self.epochs)
 
 class HasInputMapping(Params):
-  input_mapping = Param(Params._dummy(), "input_mapping", "OrderedDict of input DataFrame column to input tensor alias in signature def", typeConverter=TypeConverters.toListString)
+  input_mapping = Param(Params._dummy(), "input_mapping", "Mapping of input DataFrame column to input tensor alias in signature def", typeConverter=TypeConverters.toListString)
   def __init__(self):
     super(HasInputMapping, self).__init__()
   def setInputMapping(self, value):
@@ -97,7 +97,7 @@ class HasNumPS(Params):
     return self.getOrDefault(self.num_ps)
 
 class HasOutputMapping(Params):
-  output_mapping = Param(Params._dummy(), "output_mapping", "OrderedDict of output DataFrame column to output tensor alias in signature def", typeConverter=TypeConverters.toListString)
+  output_mapping = Param(Params._dummy(), "output_mapping", "Mapping of output DataFrame column to output tensor alias in signature def", typeConverter=TypeConverters.toListString)
   def __init__(self):
     super(HasOutputMapping, self).__init__()
   def setOutputMapping(self, value):
@@ -143,19 +143,11 @@ class HasExportDir(Params):
   def getExportDir(self):
     return self.getOrDefault(self.export_dir)
 
-class HasSignatures(Params):
-  signatures = Param(Params._dummy(), "signatures", "List of custom signature_def dictionaries", typeConverter=TypeConverters.toList)
-  def __init__(self):
-    super(HasSignatures, self).__init__()
-  def setSignatures(self, value):
-    return self._set(signatures=value)
-  def getSignatures(self):
-    return self.getOrDefault(self.signatures)
-
 class HasSignatureDefKey(Params):
   signature_def_key = Param(Params._dummy(), "signature_def_key", "Identifier for a specific saved_model signature", typeConverter=TypeConverters.toString)
   def __init__(self):
     super(HasSignatureDefKey, self).__init__()
+    self._setDefault(signature_def_key=None)
   def setSignatureDefKey(self, value):
     return self._set(signature_def_key=value)
   def getSignatureDefKey(self):
@@ -195,7 +187,7 @@ class TFParams(Params):
     return local_args
 
 class TFEstimator(Estimator, TFParams, HasInputMapping,
-                  HasClusterSize, HasNumPS, HasProtocol, HasTensorboard, HasModelDir, HasExportDir, HasSignatures,
+                  HasClusterSize, HasNumPS, HasProtocol, HasTensorboard, HasModelDir, HasExportDir,
                   HasBatchSize, HasEpochs, HasSteps):
   """Spark ML Pipeline Estimator which launches a TensorFlowOnSpark cluster for training"""
 
@@ -268,13 +260,14 @@ def _run_saved_model(iterator, args):
       os.environ['CLASSPATH'] = classpath + os.pathsep + hadoop_classpath
       os.environ['TFOS_CLASSPATH_UPDATED'] = '1'
 
-  logging.info("===== loading meta_graph_def for tag_set ({0}) from {1}".format(args.tag_set, args.export_dir))
-  meta_graph_def = get_meta_graph_def(args.export_dir, args.tag_set)
-  signature = signature_def_utils.get_signature_def_by_key(meta_graph_def, args.signature_def_key)
-  inputs_tensor_info = signature.inputs
-  logging.info("inputs_tensor_info: {0}".format(inputs_tensor_info))
-  outputs_tensor_info = signature.outputs
-  logging.info("outputs_tensor_info: {0}".format(outputs_tensor_info))
+  if args.signature_def_key is not None:
+    logging.info("===== loading meta_graph_def for tag_set ({0}) from {1}".format(args.tag_set, args.export_dir))
+    meta_graph_def = get_meta_graph_def(args.export_dir, args.tag_set)
+    signature = signature_def_utils.get_signature_def_by_key(meta_graph_def, args.signature_def_key)
+    inputs_tensor_info = signature.inputs
+    logging.info("inputs_tensor_info: {0}".format(inputs_tensor_info))
+    outputs_tensor_info = signature.outputs
+    logging.info("outputs_tensor_info: {0}".format(outputs_tensor_info))
 
   logging.info("===== creating single-node session")
   if tf.test.is_built_with_cuda():
@@ -291,23 +284,28 @@ def _run_saved_model(iterator, args):
 
   logging.info("===== input_mapping: {}".format(args.input_mapping))
   logging.info("===== output_mapping: {}".format(args.output_mapping))
-  input_tensor_aliases = [ x.split("=")[1] for x in args.input_mapping ]
-  output_tensor_aliases = [ x.split("=")[1] for x in args.output_mapping ]
-
-  input_tensor_names = [inputs_tensor_info[t].name for t in input_tensor_aliases]
-  output_tensor_names = [outputs_tensor_info[output_tensor_aliases[0]].name]
+  input_tensor_names = [ x.split("=")[1] for x in args.input_mapping ]
+  output_tensor_names = [ x.split("=")[1] for x in args.output_mapping ]
 
   result = []
   logging.info("===== running saved_model for outputs: {}".format(output_tensor_names))
   with tf.Session(graph=ops_lib.Graph()) as sess:
     loader.load(sess, args.tag_set.split(','), args.export_dir)
+    g = sess.graph
+
+    if args.signature_def_key is not None:
+      input_tensors = [inputs_tensor_info[t].name for t in input_tensor_names]
+      output_tensors = [outputs_tensor_info[output_tensor_names[0]].name]
+    else:
+      input_tensors = [g.get_tensor_by_name(t + ':0') for t in input_tensor_names] 
+      output_tensors = [g.get_tensor_by_name(t + ':0') for t in output_tensor_names]
+
     for tensors in yield_batch(iterator, args.batch_size, len(input_tensor_names)):
       inputs_feed_dict = {}
-      for i in range(len(input_tensor_names)):
-        inputs_feed_dict[input_tensor_names[i]] = tensors[i]
-      output_tensors = sess.run(output_tensor_names, feed_dict=inputs_feed_dict)
-      outputs = output_tensors[0].tolist()              # convert from numpy to standard python types
-      result.extend(outputs)
+      for i in range(len(input_tensors)):
+        inputs_feed_dict[input_tensors[i]] = tensors[i]
+      outputs = sess.run(output_tensors, feed_dict=inputs_feed_dict)
+      result.extend(outputs[0].tolist())          # convert from numpy to standard python types
   return result
 
 def get_meta_graph_def(saved_model_dir, tag_set):

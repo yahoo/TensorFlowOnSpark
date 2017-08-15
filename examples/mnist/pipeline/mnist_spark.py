@@ -11,7 +11,6 @@ from pyspark.context import SparkContext
 from pyspark.sql import SparkSession
 
 import argparse
-import json
 import numpy
 import tensorflow as tf
 from datetime import datetime
@@ -40,7 +39,6 @@ parser.add_argument("--num_ps", help="number of PS nodes in cluster", type=int, 
 parser.add_argument("--protocol", help="Tensorflow network protocol (grpc|rdma)", default="grpc")
 parser.add_argument("--steps", help="maximum number of steps", type=int, default=1000)
 parser.add_argument("--tensorboard", help="launch tensorboard process", action="store_true")
-parser.add_argument("--signature", help="json representation of serving signature", dest='signatures', default=[], action='append', type=json.loads)
 
 ######## ARGS ########
 
@@ -88,7 +86,6 @@ estimator = TFEstimator(mnist_dist.map_fun, tf_args) \
         .setInputMapping(['col1=foo', 'col2=bar']) \
         .setModelDir(args.model_dir) \
         .setExportDir(args.export_dir) \
-        .setSignatures(args.signatures) \
         .setClusterSize(args.cluster_size) \
         .setNumPS(args.num_ps) \
         .setProtocol(args.protocol) \
@@ -99,17 +96,35 @@ estimator = TFEstimator(mnist_dist.map_fun, tf_args) \
 
 model = estimator.fit(df)
 
+#
+# Using signature defs
+#
+
 # prediction
-model.setTagSet(tf.saved_model.tag_constants.SERVING) \
-      .setSignatureDefKey(tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY) \
-      .setInputMapping(['col1=image']) \
-      .setOutputMapping(['col_out=prediction']) \
+# model.setTagSet(tf.saved_model.tag_constants.SERVING) \
+#       .setSignatureDefKey(tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY) \
+#       .setInputMapping(['col1=image']) \
+#       .setOutputMapping(['col_out=prediction']) \
 
 # featurize
-#model.setTagSet(tf.saved_model.tag_constants.SERVING) \
+# model.setTagSet(tf.saved_model.tag_constants.SERVING) \
 #      .setSignatureDefKey('featurize') \
 #      .setInputMapping(['col1=image', 'col2=label']) \
 #      .setOutputMapping(['col_out=features'])
+
+#
+# Using custom/direct mappings
+#
+
+# prediction
+# model.setTagSet(tf.saved_model.tag_constants.SERVING) \
+#       .setInputMapping(['col1=x']) \
+#       .setOutputMapping(['col_out=prediction'])
+
+# featurize
+model.setTagSet(tf.saved_model.tag_constants.SERVING) \
+      .setInputMapping(['col1=x', 'col2=y_']) \
+      .setOutputMapping(['col_out=Relu'])
 
 print("{0} ===== Model.transform()".format(datetime.now().isoformat()))
 preds = model.transform(df)
