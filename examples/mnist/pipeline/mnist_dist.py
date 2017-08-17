@@ -155,7 +155,7 @@ def map_fun(args, ctx):
             'method_name': tf.saved_model.signature_constants.PREDICT_METHOD_NAME
           },
           'featurize': {
-            'inputs': { 'image': x, 'label': y_ },
+            'inputs': { 'image': x },
             'outputs': { 'features': hid },
             'method_name': 'featurize'
           }
