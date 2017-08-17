@@ -87,7 +87,7 @@ model.setTagSet(tf.saved_model.tag_constants.SERVING) \
 # featurize
 # model.setTagSet(tf.saved_model.tag_constants.SERVING) \
 #      .setSignatureDefKey('featurize') \
-#      .setInputMapping({'col1':'image', 'col2':'label'}) \
+#      .setInputMapping({'col1':'image'}) \
 #      .setOutputMapping({'col_out':'features'})
 
 #
@@ -101,7 +101,7 @@ model.setTagSet(tf.saved_model.tag_constants.SERVING) \
 
 # featurize
 # model.setTagSet(tf.saved_model.tag_constants.SERVING) \
-#       .setInputMapping({'col1':'x', 'col2':'y_'}) \
+#       .setInputMapping({'col1':'x'}) \
 #       .setOutputMapping({'col_out':'Relu'})
 
 print("{0} ===== Model.transform()".format(datetime.now().isoformat()))

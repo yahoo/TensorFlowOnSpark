@@ -39,8 +39,8 @@ def map_fun(args, ctx):
 
   def feed_dict(batch):
     # Convert from dict of named arrays to two numpy arrays of the proper type
-    images = batch['foo']
-    labels = batch['bar']
+    images = batch['image']
+    labels = batch['label']
     xs = numpy.array(images)
     xs = xs.astype(numpy.float32)
     xs = xs / 255.0

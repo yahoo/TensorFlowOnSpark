@@ -83,7 +83,7 @@ print("{0} ===== Estimator.fit()".format(datetime.now().isoformat()))
 tf_args = { 'initial_learning_rate': 0.045, 'num_epochs_per_decay': 2.0, 'learning_rate_decay_factor': 0.94 }
 
 estimator = TFEstimator(mnist_dist.map_fun, tf_args) \
-        .setInputMapping({'col1':'foo', 'col2':'bar'}) \
+        .setInputMapping({'col1':'image', 'col2':'label'}) \
         .setModelDir(args.model_dir) \
         .setExportDir(args.export_dir) \
         .setClusterSize(args.cluster_size) \
@@ -101,15 +101,15 @@ model = estimator.fit(df)
 #
 
 # prediction
-# model.setTagSet(tf.saved_model.tag_constants.SERVING) \
-#       .setSignatureDefKey(tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY) \
-#       .setInputMapping({'col1':'image'}) \
-#       .setOutputMapping({'col_out':'prediction'}) \
+model.setTagSet(tf.saved_model.tag_constants.SERVING) \
+      .setSignatureDefKey(tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY) \
+      .setInputMapping({'col1':'image'}) \
+      .setOutputMapping({'col_out':'prediction'}) \
 
 # featurize
 # model.setTagSet(tf.saved_model.tag_constants.SERVING) \
 #      .setSignatureDefKey('featurize') \
-#      .setInputMapping({'col1':'image', 'col2':'label'}) \
+#      .setInputMapping({'col1':'image'}) \
 #      .setOutputMapping({'col_out':'features'})
 
 #
@@ -122,9 +122,9 @@ model = estimator.fit(df)
 #       .setOutputMapping({'col_out':'prediction'})
 
 # featurize
-model.setTagSet(tf.saved_model.tag_constants.SERVING) \
-      .setInputMapping({'col1':'x', 'col2':'y_'}) \
-      .setOutputMapping({'col_out':'Relu'})
+# model.setTagSet(tf.saved_model.tag_constants.SERVING) \
+#       .setInputMapping({'col1':'x'}) \
+#       .setOutputMapping({'col_out':'Relu'})
 
 print("{0} ===== Model.transform()".format(datetime.now().isoformat()))
 preds = model.transform(df)
