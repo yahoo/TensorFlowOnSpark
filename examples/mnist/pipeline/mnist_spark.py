@@ -124,7 +124,7 @@ model.setTagSet(tf.saved_model.tag_constants.SERVING) \
 # featurize
 # model.setTagSet(tf.saved_model.tag_constants.SERVING) \
 #       .setInputMapping({'col1':'x'}) \
-#       .setOutputMapping({'col_out':'Relu'})
+#       .setOutputMapping({'col_out1':'prediction', 'col_out2':'Relu'})
 
 print("{0} ===== Model.transform()".format(datetime.now().isoformat()))
 preds = model.transform(df)

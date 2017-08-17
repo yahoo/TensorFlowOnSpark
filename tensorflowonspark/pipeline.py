@@ -243,7 +243,7 @@ class TFModel(Model, TFParams,
     output_cols = sorted(self.getOutputMapping().keys())
 
     rdd_out = dataset.select(input_cols).rdd.mapPartitions(lambda it: _run_saved_model(it, local_args))
-    rows_out = rdd_out.map(lambda x: Row(x))
+    rows_out = rdd_out.map(lambda x: Row(*x))
     return spark.createDataFrame(rows_out, output_cols)
 
 def _run_saved_model(iterator, args):
@@ -304,7 +304,11 @@ def _run_saved_model(iterator, args):
       for i in range(len(input_tensors)):
         inputs_feed_dict[input_tensors[i]] = tensors[i]
       outputs = sess.run(output_tensors, feed_dict=inputs_feed_dict)
-      result.extend(outputs[0].tolist())          # convert from numpy to standard python types
+      lengths = [ len(output) for output in outputs ]
+      input_size = len(tensors[0])
+      assert all([ l == input_size for l in lengths ]), "Output array sizes {} must match input size: {}".format(lengths, input_size)
+      python_outputs = [ output.tolist() for output in outputs ]      # convert from numpy to standard python types
+      result.extend(zip(*python_outputs))                             # convert to an array of tuples of "output columns"
   return result
 
 def get_meta_graph_def(saved_model_dir, tag_set):
