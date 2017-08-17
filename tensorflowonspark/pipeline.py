@@ -291,14 +291,13 @@ def _run_saved_model(iterator, args):
   logging.info("===== running saved_model for outputs: {}".format(output_tensor_names))
   with tf.Session(graph=ops_lib.Graph()) as sess:
     loader.load(sess, args.tag_set.split(','), args.export_dir)
-    g = sess.graph
 
     if args.signature_def_key is not None:
       input_tensors = [inputs_tensor_info[t].name for t in input_tensor_names]
       output_tensors = [outputs_tensor_info[output_tensor_names[0]].name]
     else:
-      input_tensors = [g.get_tensor_by_name(t + ':0') for t in input_tensor_names] 
-      output_tensors = [g.get_tensor_by_name(t + ':0') for t in output_tensor_names]
+      input_tensors = [t + ':0' for t in input_tensor_names]
+      output_tensors = [t + ':0' for t in output_tensor_names]
 
     for tensors in yield_batch(iterator, args.batch_size, len(input_tensor_names)):
       inputs_feed_dict = {}
