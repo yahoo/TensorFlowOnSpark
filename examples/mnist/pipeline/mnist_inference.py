@@ -82,13 +82,13 @@ model = TFModel(args) \
 model.setTagSet(tf.saved_model.tag_constants.SERVING) \
       .setSignatureDefKey(tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY) \
       .setInputMapping({'col1':'image'}) \
-      .setOutputMapping({'col_out':'prediction'}) \
+      .setOutputMapping({'prediction':'col_out'}) \
 
 # featurize
 # model.setTagSet(tf.saved_model.tag_constants.SERVING) \
 #      .setSignatureDefKey('featurize') \
 #      .setInputMapping({'col1':'image'}) \
-#      .setOutputMapping({'col_out':'features'})
+#      .setOutputMapping({'features':'col_out'})
 
 #
 # Using custom/direct mappings w/ tensors
@@ -97,12 +97,12 @@ model.setTagSet(tf.saved_model.tag_constants.SERVING) \
 # prediction
 # model.setTagSet(tf.saved_model.tag_constants.SERVING) \
 #       .setInputMapping({'col1':'x'}) \
-#       .setOutputMapping({'col_out':'prediction'})
+#       .setOutputMapping({'prediction':'col_out'})
 
 # featurize
 # model.setTagSet(tf.saved_model.tag_constants.SERVING) \
 #       .setInputMapping({'col1':'x'}) \
-#       .setOutputMapping({'col_out':'prediction', 'col_out2':'Relu'})
+#       .setOutputMapping({'prediction':'col_out', 'Relu':'col_out2'})
 
 print("{0} ===== Model.transform()".format(datetime.now().isoformat()))
 preds = model.transform(df)

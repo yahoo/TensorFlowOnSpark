@@ -61,22 +61,13 @@ class HasEpochs(Params):
     return self.getOrDefault(self.epochs)
 
 class HasInputMapping(Params):
-  input_mapping = Param(Params._dummy(), "input_mapping", "Mapping of input DataFrame column to input tensor alias in signature def", typeConverter=TFTypeConverters.toDict)
+  input_mapping = Param(Params._dummy(), "input_mapping", "Mapping of input DataFrame column to input tensor", typeConverter=TFTypeConverters.toDict)
   def __init__(self):
     super(HasInputMapping, self).__init__()
   def setInputMapping(self, value):
     return self._set(input_mapping=value)
   def getInputMapping(self):
     return self.getOrDefault(self.input_mapping)
-
-class HasInputTensors(Params):
-  input_tensors = Param(Params._dummy(), "input_tensors", "List of input tensor names in signature def", typeConverter=TypeConverters.toListString)
-  def __init__(self):
-    super(HasInputTensors, self).__init__()
-  def setInputTensors(self, value):
-    return self._set(input_tensors=value)
-  def getInputTensors(self):
-    return self.getOrDefault(self.input_tensors)
 
 class HasModelDir(Params):
   model_dir = Param(Params._dummy(), "model_dir", "Path to save/load model checkpoints", typeConverter=TypeConverters.toString)
@@ -97,7 +88,7 @@ class HasNumPS(Params):
     return self.getOrDefault(self.num_ps)
 
 class HasOutputMapping(Params):
-  output_mapping = Param(Params._dummy(), "output_mapping", "Mapping of output DataFrame column to output tensor alias in signature def", typeConverter=TFTypeConverters.toDict)
+  output_mapping = Param(Params._dummy(), "output_mapping", "Mapping of output tensor to output DataFrame column", typeConverter=TFTypeConverters.toDict)
   def __init__(self):
     super(HasOutputMapping, self).__init__()
   def setOutputMapping(self, value):
@@ -239,8 +230,8 @@ class TFModel(Model, TFParams,
     local_args = self._merge_args_params()
     logging.info("===== 3. inference args + params: {0}".format(local_args))
 
-    input_cols = sorted(self.getInputMapping().keys())
-    output_cols = sorted(self.getOutputMapping().keys())
+    input_cols = sorted(self.getInputMapping().keys())        # input col => input tensor
+    output_cols = sorted(self.getOutputMapping().values())    # output tensor => output col
 
     rdd_out = dataset.select(input_cols).rdd.mapPartitions(lambda it: _run_saved_model(it, local_args))
     rows_out = rdd_out.map(lambda x: Row(*x))
@@ -285,7 +276,7 @@ def _run_saved_model(iterator, args):
   logging.info("===== input_mapping: {}".format(args.input_mapping))
   logging.info("===== output_mapping: {}".format(args.output_mapping))
   input_tensor_names = [ tensor for col,tensor in sorted(args.input_mapping.items()) ]
-  output_tensor_names = [ tensor for col,tensor in sorted(args.output_mapping.items()) ]
+  output_tensor_names = [ tensor for tensor,col in sorted(args.output_mapping.items()) ]
 
   result = []
   logging.info("===== running saved_model for outputs: {}".format(output_tensor_names))
