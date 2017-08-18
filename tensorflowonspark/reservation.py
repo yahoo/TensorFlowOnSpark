@@ -17,6 +17,7 @@ import time
 from . import util
 
 BUFSIZE = 1024
+MAX_RETRIES = 3
 
 class Reservations:
 
@@ -51,7 +52,7 @@ class MessageSocket(object):
     recv_len = -1
     while not recv_done:
       buf = sock.recv(BUFSIZE)
-      if buf == None or len(buf) == 0:
+      if buf is None or len(buf) == 0:
         raise Exception("socket closed")
       if recv_len == -1:
         recv_len = struct.unpack('>I', buf[:4])[0]
@@ -69,6 +70,7 @@ class MessageSocket(object):
     data = pickle.dumps(msg)
     buf = struct.pack('>I', len(data)) + data
     sock.sendall(buf)
+
 
 class Server(MessageSocket):
   """Simple socket server with length prefixed pickle messages"""
@@ -110,7 +112,7 @@ class Server(MessageSocket):
     server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_sock.bind(('',0))
-    server_sock.listen(1)
+    server_sock.listen(10)
 
     # hostname may not be resolvable but IP address probably will be
     host = util.get_ip_address()
@@ -153,10 +155,12 @@ class Server(MessageSocket):
 class Client(MessageSocket):
   """Client to register/await node reservations"""
   sock = None
+  server_addr = None
 
   def __init__(self, server_addr):
     self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     self.sock.connect(server_addr)
+    self.server_addr = server_addr
     logging.info("connected to server at {0}".format(server_addr))
 
   def _request(self, msg_type, msg_data=None):
@@ -165,7 +169,22 @@ class Client(MessageSocket):
     msg['type'] = msg_type
     if msg_data:
       msg['data'] = msg_data
-    MessageSocket.send(self, self.sock, msg)
+
+    done = False
+    tries = 0
+    while not done and tries < MAX_RETRIES:
+      try:
+        MessageSocket.send(self, self.sock, msg)
+        done = True
+      except socket.error as e:
+        tries += 1
+        if tries >= MAX_RETRIES:
+          raise
+        print("Socket error: {}".format(e))
+        self.sock.close()
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.connect(self.server_addr)
+
     logging.debug("sent: {0}".format(msg))
     resp = MessageSocket.receive(self, self.sock)
     logging.debug("received: {0}".format(resp))

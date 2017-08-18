@@ -1,0 +1,57 @@
+import getpass
+import os
+import unittest
+from tensorflowonspark import TFManager, TFNode
+
+class TFNodeTest(unittest.TestCase):
+  def test_hdfs_path(self):
+    cwd = os.getcwd()
+    user = getpass.getuser()
+    fs = ["file://", "hdfs://", "viewfs://"]
+    paths = {
+      "hdfs://foo/bar": ["hdfs://foo/bar", "hdfs://foo/bar", "hdfs://foo/bar"],
+      "viewfs://foo/bar": ["viewfs://foo/bar", "viewfs://foo/bar", "viewfs://foo/bar"],
+      "file://foo/bar": ["file://foo/bar", "file://foo/bar", "file://foo/bar"],
+      "/foo/bar": ["file:///foo/bar", "hdfs:///foo/bar", "viewfs:///foo/bar"],
+      "foo/bar": ["file://{}/foo/bar".format(cwd), "hdfs:///user/{}/foo/bar".format(user), "viewfs:///user/{}/foo/bar".format(user)],
+    }
+
+    for i in range(len(fs)):
+      ctx = type('MockContext', (), {'defaultFS': fs[i], 'working_dir': cwd})
+      for path, expected in paths.items():
+        final_path = TFNode.hdfs_path(ctx, path)
+        self.assertEqual(expected[i], final_path, "fs({}) + path({}) => {}, expected {}".format(fs[i], path, final_path, expected[i]))
+
+  def test_datafeed(self):
+    mgr = TFManager.start('abc', ['input', 'output'], 'local')
+
+    # insert 10 numbers followed by an end-of-feed marker
+    q = mgr.get_queue('input')
+    for i in range(10):
+      q.put(i)
+    q.put(None)
+
+    feed = TFNode.DataFeed(mgr)
+
+    # [0,1]
+    self.assertFalse(feed.done_feeding)
+    batch = feed.next_batch(2)
+    self.assertEqual(2, len(batch))
+    self.assertEqual(1, sum(batch))
+
+    # [2,3,4,5]
+    batch = feed.next_batch(4)
+    self.assertEqual(4, len(batch))
+    self.assertEqual(14, sum(batch))
+
+    # [6,7,8,9]
+    batch = feed.next_batch(10)
+    self.assertEqual(4, len(batch))
+    self.assertEqual(30, sum(batch))
+
+    # should be done
+    self.assertTrue(feed.should_stop())
+
+
+if __name__ == '__main__':
+  unittest.main()
