@@ -1,3 +1,4 @@
+import os
 import unittest
 
 from pyspark import SparkContext
@@ -7,7 +8,14 @@ class SparkTest(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
-    cls.sc = SparkContext('local[*]', cls.__name__)
+    master = os.getenv('MASTER')
+    assert master is not None, "Please start a Spark standalone cluster and export MASTER to your env."
+
+    num_workers = os.getenv('SPARK_WORKER_INSTANCES')
+    assert num_workers is not None, "Please export SPARK_WORKER_INSTANCES to your env."
+
+    cls.num_workers = int(num_workers)
+    cls.sc = SparkContext(master, cls.__name__)
     cls.spark = SparkSession.builder.getOrCreate()
 
   @classmethod
