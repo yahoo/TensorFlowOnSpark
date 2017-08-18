@@ -230,8 +230,8 @@ class TFModel(Model, TFParams,
     local_args = self._merge_args_params()
     logging.info("===== 3. inference args + params: {0}".format(local_args))
 
-    input_cols = sorted(self.getInputMapping().keys())        # input col => input tensor
-    output_cols = sorted(self.getOutputMapping().values())    # output tensor => output col
+    input_cols = [ col for col, tensor in sorted(self.getInputMapping().items()) ]      # input col => input tensor
+    output_cols = [ col for tensor, col in sorted(self.getOutputMapping().items()) ]    # output tensor => output col
 
     rdd_out = dataset.select(input_cols).rdd.mapPartitions(lambda it: _run_saved_model(it, local_args))
     rows_out = rdd_out.map(lambda x: Row(*x))
