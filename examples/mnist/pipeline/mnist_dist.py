@@ -145,7 +145,7 @@ def map_fun(args, ctx):
       if sv.should_stop() or step >= args.steps:
         tf_feed.terminate()
 
-      if sv.is_chief:
+      if sv.is_chief and args.export_dir:
         print("{0} exporting saved_model to: {1}".format(datetime.now().isoformat(), args.export_dir))
         # exported signatures defined in code
         signatures = {

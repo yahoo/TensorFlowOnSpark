@@ -21,7 +21,6 @@ import copy
 import logging
 import os
 import subprocess
-#from collections import OrderedDict
 
 ##### TensorFlowOnSpark Params
 
@@ -160,15 +159,17 @@ class Namespace(object):
   """
   def __init__(self, d):
     self.__dict__.update(d)
+
   def __repr__(self):
     keys = sorted(self.__dict__)
     items = ("{}={!r}".format(k, self.__dict__[k]) for k in keys)
     return "{}({})".format(type(self).__name__, ", ".join(items))
+
   def __eq__(self, other):
     return self.__dict__ == other.__dict__
 
 class TFParams(Params):
-  """Mix-in class to store args and merge params"""
+  """Mix-in class to store dictionary-style args and merge w/ SparkML-style params"""
   args = None
   def _merge_args_params(self):
     local_args = copy.copy(self.args)
@@ -185,6 +186,10 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
   train_fn = None
 
   def __init__(self, train_fn, tf_args):
+    """
+      :param train_fn: TensorFlow "main" function for training.
+      :param tf_args: Dictionary of arguments specific to TensorFlow "main" function.
+    """
     super(TFEstimator, self).__init__()
     self.train_fn = train_fn
     self.args = Namespace(tf_args) if isinstance(tf_args, dict) else tf_args
@@ -192,13 +197,14 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
                     num_ps=0,
                     protocol='grpc',
                     tensorboard=False,
-                    model_dir='tf_model',
+                    model_dir=None,
+                    export_dir=None,
                     batch_size=100,
                     epochs=1,
-                    steps=1000,
-                    export_dir='tf_export')
+                    steps=1000)
 
   def _fit(self, dataset):
+    """Trains a TensorFlow model and returns a TFModel instance with params/args pointing to a checkpoint/saved_model on disk"""
     sc = SparkContext.getOrCreate()
 
     logging.info("===== 1. train args: {0}".format(self.args))
@@ -206,21 +212,33 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
     local_args = self._merge_args_params()
     logging.info("===== 3. train args + params: {0}".format(local_args))
 
+    # set a deterministic order for input columns (lexicographic by key)
     input_cols = sorted(self.getInputMapping().keys())
+
+    # launch the TensorFlowOnSpark cluster using InputMode.SPARK
     cluster = TFCluster.run(sc, self.train_fn, local_args, local_args.cluster_size, local_args.num_ps, local_args.tensorboard, TFCluster.InputMode.SPARK)
     cluster.train(dataset.select(input_cols).rdd, local_args.epochs)
     cluster.shutdown()
+
     return self._copyValues(TFModel(self.args))
 
 class TFModel(Model, TFParams,
               HasInputMapping, HasOutputMapping,
               HasBatchSize,
-              HasExportDir, HasSignatureDefKey, HasTagSet):
-  """Spark ML Pipeline Model which runs a TensorFlow SavedModel stored on disk."""
+              HasModelDir, HasExportDir, HasSignatureDefKey, HasTagSet):
+  """Spark ML Pipeline Model which runs single-node inferencing of a TensorFlow Model checkpoint/saved_model on disk."""
 
   def __init__(self, tf_args):
+    """
+      :param tf_args: Dictionary of arguments specific to TensorFlow graph
+    """
     super(TFModel, self).__init__()
     self.args = Namespace(tf_args) if isinstance(tf_args, dict) else tf_args
+    self._setDefault(batch_size=100,
+                    model_dir=None,
+                    export_dir=None,
+                    signature_def_key=None,
+                    tag_set=None)
 
   def _transform(self, dataset):
     spark = SparkSession.builder.getOrCreate()
@@ -230,29 +248,30 @@ class TFModel(Model, TFParams,
     local_args = self._merge_args_params()
     logging.info("===== 3. inference args + params: {0}".format(local_args))
 
+    # set a deterministic order for input/output columns (lexicographic by key)
     input_cols = [ col for col, tensor in sorted(self.getInputMapping().items()) ]      # input col => input tensor
     output_cols = [ col for tensor, col in sorted(self.getOutputMapping().items()) ]    # output tensor => output col
 
-    rdd_out = dataset.select(input_cols).rdd.mapPartitions(lambda it: _run_saved_model(it, local_args))
+    # run single-node inferencing on each executor
+    rdd_out = dataset.select(input_cols).rdd.mapPartitions(lambda it: _run_model(it, local_args))
+
+    # convert to a DataFrame-friendly format
     rows_out = rdd_out.map(lambda x: Row(*x))
     return spark.createDataFrame(rows_out, output_cols)
 
-def _run_saved_model(iterator, args):
-  """
-  Run a SavedModel using input tensors obtained from a Spark partition iterator and return a single output tensor.
-  Based on https://github.com/tensorflow/tensorflow/blob/8e0e8d41a3a8f2d4a6100c2ea1dc9d6c6c4ad382/tensorflow/python/tools/saved_model_cli.py#L233
-  """
-  # ensure expanded CLASSPATH w/o glob characters (required for Spark 2.1 + JNI)
-  if 'HADOOP_PREFIX' in os.environ and 'TFOS_CLASSPATH_UPDATED' not in os.environ:
-      classpath = os.environ['CLASSPATH']
-      hadoop_path = os.path.join(os.environ['HADOOP_PREFIX'], 'bin', 'hadoop')
-      hadoop_classpath = subprocess.check_output([hadoop_path, 'classpath', '--glob']).decode()
-      logging.debug("CLASSPATH: {0}".format(hadoop_classpath))
-      os.environ['CLASSPATH'] = classpath + os.pathsep + hadoop_classpath
-      os.environ['TFOS_CLASSPATH_UPDATED'] = '1'
+def _run_model(iterator, args):
+  """Run single-node inferencing on a checkpoint/saved_model using input tensors obtained from a Spark partition iterator and returning output tensors."""
+  single_node_env(args)
 
-  if args.signature_def_key is not None:
-    logging.info("===== loading meta_graph_def for tag_set ({0}) from {1}".format(args.tag_set, args.export_dir))
+  logging.info("===== input_mapping: {}".format(args.input_mapping))
+  logging.info("===== output_mapping: {}".format(args.output_mapping))
+  input_tensor_names = [ tensor for col,tensor in sorted(args.input_mapping.items()) ]
+  output_tensor_names = [ tensor for tensor,col in sorted(args.output_mapping.items()) ]
+
+  # if using a signature_def_key, get input/output tensor info from the requested signature
+  if args.signature_def_key:
+    assert args.export_dir, "Inferencing with signature_def_key requires --export_dir argument"
+    logging.info("===== loading meta_graph_def for tag_set ({0}) from saved_model: {1}".format(args.tag_set, args.export_dir))
     meta_graph_def = get_meta_graph_def(args.export_dir, args.tag_set)
     signature = signature_def_utils.get_signature_def_by_key(meta_graph_def, args.signature_def_key)
     inputs_tensor_info = signature.inputs
@@ -260,36 +279,31 @@ def _run_saved_model(iterator, args):
     outputs_tensor_info = signature.outputs
     logging.info("outputs_tensor_info: {0}".format(outputs_tensor_info))
 
-  logging.info("===== creating single-node session")
-  if tf.test.is_built_with_cuda():
-    # GPU
-    num_gpus = args.num_gpus if 'num_gpus' in args else 1
-    gpus_to_use = gpu_info.get_gpus(num_gpus)
-    logging.info("Using gpu(s): {0}".format(gpus_to_use))
-    os.environ['CUDA_VISIBLE_DEVICES'] = gpus_to_use
-    # Note: if there is a GPU conflict (CUDA_ERROR_INVALID_DEVICE), the entire task will fail and retry.
-  else:
-    # CPU
-    logging.info("Using CPU")
-    os.environ['CUDA_VISIBLE_DEVICES'] = ''
-
-  logging.info("===== input_mapping: {}".format(args.input_mapping))
-  logging.info("===== output_mapping: {}".format(args.output_mapping))
-  input_tensor_names = [ tensor for col,tensor in sorted(args.input_mapping.items()) ]
-  output_tensor_names = [ tensor for tensor,col in sorted(args.output_mapping.items()) ]
-
   result = []
-  logging.info("===== running saved_model for outputs: {}".format(output_tensor_names))
   with tf.Session(graph=ops_lib.Graph()) as sess:
-    loader.load(sess, args.tag_set.split(','), args.export_dir)
+    if args.export_dir:
+      # load graph from a saved_model
+      logging.info("===== restoring from saved_model: {}".format(args.export_dir))
+      loader.load(sess, args.tag_set.split(','), args.export_dir)
+    elif args.model_dir:
+      # load graph from a checkpoint
+      ckpt = tf.train.latest_checkpoint(args.model_dir)
+      assert ckpt, "Invalid model checkpoint path: {}".format(args.model_dir)
+      logging.info("===== restoring from checkpoint: {}".format(ckpt + ".meta"))
+      saver = tf.train.import_meta_graph(ckpt + ".meta", clear_devices=True)
+      saver.restore(sess, ckpt)
+    else:
+      raise Exception("Inferencing requires either --model_dir or --export_dir argument")
 
-    if args.signature_def_key is not None:
+    # get list of input/output tensors (by name)
+    if args.signature_def_key:
       input_tensors = [inputs_tensor_info[t].name for t in input_tensor_names]
       output_tensors = [outputs_tensor_info[output_tensor_names[0]].name]
     else:
       input_tensors = [t + ':0' for t in input_tensor_names]
       output_tensors = [t + ':0' for t in output_tensor_names]
 
+    # feed data in batches and return output tensors
     for tensors in yield_batch(iterator, args.batch_size, len(input_tensor_names)):
       inputs_feed_dict = {}
       for i in range(len(input_tensors)):
@@ -301,6 +315,30 @@ def _run_saved_model(iterator, args):
       python_outputs = [ output.tolist() for output in outputs ]      # convert from numpy to standard python types
       result.extend(zip(*python_outputs))                             # convert to an array of tuples of "output columns"
   return result
+
+def single_node_env(args):
+  """Sets up environment for a single-node TF session"""
+  # ensure expanded CLASSPATH w/o glob characters (required for Spark 2.1 + JNI)
+  if 'HADOOP_PREFIX' in os.environ and 'TFOS_CLASSPATH_UPDATED' not in os.environ:
+      classpath = os.environ['CLASSPATH']
+      hadoop_path = os.path.join(os.environ['HADOOP_PREFIX'], 'bin', 'hadoop')
+      hadoop_classpath = subprocess.check_output([hadoop_path, 'classpath', '--glob']).decode()
+      logging.debug("CLASSPATH: {0}".format(hadoop_classpath))
+      os.environ['CLASSPATH'] = classpath + os.pathsep + hadoop_classpath
+      os.environ['TFOS_CLASSPATH_UPDATED'] = '1'
+
+  # reserve GPU, if requested
+  if tf.test.is_built_with_cuda():
+    # GPU
+    num_gpus = args.num_gpus if 'num_gpus' in args else 1
+    gpus_to_use = gpu_info.get_gpus(num_gpus)
+    logging.info("Using gpu(s): {0}".format(gpus_to_use))
+    os.environ['CUDA_VISIBLE_DEVICES'] = gpus_to_use
+    # Note: if there is a GPU conflict (CUDA_ERROR_INVALID_DEVICE), the entire task will fail and retry.
+  else:
+    # CPU
+    logging.info("Using CPU")
+    os.environ['CUDA_VISIBLE_DEVICES'] = ''
 
 def get_meta_graph_def(saved_model_dir, tag_set):
   """

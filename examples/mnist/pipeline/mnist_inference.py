@@ -30,7 +30,8 @@ parser = argparse.ArgumentParser()
 
 ## TFoS/cluster
 parser.add_argument("--batch_size", help="number of records per batch", type=int, default=100)
-parser.add_argument("--export_dir", help="HDFS path to export model", default="mnist_export")
+parser.add_argument("--export_dir", help="HDFS path to exported saved_model", type=str)
+parser.add_argument("--model_dir", help="HDFS path to model checkpoint", type=str)
 
 ######## ARGS ########
 
@@ -71,36 +72,53 @@ else:
 df = spark.createDataFrame(dataRDD, ['col1', 'col2'])
 
 model = TFModel(args) \
-        .setExportDir(args.export_dir) \
         .setBatchSize(args.batch_size)
 
 #
-# Using exported signature defs w/ tensor aliases
+# Using saved_model w/ signature defs and tensor aliases
 #
 
 # prediction
 model.setTagSet(tf.saved_model.tag_constants.SERVING) \
+      .setExportDir(args.export_dir) \
       .setSignatureDefKey(tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY) \
       .setInputMapping({'col1':'image'}) \
-      .setOutputMapping({'prediction':'col_out'}) \
+      .setOutputMapping({'prediction':'col_out'})
 
 # featurize
 # model.setTagSet(tf.saved_model.tag_constants.SERVING) \
+#      .setExportDir(args.export_dir) \
 #      .setSignatureDefKey('featurize') \
 #      .setInputMapping({'col1':'image'}) \
 #      .setOutputMapping({'features':'col_out'})
 
 #
-# Using custom/direct mappings w/ tensors
+# Using saved_model w/ custom/direct mappings of tensors
 #
 
 # prediction
 # model.setTagSet(tf.saved_model.tag_constants.SERVING) \
+#       .setExportDir(args.export_dir) \
 #       .setInputMapping({'col1':'x'}) \
 #       .setOutputMapping({'prediction':'col_out'})
 
 # featurize
 # model.setTagSet(tf.saved_model.tag_constants.SERVING) \
+#       .setExportDir(args.export_dir) \
+#       .setInputMapping({'col1':'x'}) \
+#       .setOutputMapping({'prediction':'col_out', 'Relu':'col_out2'})
+
+#
+# Using checkpoint w/ custom/direct mappings of tensors
+#
+
+# prediction
+# model.setModelDir(args.model_dir) \
+#       .setInputMapping({'col1':'x'}) \
+#       .setOutputMapping({'prediction':'col_out'})
+
+# featurize
+# model.setModelDir(args.model_dir) \
 #       .setInputMapping({'col1':'x'}) \
 #       .setOutputMapping({'prediction':'col_out', 'Relu':'col_out2'})
 
