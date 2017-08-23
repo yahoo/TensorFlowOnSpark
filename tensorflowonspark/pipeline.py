@@ -169,13 +169,13 @@ class Namespace(object):
     return self.__dict__ == other.__dict__
 
 class TFParams(Params):
-  """Mix-in class to store dictionary-style args and merge w/ SparkML-style params"""
+  """Mix-in class to store namespace-style args and merge w/ SparkML-style params"""
   args = None
   def _merge_args_params(self):
-    local_args = copy.copy(self.args)
-    args_dict = vars(local_args)
+    local_args = copy.copy(self.args)                 # make a local copy of args
+    args_dict = vars(local_args)                      # get dictionary view
     for p in self.params:
-      args_dict[p.name] = self.getOrDefault(p.name)
+      args_dict[p.name] = self.getOrDefault(p.name)   # update with params
     return local_args
 
 class TFEstimator(Estimator, TFParams, HasInputMapping,
