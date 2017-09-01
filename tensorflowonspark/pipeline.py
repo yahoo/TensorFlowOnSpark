@@ -15,7 +15,7 @@ import tensorflow as tf
 from tensorflow.contrib.saved_model.python.saved_model import reader, signature_def_utils
 from tensorflow.python.framework import ops as ops_lib
 from tensorflow.python.saved_model import loader
-from . import TFCluster, gpu_info
+from . import TFCluster, gpu_info, dfutil
 
 import copy
 import logging
@@ -68,6 +68,15 @@ class HasInputMapping(Params):
   def getInputMapping(self):
     return self.getOrDefault(self.input_mapping)
 
+class HasInputMode(Params):
+  input_mode = Param(Params._dummy(), "input_mode", "Input data feeding mode (0=TENSORFLOW, 1=SPARK)", typeConverter=TypeConverters.toInt)
+  def __init__(self):
+    super(HasInputMode, self).__init__()
+  def setInputMode(self, value):
+    return self._set(input_mode=value)
+  def getInputMode(self):
+    return self.getOrDefault(self.input_mode)
+
 class HasModelDir(Params):
   model_dir = Param(Params._dummy(), "model_dir", "Path to save/load model checkpoints", typeConverter=TypeConverters.toString)
   def __init__(self):
@@ -103,6 +112,15 @@ class HasProtocol(Params):
     return self._set(protocol=value)
   def getProtocol(self):
     return self.getOrDefault(self.protocol)
+
+class HasReaders(Params):
+  readers = Param(Params._dummy(), "readers", "number of reader/enqueue threads", typeConverter=TypeConverters.toInt)
+  def __init__(self):
+    super(HasReaders, self).__init__()
+  def setReaders(self, value):
+    return self._set(readers=value)
+  def getReaders(self):
+    return self.getOrDefault(self.readers)
 
 class HasSteps(Params):
   steps = Param(Params._dummy(), "steps", "Maximum number of steps to train", typeConverter=TypeConverters.toInt)
@@ -179,32 +197,39 @@ class TFParams(Params):
     return local_args
 
 class TFEstimator(Estimator, TFParams, HasInputMapping,
-                  HasClusterSize, HasNumPS, HasProtocol, HasTensorboard, HasModelDir, HasExportDir,
-                  HasBatchSize, HasEpochs, HasSteps):
+                  HasClusterSize, HasNumPS, HasInputMode, HasProtocol, HasTensorboard, HasModelDir, HasExportDir,
+                  HasBatchSize, HasEpochs, HasReaders, HasSteps):
   """Spark ML Pipeline Estimator which launches a TensorFlowOnSpark cluster for training"""
 
   train_fn = None
+  export_fn = None
 
-  def __init__(self, train_fn, tf_args):
+  def __init__(self, train_fn, tf_args, export_fn=None):
     """
       :param train_fn: TensorFlow "main" function for training.
       :param tf_args: Dictionary of arguments specific to TensorFlow "main" function.
     """
     super(TFEstimator, self).__init__()
     self.train_fn = train_fn
+    self.export_fn = export_fn
     self.args = Namespace(tf_args) if isinstance(tf_args, dict) else tf_args
-    self._setDefault(cluster_size=1,
+    self._setDefault(input_mapping={},
+                    cluster_size=1,
                     num_ps=0,
+                    input_mode=TFCluster.InputMode.SPARK,
                     protocol='grpc',
                     tensorboard=False,
                     model_dir=None,
                     export_dir=None,
                     batch_size=100,
                     epochs=1,
+                    readers=1,
                     steps=1000)
 
   def _fit(self, dataset):
-    """Trains a TensorFlow model and returns a TFModel instance with params/args pointing to a checkpoint/saved_model on disk"""
+    """Trains a TensorFlow model and returns a TFModel instance with params/args pointing to a checkpoint/saved_model on disk.
+    Note: for input_mode == InputMode.TENSORFLOW, the dataset input is ignored, and it's assumed that the TF train_fn is responsible for reading input data.
+    """
     sc = SparkContext.getOrCreate()
 
     logging.info("===== 1. train args: {0}".format(self.args))
@@ -212,13 +237,34 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
     local_args = self._merge_args_params()
     logging.info("===== 3. train args + params: {0}".format(local_args))
 
-    # set a deterministic order for input columns (lexicographic by key)
-    input_cols = sorted(self.getInputMapping().keys())
+    if local_args.input_mode == TFCluster.InputMode.TENSORFLOW:
+      print("converting to tfrecords")
+      print("dataset.dtypes: {}".format(dataset.dtypes))
+      tfexamples = dataset.rdd.mapPartitions(dfutil.toTFExample(dataset.dtypes))
+      print("saving tfrecords to disk: {}".format(local_args.tfr_dir))
+      tfexamples.saveAsNewAPIHadoopFile(local_args.tfr_dir, "org.tensorflow.hadoop.io.TFRecordFileOutputFormat",
+                                keyClass="org.apache.hadoop.io.BytesWritable",
+                                valueClass="org.apache.hadoop.io.NullWritable")
+      print("done saving")
 
-    # launch the TensorFlowOnSpark cluster using InputMode.SPARK
-    cluster = TFCluster.run(sc, self.train_fn, local_args, local_args.cluster_size, local_args.num_ps, local_args.tensorboard, TFCluster.InputMode.SPARK)
-    cluster.train(dataset.select(input_cols).rdd, local_args.epochs)
+    cluster = TFCluster.run(sc, self.train_fn, local_args, local_args.cluster_size, local_args.num_ps, local_args.tensorboard, local_args.input_mode)
+    if local_args.input_mode == TFCluster.InputMode.SPARK:
+      # feed data, using a deterministic order for input columns (lexicographic by key)
+      input_cols = sorted(self.getInputMapping().keys())
+      cluster.train(dataset.select(input_cols).rdd, local_args.epochs)
     cluster.shutdown()
+
+    # Run export function, if provided
+    if self.export_fn:
+      assert local_args.export_dir, "Export function requires --export_dir to be set"
+      logging.info("Exporting saved_model (via export_fn) to: {}".format(local_args.export_dir))
+
+      def _export(iterator, fn, args):
+        single_node_env(args)
+        fn(args)
+
+      # Run on a single exeucutor
+      sc.parallelize([1], 1).foreachPartition(lambda it: _export(it, self.export_fn, local_args))
 
     return self._copyValues(TFModel(self.args))
 
@@ -282,6 +328,7 @@ def _run_model(iterator, args):
   result = []
   with tf.Session(graph=ops_lib.Graph()) as sess:
     if args.export_dir:
+      assert args.tag_set, "Inferencing from a saved_model requires --tag_set"
       # load graph from a saved_model
       logging.info("===== restoring from saved_model: {}".format(args.export_dir))
       loader.load(sess, args.tag_set.split(','), args.export_dir)

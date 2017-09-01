@@ -49,7 +49,7 @@ def toTFExample(dtypes):
     for row in iter:
       features = dict([_toTFFeature(name, dtype, row) for name, dtype in dtypes])
       example = tf.train.Example(features=tf.train.Features(feature=features))
-      results.append(example.SerializeToString())
+      results.append((bytearray(example.SerializeToString()),None))
     return results
 
   return _toTFExample

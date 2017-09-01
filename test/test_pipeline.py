@@ -3,62 +3,8 @@ import os
 import shutil
 import test
 import unittest
+from tensorflowonspark import TFCluster
 from tensorflowonspark.pipeline import HasBatchSize, HasSteps, Namespace, TFEstimator, TFParams
-
-def _map_fun(args, ctx):
-  """Basic linear regression in a distributed TF cluster and InputMode.SPARK"""
-  import tensorflow as tf
-  from tensorflowonspark import TFNode
-  cluster, server = TFNode.start_cluster_server(ctx)
-  if ctx.job_name == "ps":
-    server.join()
-  elif ctx.job_name == "worker":
-    with tf.device(tf.train.replica_device_setter(
-      worker_device="/job:worker/task:%d" % ctx.task_index,
-      cluster=cluster)):
-      x = tf.placeholder(tf.float32, [None, 2], name='x')
-      y_ = tf.placeholder(tf.float32, [None, 1], name='y_')
-      w = tf.Variable(tf.truncated_normal([2,1]), name='w')
-      y = tf.matmul(x, w, name='y')
-      y2 = tf.square(y, name="y2")                      # extra/optional output for testing multiple output tensors
-
-      cost = tf.reduce_mean(tf.square(y_ - y), name='cost')
-      optimizer = tf.train.GradientDescentOptimizer(0.5).minimize(cost)
-
-      init_op = tf.global_variables_initializer()
-      saver = tf.train.Saver()
-
-    sv = tf.train.Supervisor(is_chief=(ctx.task_index == 0),
-                            init_op=init_op)
-    with sv.managed_session(server.target) as sess:
-      tf_feed = TFNode.DataFeed(ctx.mgr, input_mapping=args.input_mapping)
-      while not sv.should_stop() and not tf_feed.should_stop():
-        batch = tf_feed.next_batch(10)
-        if args.input_mapping:
-          if len(batch['x']) > 0:
-            feed = { x: batch['x'], y_: batch['y_'] }
-          opt = sess.run(optimizer, feed_dict=feed)
-
-      if sv.is_chief:
-        if args.model_dir:
-          # manually save checkpoint
-          ckpt_name = args.model_dir + "/model.ckpt"
-          print("Saving checkpoint to: {}".format(ckpt_name))
-          saver.save(sess, ckpt_name)
-        elif args.export_dir:
-          # export a saved_model
-          signatures = {
-            'test_key': {
-              'inputs': { 'features': x },
-              'outputs': { 'prediction': y },
-              'method_name': 'test'
-            }
-          }
-          TFNode.export_saved_model(sess, export_dir=args.export_dir, tag_set='test_tag', signatures=signatures)
-        else:
-          print("WARNING: model state not saved.")
-
-    sv.stop()
 
 class PipelineTest(test.SparkTest):
   @classmethod
@@ -84,12 +30,13 @@ class PipelineTest(test.SparkTest):
     super(PipelineTest, cls).tearDownClass()
 
   def setUp(self):
-    pass
-
-  def tearDown(self):
-    # remove test artifacts
+    # remove any prior test artifacts
     shutil.rmtree(self.model_dir, ignore_errors=True)
     shutil.rmtree(self.export_dir, ignore_errors=True)
+
+  def tearDown(self):
+    # Note: don't clean up artifacts after test (in case we need to view/debug)
+    pass
 
   def test_namespace(self):
     """Namespace class from dict"""
@@ -114,15 +61,15 @@ class PipelineTest(test.SparkTest):
     expected_args = Namespace({ 'a': 1, 'b': 2, 'batch_size': 10, 'steps': 100 })
     self.assertEqual(combined_args, expected_args)
 
-  def test_checkpoint(self):
-    """TFEstimator + TFModel using model checkpoint"""
+  def test_spark_checkpoint(self):
+    """InputMode.SPARK TFEstimator w/ TFModel inferencing directly from model checkpoint"""
 
     # create a Spark DataFrame of training examples (features, labels)
     trainDF = self.spark.createDataFrame(self.train_examples, ['col1', 'col2'])
 
     # train model
     args = {}
-    estimator = TFEstimator(_map_fun, args) \
+    estimator = TFEstimator(self.get_function('spark/train'), args) \
                   .setInputMapping( { 'col1': 'x', 'col2': 'y_' }) \
                   .setModelDir(self.model_dir) \
                   .setClusterSize(self.num_workers) \
@@ -142,15 +89,15 @@ class PipelineTest(test.SparkTest):
     pred = preds.cout[0]                                  # unpack scalar from tensor
     self.assertAlmostEqual(pred, np.sum(self.weights), 5)
 
-  def test_saved_model(self):
-    """TFEstimator + TFModel using saved_model export"""
+  def test_spark_saved_model(self):
+    """InputMode.SPARK TFEstimator w/ explicit saved_model export for TFModel inferencing"""
 
     # create a Spark DataFrame of training examples (features, labels)
     trainDF = self.spark.createDataFrame(self.train_examples, ['col1', 'col2'])
 
     # train model
     args = {}
-    estimator = TFEstimator(_map_fun, args) \
+    estimator = TFEstimator(self.get_function('spark/train'), args) \
                   .setInputMapping( { 'col1': 'x', 'col2': 'y_' }) \
                   .setExportDir(self.export_dir) \
                   .setClusterSize(self.num_workers) \
@@ -184,6 +131,175 @@ class PipelineTest(test.SparkTest):
 
     self.assertAlmostEqual(pred, expected, 5)
     self.assertAlmostEqual(squared_pred, expected * expected, 5)
+
+  def test_tf_checkpoint_with_export_fn(self):
+    """InputMode.TENSORFLOW TFEstimator w/ a separate saved_model export function to add placeholders for InputMode.SPARK TFModel inferencing"""
+
+    # create a Spark DataFrame of training examples (features, labels)
+    trainDF = self.spark.createDataFrame(self.train_examples, ['col1', 'col2'])
+
+    # train model
+    args = {}
+    estimator = TFEstimator(self.get_function('tf/train'), args, self.get_function('tf/export')) \
+                  .setInputMapping( { 'col1': 'x', 'col2': 'y_' }) \
+                  .setInputMode(TFCluster.InputMode.TENSORFLOW) \
+                  .setModelDir(self.model_dir) \
+                  .setExportDir(self.export_dir) \
+                  .setClusterSize(self.num_workers) \
+                  .setNumPS(1) \
+                  .setBatchSize(10)
+    model = estimator.fit(trainDF)
+    self.assertTrue(os.path.isdir(self.model_dir))
+
+    # create a Spark DataFrame of test examples (features, labels)
+    testDF = self.spark.createDataFrame(self.test_examples, ['c1', 'c2'])
+
+    # test model from checkpoint, referencing tensors directly
+    model.setTagSet('test_tag') \
+        .setInputMapping( { 'c1': 'x' }) \
+        .setOutputMapping( { 'y': 'cout1', 'y2': 'cout2' })
+    preds = model.transform(testDF).head()                # take first/only result, e.g. [ Row(cout=[4.758000373840332])]
+    pred1, pred2 = preds.cout1[0], preds.cout2[0]
+    self.assertAlmostEqual(pred1, np.sum(self.weights), 5)
+    self.assertAlmostEqual(pred2, np.sum(self.weights) ** 2, 5)
+
+  def get_function(self, name):
+    """Returns a TF map_function for tests (required to avoid serializing the parent module/class)"""
+
+    def _spark_train(args, ctx):
+      """Basic linear regression in a distributed TF cluster using InputMode.SPARK"""
+      import tensorflow as tf
+      from tensorflowonspark import TFNode
+      cluster, server = TFNode.start_cluster_server(ctx)
+      if ctx.job_name == "ps":
+        server.join()
+      elif ctx.job_name == "worker":
+        with tf.device(tf.train.replica_device_setter(
+          worker_device="/job:worker/task:%d" % ctx.task_index,
+          cluster=cluster)):
+          x = tf.placeholder(tf.float32, [None, 2], name='x')
+          y_ = tf.placeholder(tf.float32, [None, 1], name='y_')
+          w = tf.Variable(tf.truncated_normal([2,1]), name='w')
+          y = tf.matmul(x, w, name='y')
+          y2 = tf.square(y, name="y2")                      # extra/optional output for testing multiple output tensors
+          cost = tf.reduce_mean(tf.square(y_ - y), name='cost')
+          optimizer = tf.train.GradientDescentOptimizer(0.5).minimize(cost)
+          init_op = tf.global_variables_initializer()
+          saver = tf.train.Saver()
+
+        sv = tf.train.Supervisor(is_chief=(ctx.task_index == 0),
+                                init_op=init_op)
+        with sv.managed_session(server.target) as sess:
+          tf_feed = TFNode.DataFeed(ctx.mgr, input_mapping=args.input_mapping)
+          while not sv.should_stop() and not tf_feed.should_stop():
+            batch = tf_feed.next_batch(10)
+            if args.input_mapping:
+              if len(batch['x']) > 0:
+                feed = { x: batch['x'], y_: batch['y_'] }
+              opt = sess.run(optimizer, feed_dict=feed)
+
+          if sv.is_chief:
+            if args.model_dir:
+              # manually save checkpoint
+              ckpt_name = args.model_dir + "/model.ckpt"
+              print("Saving checkpoint to: {}".format(ckpt_name))
+              saver.save(sess, ckpt_name)
+            elif args.export_dir:
+              # export a saved_model
+              signatures = {
+                'test_key': {
+                  'inputs': { 'features': x },
+                  'outputs': { 'prediction': y },
+                  'method_name': 'test'
+                }
+              }
+              TFNode.export_saved_model(sess, export_dir=args.export_dir, tag_set='test_tag', signatures=signatures)
+            else:
+              print("WARNING: model state not saved.")
+
+        sv.stop()
+
+    def _tf_train(args, ctx):
+      """Basic linear regression in a distributed TF cluster using InputMode.TENSORFLOW"""
+      import tensorflow as tf
+      from tensorflowonspark import TFNode
+      cluster, server = TFNode.start_cluster_server(ctx)
+
+      def _get_examples(batch_size):
+        """Generate test data (mocking a queue_runner of file inputs)"""
+        features = tf.random_uniform([batch_size,2])      # (batch_size x 2)
+        weights = tf.constant([[3.14], [1.618]])          # (2, 1)
+        labels = tf.matmul(features, weights)
+        return features, labels
+
+      if ctx.job_name == "ps":
+        server.join()
+      elif ctx.job_name == "worker":
+        with tf.device(tf.train.replica_device_setter(
+          worker_device="/job:worker/task:%d" % ctx.task_index,
+          cluster=cluster)):
+          x, y_ = _get_examples(10)                          # no input placeholders, TF code reads (or in this case "generates") input
+          w = tf.Variable(tf.truncated_normal([2,1]), name='w')
+          y = tf.matmul(x, w, name='y')
+          global_step = tf.Variable(0)
+
+          cost = tf.reduce_mean(tf.square(y_ - y), name='cost')
+          optimizer = tf.train.GradientDescentOptimizer(0.5).minimize(cost, global_step)
+
+          init_op = tf.global_variables_initializer()
+          saver = tf.train.Saver()
+
+        sv = tf.train.Supervisor(is_chief=(ctx.task_index == 0),
+                                init_op=init_op)
+        step = 0
+        with sv.managed_session(server.target) as sess:
+          while not sv.should_stop() and step < args.steps:
+            opt, weights, step = sess.run([optimizer, w, global_step])
+            if (step % 100 == 0):
+              print("step: {}, weights: {}".format(step, weights))
+
+          if sv.is_chief:
+            if args.model_dir:
+              # manually save checkpoint
+              ckpt_name = args.model_dir + "/model.ckpt"
+              print("Saving checkpoint to: {}".format(ckpt_name))
+              saver.save(sess, ckpt_name)
+
+    def _tf_export(args):
+      """Creates an inference graph w/ placeholder and loads weights from checkpoint"""
+      import tensorflow as tf
+      from tensorflowonspark import TFNode
+
+      x = tf.placeholder(tf.float32, [None, 2], name='x')
+      w = tf.Variable(tf.truncated_normal([2,1]), name='w')
+      y = tf.matmul(x, w, name='y')
+      y2 = tf.square(y, name="y2")                      # extra/optional output for testing multiple output tensors
+      saver = tf.train.Saver()
+
+      with tf.Session() as sess:
+        # load graph from a checkpoint
+        ckpt = tf.train.get_checkpoint_state(args.model_dir)
+        assert ckpt and ckpt.model_checkpoint_path, "Invalid model checkpoint path: {}".format(args.model_dir)
+        saver.restore(sess, ckpt.model_checkpoint_path)
+
+        # exported signatures defined in code
+        signatures = {
+          'test_key': {
+            'inputs': { 'features': x },
+            'outputs': { 'prediction': y, 'pred2': y2 },
+            'method_name': 'test'
+          }
+        }
+        TFNode.export_saved_model(sess, export_dir=args.export_dir, tag_set='test_tag', signatures=signatures)
+
+    if name == 'spark/train':
+      return _spark_train
+    elif name == 'tf/train':
+      return _tf_train
+    elif name == 'tf/export':
+      return _tf_export
+    else:
+      raise "Unknown function name: {}".format(name)
 
 
 if __name__ == '__main__':
