@@ -44,7 +44,7 @@ parser.add_argument("--tensorboard", help="launch tensorboard process", action="
 ######## ARGS ########
 
 # Spark input/output
-parser.add_argument("--format", help="example format: (csv|pickle|tfr)", choices=["csv","pickle","tfr"], default="csv")
+parser.add_argument("--format", help="example format: (csv|tfr)", choices=["csv","tfr"], default="csv")
 parser.add_argument("--images", help="HDFS path to MNIST images in parallelized format")
 parser.add_argument("--labels", help="HDFS path to MNIST labels in parallelized format")
 parser.add_argument("--output", help="HDFS path to save test/inference output", default="predictions")
@@ -52,10 +52,15 @@ parser.add_argument("--output", help="HDFS path to save test/inference output", 
 args = parser.parse_args()
 print("args:",args)
 
-images = sc.textFile(args.images).map(lambda ln: [int(x) for x in ln.split(',')])
-labels = sc.textFile(args.labels).map(lambda ln: [int(float(x)) for x in ln.split(',')])
-dataRDD = images.zip(labels)
-df = spark.createDataFrame(dataRDD, ['image', 'label'])
+if args.format == "tfr":
+  df = dfutil.loadTFRecords(sc, args.images)
+elif args.format == "csv":
+  images = sc.textFile(args.images).map(lambda ln: [int(x) for x in ln.split(',')])
+  labels = sc.textFile(args.labels).map(lambda ln: [int(float(x)) for x in ln.split(',')])
+  dataRDD = images.zip(labels)
+  df = spark.createDataFrame(dataRDD, ['image', 'label'])
+else:
+  raise Exception("Unsupported format: {}".format(args.format))
 
 print("{0} ===== Start".format(datetime.now().isoformat()))
 estimator = TFEstimator(mnist_dist.map_fun, args, export_fn=mnist_dist.export_fun) \

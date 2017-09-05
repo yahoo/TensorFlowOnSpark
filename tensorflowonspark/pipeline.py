@@ -238,14 +238,14 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
     logging.info("===== 3. train args + params: {0}".format(local_args))
 
     if local_args.input_mode == TFCluster.InputMode.TENSORFLOW:
-      print("converting to tfrecords")
-      print("dataset.dtypes: {}".format(dataset.dtypes))
-      tfexamples = dataset.rdd.mapPartitions(dfutil.toTFExample(dataset.dtypes))
-      print("saving tfrecords to disk: {}".format(local_args.tfr_dir))
-      tfexamples.saveAsNewAPIHadoopFile(local_args.tfr_dir, "org.tensorflow.hadoop.io.TFRecordFileOutputFormat",
-                                keyClass="org.apache.hadoop.io.BytesWritable",
-                                valueClass="org.apache.hadoop.io.NullWritable")
-      print("done saving")
+      if dfutil.isLoadedDF(dataset):
+        # if just a DataFrame loaded from tfrecords, just point to original source path
+        local_args.tfr_dir = dfutil.loadedDF[dataset]
+      else:
+        # otherwise, save as tfrecords and point to save path
+        print("saving as tfrecords with dataset.dtypes: {}".format(dataset.dtypes))
+        dfutil.saveAsTFRecords(dataset, local_args.tfr_dir)
+        print("done saving")
 
     cluster = TFCluster.run(sc, self.train_fn, local_args, local_args.cluster_size, local_args.num_ps, local_args.tensorboard, local_args.input_mode)
     if local_args.input_mode == TFCluster.InputMode.SPARK:
