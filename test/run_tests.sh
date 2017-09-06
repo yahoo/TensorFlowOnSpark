@@ -10,6 +10,11 @@ if [ -z "$TFoS_HOME" ]; then
   exit 1
 fi
 
+if [ -z "$SPARK_CLASSPATH" ]; then
+  echo "Please add the path to tensorflow-hadoop-*.jar to the SPARK_CLASSPATH environment variable"
+  exit 1
+fi
+
 # Start Spark Standalone Cluster
 export PYTHONPATH=${SPARK_HOME}/python
 export MASTER=spark://$(hostname):7077

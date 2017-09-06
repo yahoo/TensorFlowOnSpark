@@ -3,6 +3,7 @@ import os
 import shutil
 import test
 import unittest
+
 from tensorflowonspark import TFCluster
 from tensorflowonspark.pipeline import HasBatchSize, HasSteps, Namespace, TFEstimator, TFParams
 
@@ -24,6 +25,7 @@ class PipelineTest(test.SparkTest):
     # define model_dir and export_dir for tests
     cls.model_dir = os.getcwd() + os.sep + "test_model"
     cls.export_dir = os.getcwd() + os.sep + "test_export"
+    cls.tfrecord_dir = os.getcwd() + os.sep + "test_tfr"
 
   @classmethod
   def tearDownClass(cls):
@@ -33,6 +35,7 @@ class PipelineTest(test.SparkTest):
     # remove any prior test artifacts
     shutil.rmtree(self.model_dir, ignore_errors=True)
     shutil.rmtree(self.export_dir, ignore_errors=True)
+    shutil.rmtree(self.tfrecord_dir, ignore_errors=True)
 
   def tearDown(self):
     # Note: don't clean up artifacts after test (in case we need to view/debug)
@@ -145,6 +148,7 @@ class PipelineTest(test.SparkTest):
                   .setInputMode(TFCluster.InputMode.TENSORFLOW) \
                   .setModelDir(self.model_dir) \
                   .setExportDir(self.export_dir) \
+                  .setTFRecordDir(self.tfrecord_dir) \
                   .setClusterSize(self.num_workers) \
                   .setNumPS(1) \
                   .setBatchSize(10)
@@ -270,6 +274,7 @@ class PipelineTest(test.SparkTest):
       import tensorflow as tf
       from tensorflowonspark import TFNode
 
+      tf.reset_default_graph()                          # reset graph in case we're re-using a Spark python worker from training
       x = tf.placeholder(tf.float32, [None, 2], name='x')
       w = tf.Variable(tf.truncated_normal([2,1]), name='w')
       y = tf.matmul(x, w, name='y')

@@ -7,8 +7,7 @@ from __future__ import division
 from __future__ import nested_scopes
 from __future__ import print_function
 
-loadedDF = {}       # Stores origin paths of loaded DataFrames (df => path)
-savedDF = {}        # Stores destination paths of saved DataFrames (df => path)
+_loadedDF = {}       # Stores origin paths of loaded DataFrames (df => path)
 
 def saveAsTFRecords(df, output_dir):
   """Helper function to persist a Spark DataFrame as TFRecords"""
@@ -16,7 +15,6 @@ def saveAsTFRecords(df, output_dir):
   tf_rdd.saveAsNewAPIHadoopFile(output_dir, "org.tensorflow.hadoop.io.TFRecordFileOutputFormat",
                             keyClass="org.apache.hadoop.io.BytesWritable",
                             valueClass="org.apache.hadoop.io.NullWritable")
-  savedDF[tf_rdd] = output_dir
 
 
 def loadTFRecords(sc, input_dir):
@@ -24,30 +22,26 @@ def loadTFRecords(sc, input_dir):
   tfr_rdd = sc.newAPIHadoopFile(input_dir, "org.tensorflow.hadoop.io.TFRecordFileInputFormat",
                               keyClass="org.apache.hadoop.io.BytesWritable",
                               valueClass="org.apache.hadoop.io.NullWritable")
-  df = tfr_rdd.map(lambda x: fromTFExample(str(x[0]))).toDF()
-  loadedDF[df] = input_dir
+  df = tfr_rdd.mapPartitions(fromTFExample).toDF()
+  _loadedDF[df] = input_dir
   return df
 
 
-def isSavedDF(df):
-  return df in savedDF
-
-
 def isLoadedDF(df):
-  return df in loadedDF
+  return df in _loadedDF
 
 
 def toTFExample(dtypes):
-  """mapPartition function to convert a Spark DataFrame into serialized `tf.train.Example` bytestring.
+  """mapPartition function to convert a Spark RDD of Row into an RDD of serialized `tf.train.Example` bytestring.
 
   Note that `tf.train.Example` is a fairly flat structure with limited datatypes, e.g. `tf.train.FloatList`,
-  `tf.train.Int64List`, and `tf.train.BytesList`, so most DataFrame types will be converted into one of these types.
+  `tf.train.Int64List`, and `tf.train.BytesList`, so most DataFrame types will be coerced into one of these types.
 
   Args:
     dtypes: the `DataFrame.dtypes` of the source DataFrame.
 
   Returns:
-    A mapPartition lambda function which converts the source DataFrame into `tf.train.Example` bytestring
+    A mapPartition lambda function which converts the source DataFrame into `tf.train.Example` bytestring.
   """
   def _toTFExample(iter):
     import tensorflow as tf
@@ -79,19 +73,16 @@ def toTFExample(dtypes):
     for row in iter:
       features = dict([_toTFFeature(name, dtype, row) for name, dtype in dtypes])
       example = tf.train.Example(features=tf.train.Features(feature=features))
-      results.append((bytearray(example.SerializeToString()),None))
+      results.append((bytearray(example.SerializeToString()), None))
     return results
 
   return _toTFExample
 
 
-def fromTFExample(bytestr):
-  """map function to convert an RDD of `tf.train.Example' bytestring to an RDD of Row"""
+def fromTFExample(iter):
+  """mapPartition function to convert an RDD of `tf.train.Example' bytestring to an RDD of Row."""
   import tensorflow as tf
   from pyspark.sql import Row
-
-  example = tf.train.Example()
-  example.ParseFromString(bytestr)
 
   # convert from protobuf-like dict to DataFrame-friendly dict
   def _get_value(v):
@@ -102,7 +93,13 @@ def fromTFExample(bytestr):
     else:
       return list(v.bytes_list.value)
 
-  d = { k: _get_value(v) for k,v in example.features.feature.items() }
-  row = Row(**d)
-  return row
+  results = []
+  for record in iter:
+    example = tf.train.Example()
+    example.ParseFromString(str(record[0]))       # record is (bytestr, None)
+    d = { k: _get_value(v) for k,v in example.features.feature.items() }
+    row = Row(**d)
+    results.append(row)
+
+  return results
 

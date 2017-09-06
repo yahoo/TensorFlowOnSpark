@@ -140,6 +140,15 @@ class HasTensorboard(Params):
   def getTensorboard(self):
     return self.getOrDefault(self.tensorboard)
 
+class HasTFRecordDir(Params):
+  tfrecord_dir = Param(Params._dummy(), "tfrecord_dir", "Path to temporarily export a DataFrame as TFRecords (for InputMode.TENSORFLOW apps)", typeConverter=TypeConverters.toString)
+  def __init__(self):
+    super(HasTFRecordDir, self).__init__()
+  def setTFRecordDir(self, value):
+    return self._set(tfrecord_dir=value)
+  def getTFRecordDir(self):
+    return self.getOrDefault(self.tfrecord_dir)
+
 ##### SavedModelBuilder Params
 
 class HasExportDir(Params):
@@ -197,7 +206,7 @@ class TFParams(Params):
     return local_args
 
 class TFEstimator(Estimator, TFParams, HasInputMapping,
-                  HasClusterSize, HasNumPS, HasInputMode, HasProtocol, HasTensorboard, HasModelDir, HasExportDir,
+                  HasClusterSize, HasNumPS, HasInputMode, HasProtocol, HasTensorboard, HasModelDir, HasExportDir, HasTFRecordDir,
                   HasBatchSize, HasEpochs, HasReaders, HasSteps):
   """Spark ML Pipeline Estimator which launches a TensorFlowOnSpark cluster for training"""
 
@@ -221,6 +230,7 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
                     tensorboard=False,
                     model_dir=None,
                     export_dir=None,
+                    tfrecord_dir=None,
                     batch_size=100,
                     epochs=1,
                     readers=1,
@@ -240,12 +250,13 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
     if local_args.input_mode == TFCluster.InputMode.TENSORFLOW:
       if dfutil.isLoadedDF(dataset):
         # if just a DataFrame loaded from tfrecords, just point to original source path
-        local_args.tfr_dir = dfutil.loadedDF[dataset]
+        local_args.tfrecord_dir = dfutil.loadedDF[dataset]
       else:
         # otherwise, save as tfrecords and point to save path
-        print("saving as tfrecords with dataset.dtypes: {}".format(dataset.dtypes))
-        dfutil.saveAsTFRecords(dataset, local_args.tfr_dir)
-        print("done saving")
+        assert local_args.tfrecord_dir, "Please specify --tfrecord_dir to export DataFrame to TFRecord."
+        logging.info("Exporting DataFrame {} as TFRecord to: {}".format(dataset.dtypes, local_args.tfrecord_dir))
+        dfutil.saveAsTFRecords(dataset, local_args.tfrecord_dir)
+        logging.info("Done saving")
 
     cluster = TFCluster.run(sc, self.train_fn, local_args, local_args.cluster_size, local_args.num_ps, local_args.tensorboard, local_args.input_mode)
     if local_args.input_mode == TFCluster.InputMode.SPARK:
