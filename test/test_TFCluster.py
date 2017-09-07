@@ -54,7 +54,7 @@ class TFClusterTest(test.SparkTest):
     cluster = TFCluster.run(self.sc, _map_fun, tf_args={}, num_executors=self.num_workers, num_ps=0, input_mode=TFCluster.InputMode.SPARK)
     rdd_out = cluster.inference(rdd)
     rdd_sum = rdd_out.sum()
-    self.assertEqual(sum( [x * x for x in range(1000)] ), rdd_sum)
+    self.assertEqual(rdd_sum, sum( [x * x for x in range(1000)] ))
     cluster.shutdown()
 
 

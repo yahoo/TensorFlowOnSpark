@@ -15,6 +15,8 @@ Note: the tests that use Spark will require a local Spark Standalone cluster (vs
 ```
     export SPARK_HOME=<path_to_Spark>
     export TFoS_HOME=<path_to_TFoS>
+    export PYTHONPATH=${SPARK_HOME}/python
+    export SPARK_CLASSPATH=<path_to_tensorflow-hadoop-*.jar>
 ```
 2a. Run script to automatically start Spark Standalone cluster, run all tests, and shutdown the cluster, OR
 ```
