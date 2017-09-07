@@ -7,7 +7,7 @@ from __future__ import division
 from __future__ import nested_scopes
 from __future__ import print_function
 
-_loadedDF = {}       # Stores origin paths of loaded DataFrames (df => path)
+loadedDF = {}       # Stores origin paths of loaded DataFrames (df => path)
 
 def saveAsTFRecords(df, output_dir):
   """Helper function to persist a Spark DataFrame as TFRecords"""
@@ -23,13 +23,12 @@ def loadTFRecords(sc, input_dir):
                               keyClass="org.apache.hadoop.io.BytesWritable",
                               valueClass="org.apache.hadoop.io.NullWritable")
   df = tfr_rdd.mapPartitions(fromTFExample).toDF()
-  _loadedDF[df] = input_dir
+  loadedDF[df] = input_dir
   return df
 
 
 def isLoadedDF(df):
-  return df in _loadedDF
-
+  return df in loadedDF
 
 def toTFExample(dtypes):
   """mapPartition function to convert a Spark RDD of Row into an RDD of serialized `tf.train.Example` bytestring.

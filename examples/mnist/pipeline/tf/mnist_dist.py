@@ -50,7 +50,7 @@ def map_fun(args, ctx):
 
       # Placeholders or QueueRunner/Readers for input data
       num_epochs = None if args.epochs == 0 else args.epochs
-      images = TFNode.hdfs_path(ctx, args.tfr_dir)
+      images = TFNode.hdfs_path(ctx, args.tfrecord_dir)
       x, y_ = read_tfr_examples(images, 100, num_epochs)
 
       x_img = tf.reshape(x, [-1, IMAGE_PIXELS, IMAGE_PIXELS, 1])

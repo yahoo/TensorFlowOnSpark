@@ -164,6 +164,11 @@ def map_fun(args, ctx):
                                   args.export_dir,
                                   tf.saved_model.tag_constants.SERVING,
                                   signatures)
+      else:
+        # non-chief workers should wait for chief
+        while not sv.should_stop():
+          print("Waiting for chief")
+          time.sleep(5)
 
     # Ask for all the services to stop.
     print("{0} stopping supervisor".format(datetime.now().isoformat()))

@@ -50,6 +50,8 @@ class PipelineTest(test.SparkTest):
     self.assertEqual(n.float, 3.14)
     self.assertEqual(n.array, [1,2,3])
     self.assertEqual(n.map, {'a':1, 'b':2})
+    self.assertTrue('string' in n)
+    self.assertFalse('extra' in n)
 
   def test_TFParams(self):
     """Merging namespace args w/ ML Params"""

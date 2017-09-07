@@ -33,7 +33,7 @@ parser.add_argument("--batch_size", help="number of records per batch", type=int
 parser.add_argument("--epochs", help="number of epochs", type=int, default=1)
 parser.add_argument("--model_dir", help="HDFS path to save/load model during train/inference", type=str)
 parser.add_argument("--export_dir", help="HDFS path to export model", type=str)
-parser.add_argument("--tfr_dir", help="HDFS path to temporarily save DataFrame to disk", type=str)
+parser.add_argument("--tfrecord_dir", help="HDFS path to temporarily save DataFrame to disk", type=str)
 parser.add_argument("--cluster_size", help="number of nodes in the cluster", type=int, default=num_executors)
 parser.add_argument("--num_ps", help="number of PS nodes in cluster", type=int, default=1)
 parser.add_argument("--protocol", help="Tensorflow network protocol (grpc|rdma)", default="grpc")
@@ -69,6 +69,7 @@ estimator = TFEstimator(mnist_dist.map_fun, args, export_fn=mnist_dist.export_fu
         .setClusterSize(args.cluster_size) \
         .setNumPS(args.num_ps) \
         .setInputMode(TFCluster.InputMode.TENSORFLOW) \
+        .setTFRecordDir(args.tfrecord_dir) \
         .setProtocol(args.protocol) \
         .setReaders(args.readers) \
         .setTensorboard(args.tensorboard) \

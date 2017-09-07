@@ -187,6 +187,10 @@ class Namespace(object):
   def __init__(self, d):
     self.__dict__.update(d)
 
+  def __iter__(self):
+    for key in self.__dict__.keys():
+      yield key
+
   def __repr__(self):
     keys = sorted(self.__dict__)
     items = ("{}={!r}".format(k, self.__dict__[k]) for k in keys)
