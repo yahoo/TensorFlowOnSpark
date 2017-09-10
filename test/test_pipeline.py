@@ -62,7 +62,7 @@ class PipelineTest(test.SparkTest):
 
     n = Namespace({ 'a': 1, 'b': 2 })
     f = Foo(n).setBatchSize(10).setSteps(100)
-    combined_args = f._merge_args_params()
+    combined_args = f.merge_args_params()
     expected_args = Namespace({ 'a': 1, 'b': 2, 'batch_size': 10, 'steps': 100 })
     self.assertEqual(combined_args, expected_args)
 
@@ -145,7 +145,7 @@ class PipelineTest(test.SparkTest):
 
     # train model
     args = {}
-    estimator = TFEstimator(self.get_function('tf/train'), args, self.get_function('tf/export')) \
+    estimator = TFEstimator(self.get_function('tf/train'), args, export_fn=self.get_function('tf/export')) \
                   .setInputMapping( { 'col1': 'x', 'col2': 'y_' }) \
                   .setInputMode(TFCluster.InputMode.TENSORFLOW) \
                   .setModelDir(self.model_dir) \

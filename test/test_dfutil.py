@@ -68,6 +68,10 @@ class DFUtilTest(test.SparkTest):
     df2 = df3
     self.assertFalse(dfutil.isLoadedDF(df2))
 
+  def test_isEmptyDF(self):
+    df = self.sc.parallelize([('empty',)],1).toDF(['empty'])
+    self.assertTrue(dfutil.isEmptyDF(df))
+
 
 if __name__ == '__main__':
   unittest.main()

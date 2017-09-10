@@ -30,6 +30,10 @@ def loadTFRecords(sc, input_dir):
 def isLoadedDF(df):
   return df in loadedDF
 
+
+def isEmptyDF(df):
+  return df.take(1)[0][0] == "empty"
+
 def toTFExample(dtypes):
   """mapPartition function to convert a Spark RDD of Row into an RDD of serialized `tf.train.Example` bytestring.
 
@@ -95,7 +99,7 @@ def fromTFExample(iter):
   results = []
   for record in iter:
     example = tf.train.Example()
-    example.ParseFromString(str(record[0]))       # record is (bytestr, None)
+    example.ParseFromString(bytes(record[0]))       # record is (bytestr, None)
     d = { k: _get_value(v) for k,v in example.features.feature.items() }
     row = Row(**d)
     results.append(row)

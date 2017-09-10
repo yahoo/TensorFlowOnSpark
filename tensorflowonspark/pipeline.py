@@ -202,7 +202,8 @@ class Namespace(object):
 class TFParams(Params):
   """Mix-in class to store namespace-style args and merge w/ SparkML-style params"""
   args = None
-  def _merge_args_params(self):
+  argv = None
+  def merge_args_params(self):
     local_args = copy.copy(self.args)                 # make a local copy of args
     args_dict = vars(local_args)                      # get dictionary view
     for p in self.params:
@@ -217,7 +218,7 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
   train_fn = None
   export_fn = None
 
-  def __init__(self, train_fn, tf_args, export_fn=None):
+  def __init__(self, train_fn, tf_args, tf_argv=None, export_fn=None):
     """
       :param train_fn: TensorFlow "main" function for training.
       :param tf_args: Dictionary of arguments specific to TensorFlow "main" function.
@@ -226,6 +227,7 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
     self.train_fn = train_fn
     self.export_fn = export_fn
     self.args = Namespace(tf_args) if isinstance(tf_args, dict) else tf_args
+    self.argv = tf_argv
     self._setDefault(input_mapping={},
                     cluster_size=1,
                     num_ps=0,
@@ -248,13 +250,16 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
 
     logging.info("===== 1. train args: {0}".format(self.args))
     logging.info("===== 2. train params: {0}".format(self._paramMap))
-    local_args = self._merge_args_params()
+    local_args = self.merge_args_params()
     logging.info("===== 3. train args + params: {0}".format(local_args))
 
     if local_args.input_mode == TFCluster.InputMode.TENSORFLOW:
       if dfutil.isLoadedDF(dataset):
         # if just a DataFrame loaded from tfrecords, just point to original source path
+        logging.info("Loaded DataFrame of TFRecord.")
         local_args.tfrecord_dir = dfutil.loadedDF[dataset]
+      elif dfutil.isEmptyDF(dataset):
+        logging.info("Ignoring empty dataset.")
       else:
         # otherwise, save as tfrecords and point to save path
         assert local_args.tfrecord_dir, "Please specify --tfrecord_dir to export DataFrame to TFRecord."
@@ -262,7 +267,8 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
         dfutil.saveAsTFRecords(dataset, local_args.tfrecord_dir)
         logging.info("Done saving")
 
-    cluster = TFCluster.run(sc, self.train_fn, local_args, local_args.cluster_size, local_args.num_ps, local_args.tensorboard, local_args.input_mode)
+    tf_args = self.argv if self.argv else local_args
+    cluster = TFCluster.run(sc, self.train_fn, tf_args, local_args.cluster_size, local_args.num_ps, local_args.tensorboard, local_args.input_mode)
     if local_args.input_mode == TFCluster.InputMode.SPARK:
       # feed data, using a deterministic order for input columns (lexicographic by key)
       input_cols = sorted(self.getInputMapping().keys())
@@ -274,14 +280,14 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
       assert local_args.export_dir, "Export function requires --export_dir to be set"
       logging.info("Exporting saved_model (via export_fn) to: {}".format(local_args.export_dir))
 
-      def _export(iterator, fn, args):
+      def _export(iterator, fn, args, argv=None):
         single_node_env(args)
-        fn(args)
+        fn(args, argv)
 
       # Run on a single exeucutor
-      sc.parallelize([1], 1).foreachPartition(lambda it: _export(it, self.export_fn, local_args))
+      sc.parallelize([1], 1).foreachPartition(lambda it: _export(it, self.export_fn, local_args, self.argv))
 
-    return self._copyValues(TFModel(self.args))
+    return self._copyValues(TFModel(self.args, self.argv))
 
 class TFModel(Model, TFParams,
               HasInputMapping, HasOutputMapping,
@@ -289,7 +295,7 @@ class TFModel(Model, TFParams,
               HasModelDir, HasExportDir, HasSignatureDefKey, HasTagSet):
   """Spark ML Pipeline Model which runs single-node inferencing of a TensorFlow Model checkpoint/saved_model on disk."""
 
-  def __init__(self, tf_args):
+  def __init__(self, tf_args, tf_argv=None):
     """
       :param tf_args: Dictionary of arguments specific to TensorFlow graph
     """
@@ -306,7 +312,7 @@ class TFModel(Model, TFParams,
 
     logging.info("===== 1. inference args: {0}".format(self.args))
     logging.info("===== 2. inference params: {0}".format(self._paramMap))
-    local_args = self._merge_args_params()
+    local_args = self.merge_args_params()
     logging.info("===== 3. inference args + params: {0}".format(local_args))
 
     # set a deterministic order for input/output columns (lexicographic by key)
