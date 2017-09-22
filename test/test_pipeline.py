@@ -271,7 +271,7 @@ class PipelineTest(test.SparkTest):
               print("Saving checkpoint to: {}".format(ckpt_name))
               saver.save(sess, ckpt_name)
 
-    def _tf_export(args):
+    def _tf_export(args, argv):
       """Creates an inference graph w/ placeholder and loads weights from checkpoint"""
       import tensorflow as tf
       from tensorflowonspark import TFNode

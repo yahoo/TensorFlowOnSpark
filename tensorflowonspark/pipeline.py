@@ -258,8 +258,6 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
         # if just a DataFrame loaded from tfrecords, just point to original source path
         logging.info("Loaded DataFrame of TFRecord.")
         local_args.tfrecord_dir = dfutil.loadedDF[dataset]
-      elif dfutil.isEmptyDF(dataset):
-        logging.info("Ignoring empty dataset.")
       else:
         # otherwise, save as tfrecords and point to save path
         assert local_args.tfrecord_dir, "Please specify --tfrecord_dir to export DataFrame to TFRecord."
@@ -320,6 +318,9 @@ class TFModel(Model, TFParams,
     output_cols = [ col for tensor, col in sorted(self.getOutputMapping().items()) ]    # output tensor => output col
 
     # run single-node inferencing on each executor
+    logging.info("input_cols: {}".format(input_cols))
+    logging.info("output_cols: {}".format(output_cols))
+
     rdd_out = dataset.select(input_cols).rdd.mapPartitions(lambda it: _run_model(it, local_args))
 
     # convert to a DataFrame-friendly format
@@ -341,6 +342,7 @@ def _run_model(iterator, args):
     logging.info("===== loading meta_graph_def for tag_set ({0}) from saved_model: {1}".format(args.tag_set, args.export_dir))
     meta_graph_def = get_meta_graph_def(args.export_dir, args.tag_set)
     signature = signature_def_utils.get_signature_def_by_key(meta_graph_def, args.signature_def_key)
+    logging.info("signature: {}".format(signature))
     inputs_tensor_info = signature.inputs
     logging.info("inputs_tensor_info: {0}".format(inputs_tensor_info))
     outputs_tensor_info = signature.outputs
@@ -371,11 +373,15 @@ def _run_model(iterator, args):
       input_tensors = [t + ':0' for t in input_tensor_names]
       output_tensors = [t + ':0' for t in output_tensor_names]
 
+    logging.info("input_tensors: {0}".format(input_tensors))
+    logging.info("output_tensors: {0}".format(output_tensors))
+
     # feed data in batches and return output tensors
     for tensors in yield_batch(iterator, args.batch_size, len(input_tensor_names)):
       inputs_feed_dict = {}
       for i in range(len(input_tensors)):
         inputs_feed_dict[input_tensors[i]] = tensors[i]
+
       outputs = sess.run(output_tensors, feed_dict=inputs_feed_dict)
       lengths = [ len(output) for output in outputs ]
       input_size = len(tensors[0])
@@ -427,7 +433,8 @@ def yield_batch(iterable, batch_size, num_tensors=1):
     if item is None:
       break
     for i in range(num_tensors):
-      tensors[i].append(item[i])
+      tmp = str(item[i]) if type(item[i]) is bytearray else item[i]
+      tensors[i].append(tmp)
     if len(tensors[0]) >= batch_size:
       yield tensors
       tensors = [ [] for i in range(num_tensors) ]

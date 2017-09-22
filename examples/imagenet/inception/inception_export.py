@@ -5,18 +5,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from datetime import datetime
-import math
-import os.path
 import sys
-import time
 
-
-import numpy as np
 import tensorflow as tf
 from tensorflowonspark import TFNode
 
-from inception import image_processing
+from inception import image_processing                    # for FLAGS.image_size
 from inception import inception_model as inception
 from inception.imagenet_data import ImagenetData
 
@@ -38,14 +32,35 @@ def export(args, argv):
   #with tf.Graph().as_default():
   tf.reset_default_graph()
 
-  # Get images and labels from the dataset.
-  height = FLAGS.image_size
-  width = FLAGS.image_size
-  depth = 3
+  def preprocess_image(image_buffer):
+    """Preprocess JPEG encoded bytes to 3D float Tensor."""
 
-  flattened_images = tf.placeholder(tf.float32, [None, height * width * depth])
-  images = tf.reshape(flattened_images, [-1, height, width, depth])
-  labels = tf.placeholder(tf.int32, [None])
+    # Decode the string as an RGB JPEG.
+    # Note that the resulting image contains an unknown height and width
+    # that is set dynamically by decode_jpeg. In other words, the height
+    # and width of image is unknown at compile-time.
+    image = tf.image.decode_jpeg(image_buffer, channels=3)
+    # After this point, all image pixels reside in [0,1)
+    # until the very end, when they're rescaled to (-1, 1).  The various
+    # adjust_* ops all require this range for dtype float.
+    image = tf.image.convert_image_dtype(image, dtype=tf.float32)
+    # Crop the central region of the image with an area containing 87.5% of
+    # the original image.
+    image = tf.image.central_crop(image, central_fraction=0.875)
+    # Resize the image to the original height and width.
+    image = tf.expand_dims(image, 0)
+    image = tf.image.resize_bilinear(
+        image, [FLAGS.image_size, FLAGS.image_size], align_corners=False)
+    image = tf.squeeze(image, [0])
+    # Finally, rescale to [-1,1] instead of [0, 1)
+    image = tf.subtract(image, 0.5)
+    image = tf.multiply(image, 2.0)
+    return image
+
+  # Get images and labels from the dataset.
+  jpegs = tf.placeholder(tf.string, [None], name='jpegs')
+  images = tf.map_fn(preprocess_image, jpegs, dtype=tf.float32)
+  labels = tf.placeholder(tf.int32, [None], name='labels')
 
   # Number of classes in the Dataset label set plus 1.
   # Label 0 is reserved for an (unused) background class.
@@ -67,11 +82,6 @@ def export(args, argv):
   variables_to_restore = variable_averages.variables_to_restore()
   saver = tf.train.Saver(variables_to_restore)
 
-  # Build the summary operation based on the TF collection of Summaries.
-  summary_op = tf.summary.merge_all()
-
-  #graph_def = tf.get_default_graph().as_graph_def()
-
   with tf.Session() as sess:
     ckpt = tf.train.get_checkpoint_state(FLAGS.train_dir)
     if not ckpt or not ckpt.model_checkpoint_path:
@@ -91,7 +101,7 @@ def export(args, argv):
     # exported signatures defined in code
     signatures = {
       tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: {
-        'inputs': { 'flattened_images': flattened_images },
+        'inputs': { 'jpegs': jpegs },
         'outputs': { 'logits': logits },
         'method_name': tf.saved_model.signature_constants.PREDICT_METHOD_NAME
       }

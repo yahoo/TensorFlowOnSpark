@@ -7,7 +7,17 @@ from __future__ import division
 from __future__ import nested_scopes
 from __future__ import print_function
 
+import tensorflow as tf
+from pyspark.sql import Row
+from pyspark.sql.types import ArrayType, BinaryType, DoubleType, LongType, StringType, StructField, StructType
+
 loadedDF = {}       # Stores origin paths of loaded DataFrames (df => path)
+
+
+def isLoadedDF(df):
+  """Returns true if the DataFrame was produced by the loadTFRecords() method"""
+  return df in loadedDF
+
 
 def saveAsTFRecords(df, output_dir):
   """Helper function to persist a Spark DataFrame as TFRecords"""
@@ -17,22 +27,42 @@ def saveAsTFRecords(df, output_dir):
                             valueClass="org.apache.hadoop.io.NullWritable")
 
 
-def loadTFRecords(sc, input_dir):
-  """Helper function to load TFRecords from disk into a DataFrame"""
+def loadTFRecords(sc, input_dir, binary_features=[]):
+  """Helper function to load TFRecords from disk into a DataFrame.  This will attempt to automatically
+  convert the tf.train.Example features into Spark DataFrame columns of equivalent types.
+
+  Note: TensorFlow represents both strings and binary types as `tf.train.BytesList`, and we need to 
+  disambiguate these types for Spark DataFrames DTypes (StringType and BinaryType), so we require a "hint"
+  from the caller in the binary_features argument.
+
+  Args:
+    binary_features: a list of tf.train.Example features which are expected to be binary/bytearrays.
+
+  Returns:
+    A Spark DataFrame mirroring the tf.train.Example schema.
+  """
+  import tensorflow as tf
+
   tfr_rdd = sc.newAPIHadoopFile(input_dir, "org.tensorflow.hadoop.io.TFRecordFileInputFormat",
                               keyClass="org.apache.hadoop.io.BytesWritable",
                               valueClass="org.apache.hadoop.io.NullWritable")
-  df = tfr_rdd.mapPartitions(fromTFExample).toDF()
+
+  # infer Spark SQL types from tf.Example
+  record = tfr_rdd.take(1)[0]
+  example = tf.train.Example()
+  example.ParseFromString(bytes(record[0]))
+  schema = infer_schema(example, binary_features)
+
+  # convert serialized protobuf to tf.Example to Row
+  example_rdd = tfr_rdd.mapPartitions(lambda x: fromTFExample(x, binary_features))
+
+  # create a Spark DataFrame from RDD[Row]
+  df = example_rdd.toDF(schema)
+
+  # save reference of this dataframe
   loadedDF[df] = input_dir
   return df
 
-
-def isLoadedDF(df):
-  return df in loadedDF
-
-
-def isEmptyDF(df):
-  return df.take(1)[0][0] == "empty"
 
 def toTFExample(dtypes):
   """mapPartition function to convert a Spark RDD of Row into an RDD of serialized `tf.train.Example` bytestring.
@@ -47,12 +77,11 @@ def toTFExample(dtypes):
     A mapPartition lambda function which converts the source DataFrame into `tf.train.Example` bytestring.
   """
   def _toTFExample(iter):
-    import tensorflow as tf
 
     # supported type mappings between DataFrame.dtypes and tf.train.Feature types
     float_dtypes = ['float', 'double']
     int64_dtypes = ['boolean', 'tinyint', 'smallint', 'int', 'bigint', 'long']
-    bytes_dtypes = ['string']
+    bytes_dtypes = ['binary', 'string']
     float_list_dtypes = ['array<float>', 'array<double>']
     int64_list_dtypes = ['array<boolean>', 'array<tinyint>', 'array<smallint>', 'array<int>', 'array<bigint>', 'array<long>']
 
@@ -82,25 +111,58 @@ def toTFExample(dtypes):
   return _toTFExample
 
 
-def fromTFExample(iter):
-  """mapPartition function to convert an RDD of `tf.train.Example' bytestring to an RDD of Row."""
-  import tensorflow as tf
-  from pyspark.sql import Row
+def infer_schema(example, binary_features=[]):
+  def _infer_sql_type(k, v):
+    """Given a tf.Example, infer the Spark DataFrame StructFields for schema"""
+    # special handling for binary features
+    if k in binary_features:
+      return BinaryType()
 
-  # convert from protobuf-like dict to DataFrame-friendly dict
-  def _get_value(v):
     if v.int64_list.value:
-      return list(v.int64_list.value)
+      result = v.int64_list.value
+      sql_type = LongType()
     elif v.float_list.value:
-      return list(v.float_list.value)
+      result = v.float_list.value
+      sql_type = DoubleType()
     else:
-      return list(v.bytes_list.value)
+      result = v.bytes_list.value
+      sql_type = StringType()
+
+    if len(result) > 1:             # represent multi-item tensors as Spark SQL ArrayType() of base types
+      return ArrayType(sql_type)
+    else:                           # represent everything else as base types (and empty tensors as StringType())
+      return sql_type
+
+  return StructType([ StructField(k, _infer_sql_type(k, v), True) for k,v in sorted(example.features.feature.items()) ])
+
+
+def fromTFExample(iter, binary_features=[]):
+  """mapPartition function to convert an RDD of `tf.train.Example' bytestring to an RDD of Row."""
+  # convert from protobuf-like dict to DataFrame-friendly dict
+  def _get_value(k, v):
+    # special handling for binary features
+    if k in binary_features:
+      return bytearray(v.bytes_list.value[0])
+
+    if v.int64_list.value:
+      result = v.int64_list.value
+    elif v.float_list.value:
+      result = v.float_list.value
+    else:
+      result = v.bytes_list.value
+
+    if len(result) > 1:         # represent multi-item tensors as python lists
+      return list(result)
+    elif len(result) == 1:      # extract scalars from single-item tensors
+      return result[0]
+    else:                       # represent empty tensors as python None
+      return None
 
   results = []
   for record in iter:
     example = tf.train.Example()
     example.ParseFromString(bytes(record[0]))       # record is (bytestr, None)
-    d = { k: _get_value(v) for k,v in example.features.feature.items() }
+    d = { k: _get_value(k, v) for k,v in sorted(example.features.feature.items()) }
     row = Row(**d)
     results.append(row)
 
