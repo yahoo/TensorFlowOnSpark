@@ -10,8 +10,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import sys
-
 import tensorflow as tf
 from tensorflowonspark import TFNode
 
@@ -29,8 +27,7 @@ tf.app.flags.DEFINE_string('train_dir', '/tmp/imagenet_train',
 tf.app.flags.DEFINE_string('subset', 'validation',
                            """Either 'validation' or 'train'.""")
 
-def export(args, argv):
-  sys.argv = argv
+def export(args):
   FLAGS = tf.app.flags.FLAGS
 
   """Evaluate model on Dataset for a number of steps."""

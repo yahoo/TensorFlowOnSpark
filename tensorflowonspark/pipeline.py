@@ -21,6 +21,7 @@ import copy
 import logging
 import os
 import subprocess
+import sys
 
 ##### TensorFlowOnSpark Params
 
@@ -280,8 +281,8 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
       logging.info("Exporting saved_model (via export_fn) to: {}".format(local_args.export_dir))
 
       def _export(iterator, fn, args, argv=None):
-        single_node_env(args)
-        fn(args, argv)
+        single_node_env(args, argv)
+        fn(args)
 
       # Run on a single exeucutor
       sc.parallelize([1], 1).foreachPartition(lambda it: _export(it, self.export_fn, local_args, self.argv))
@@ -391,8 +392,11 @@ def _run_model(iterator, args):
       result.extend(zip(*python_outputs))                             # convert to an array of tuples of "output columns"
   return result
 
-def single_node_env(args):
+def single_node_env(args, argv=None):
   """Sets up environment for a single-node TF session"""
+  if argv:
+      sys.argv = argv
+
   # ensure expanded CLASSPATH w/o glob characters (required for Spark 2.1 + JNI)
   if 'HADOOP_PREFIX' in os.environ and 'TFOS_CLASSPATH_UPDATED' not in os.environ:
       classpath = os.environ['CLASSPATH']
