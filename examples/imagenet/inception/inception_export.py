@@ -1,4 +1,9 @@
-# Based on inception_eval.py
+# Copyright 2017 Yahoo Inc.
+# Licensed under the terms of the Apache 2.0 license.
+# Please see LICENSE file in the project root for terms.
+
+# Based on https://github.com/tensorflow/serving/blob/c6ace3fed3a0ec7cec6b7267cd86b8ed3a034a50/tensorflow_serving/example/inception_saved_model.py
+
 """A library to export an Inception saved_model
 """
 from __future__ import absolute_import
