@@ -4,7 +4,7 @@ import shutil
 import test
 import unittest
 
-from tensorflowonspark import TFCluster
+from tensorflowonspark import TFCluster, dfutil
 from tensorflowonspark.pipeline import HasBatchSize, HasSteps, Namespace, TFEstimator, TFParams
 
 class PipelineTest(test.SparkTest):
@@ -136,6 +136,35 @@ class PipelineTest(test.SparkTest):
 
     self.assertAlmostEqual(pred, expected, 5)
     self.assertAlmostEqual(squared_pred, expected * expected, 5)
+
+  def test_tf_column_filter(self):
+    """InputMode.TENSORFLOW TFEstimator saving temporary TFRecords, filtered by input_mapping columns"""
+
+    # create a Spark DataFrame of training examples (features, labels)
+    trainDF = self.spark.createDataFrame(self.train_examples, ['col1', 'col2'])
+
+    # and add some extra columns
+    df = trainDF.withColumn('extra1', trainDF.col1 )
+    df = df.withColumn('extra2', trainDF.col2)
+    self.assertEquals(len(df.columns), 4)
+
+    # train model
+    args = {}
+    estimator = TFEstimator(self.get_function('tf/train'), args, export_fn=self.get_function('tf/export')) \
+                  .setInputMapping( { 'col1': 'x', 'col2': 'y_' }) \
+                  .setInputMode(TFCluster.InputMode.TENSORFLOW) \
+                  .setModelDir(self.model_dir) \
+                  .setExportDir(self.export_dir) \
+                  .setTFRecordDir(self.tfrecord_dir) \
+                  .setClusterSize(self.num_workers) \
+                  .setNumPS(1) \
+                  .setBatchSize(10)
+    model = estimator.fit(df)
+    self.assertTrue(os.path.isdir(self.model_dir))
+    self.assertTrue(os.path.isdir(self.tfrecord_dir))
+
+    df_tmp = dfutil.loadTFRecords(self.sc, self.tfrecord_dir)
+    self.assertEquals(df_tmp.columns, ['col1', 'col2'])
 
   def test_tf_checkpoint_with_export_fn(self):
     """InputMode.TENSORFLOW TFEstimator w/ a separate saved_model export function to add placeholders for InputMode.SPARK TFModel inferencing"""

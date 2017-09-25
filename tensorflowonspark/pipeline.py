@@ -261,8 +261,9 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
       else:
         # otherwise, save as tfrecords and point to save path
         assert local_args.tfrecord_dir, "Please specify --tfrecord_dir to export DataFrame to TFRecord."
-        logging.info("Exporting DataFrame {} as TFRecord to: {}".format(dataset.dtypes, local_args.tfrecord_dir))
-        dfutil.saveAsTFRecords(dataset, local_args.tfrecord_dir)
+        df = dataset.select(self.getInputMapping().keys())
+        logging.info("Exporting DataFrame {} as TFRecord to: {}".format(df.dtypes, local_args.tfrecord_dir))
+        dfutil.saveAsTFRecords(df, local_args.tfrecord_dir)
         logging.info("Done saving")
 
     tf_args = self.argv if self.argv else local_args
