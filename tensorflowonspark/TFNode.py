@@ -14,7 +14,7 @@ import getpass
 import logging
 import os
 import time
-from six.moves.queue import Queue, Empty
+from six.moves.queue import Empty
 from . import marker
 
 def hdfs_path(ctx, path):
@@ -103,7 +103,7 @@ def next_batch(mgr, batch_size, qname='input'):
         if item is None:
             logging.info("next_batch() got None")
             queue.task_done()
-            break;
+            break
         elif type(item) is marker.EndPartition:
             logging.info("next_batch() got EndPartition")
             queue.task_done()
@@ -116,6 +116,28 @@ def next_batch(mgr, batch_size, qname='input'):
 
     logging.debug("next_batch() returning data")
     return batch
+
+def export_saved_model(sess, export_dir, tag_set, signatures):
+    """Convenience function to export a saved_model using provided arguments"""
+    import tensorflow as tf
+    g = sess.graph
+    g._unsafe_unfinalize()           # https://github.com/tensorflow/serving/issues/363
+    builder = tf.saved_model.builder.SavedModelBuilder(export_dir)
+
+    logging.info("===== signatures: {}".format(signatures))
+    signature_def_map = {}
+    for key, sig in signatures.items():
+        signature_def_map[key] = tf.saved_model.signature_def_utils.build_signature_def(
+                  inputs={ name:tf.saved_model.utils.build_tensor_info(tensor) for name, tensor in sig['inputs'].items() },
+                  outputs={ name:tf.saved_model.utils.build_tensor_info(tensor) for name, tensor in sig['outputs'].items() },
+                  method_name=sig['method_name'] if 'method_name' in sig else key)
+    logging.info("===== signature_def_map: {}".format(signature_def_map))
+    builder.add_meta_graph_and_variables(sess,
+                  tag_set.split(','),
+                  signature_def_map=signature_def_map,
+                  clear_devices=True)
+    g.finalize()
+    builder.save()
 
 def batch_results(mgr, results, qname='output'):
     """DEPRECATED: Use TFNode class instead"""
@@ -144,22 +166,29 @@ def terminate(mgr, qname='input'):
             done = True
 
 class DataFeed(object):
-    def __init__(self, mgr, train_mode=True, qname_in='input', qname_out='output'):
+    def __init__(self, mgr, train_mode=True, qname_in='input', qname_out='output', input_mapping=None):
         self.mgr = mgr
         self.train_mode = train_mode
         self.qname_in = qname_in
         self.qname_out = qname_out
         self.done_feeding = False
+        self.input_tensors = [ tensor for col, tensor in sorted(input_mapping.items()) ] if input_mapping is not None else None
 
     def next_batch(self, batch_size):
         """
-        Invoked from the user-supplied TensorFlow main function, which should have been launched as a background thread in the start() method
-        with a multiprocessing.Manager as an argument.  This Manager and a unique queue name must be supplied to this function.
+        Returns a batch of items from the input RDD as either an array or a dict (depending on the input_mapping).
+
+        If multiple tensors are provided per row, e.g. tuple of (tensor1, tensor2, ..., tensorN) and no input_mapping
+        is provided, the caller will be responsible for separating the tensors from the resulting array of tuples.
+
+        If an input_mapping is provided to the DataFeed constructor, this will return a dictionary of tensors,
+        where the tensors will be constructed/named in the same order as specified in the input_mapping.
         """
         logging.debug("next_batch() invoked")
         queue = self.mgr.get_queue(self.qname_in)
-        batch = []
-        while len(batch) < batch_size:
+        tensors = [] if self.input_tensors is None else { tensor:[] for tensor in self.input_tensors }
+        count = 0
+        while count < batch_size:
             item = queue.get(block=True)
             if item is None:
                 logging.info("next_batch() got None")
@@ -169,14 +198,19 @@ class DataFeed(object):
             elif type(item) is marker.EndPartition:
                 logging.info("next_batch() got EndPartition")
                 queue.task_done()
-                if not self.train_mode and len(batch) > 0:
+                if not self.train_mode and count > 0:
                     break
             else:
                 # logging.info("next_batch() got {0}".format(item))
-                batch.append(item)
+                if self.input_tensors is None:
+                  tensors.append(item)
+                else:
+                  for i in range(len(self.input_tensors)):
+                    tensors[self.input_tensors[i]].append(item[i])
+                count += 1
                 queue.task_done()
-        logging.debug("next_batch() returning {0} items".format(len(batch)))
-        return batch
+        logging.debug("next_batch() returning {0} items".format(count))
+        return tensors
 
     def should_stop(self):
         """Check if the feed process was told to stop."""
@@ -205,3 +239,4 @@ class DataFeed(object):
             except Empty:
                 logging.info("dropped {0} items from queue".format(count))
                 done = True
+
