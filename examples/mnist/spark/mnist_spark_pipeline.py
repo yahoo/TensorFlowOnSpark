@@ -6,8 +6,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from pyspark.context import SparkContext
 from pyspark.conf import SparkConf
+from pyspark.context import SparkContext
 from pyspark.sql import SparkSession
 
 import argparse
@@ -15,11 +15,11 @@ import sys
 import tensorflow as tf
 from datetime import datetime
 
-from tensorflowonspark import TFCluster, dfutil
+from tensorflowonspark import dfutil
 from tensorflowonspark.pipeline import TFEstimator, TFModel
-import mnist_dist
+import mnist_dist_pipeline
 
-sc = SparkContext(conf=SparkConf().setAppName("mnist_tf"))
+sc = SparkContext(conf=SparkConf().setAppName("mnist_spark"))
 spark = SparkSession(sc)
 
 executors = sc._conf.get("spark.executor.instances")
@@ -35,11 +35,9 @@ parser.add_argument("--batch_size", help="number of records per batch", type=int
 parser.add_argument("--epochs", help="number of epochs", type=int, default=1)
 parser.add_argument("--model_dir", help="HDFS path to save/load model during train/inference", type=str)
 parser.add_argument("--export_dir", help="HDFS path to export model", type=str)
-parser.add_argument("--tfrecord_dir", help="HDFS path to temporarily save DataFrame to disk", type=str)
 parser.add_argument("--cluster_size", help="number of nodes in the cluster", type=int, default=num_executors)
 parser.add_argument("--num_ps", help="number of PS nodes in cluster", type=int, default=1)
 parser.add_argument("--protocol", help="Tensorflow network protocol (grpc|rdma)", default="grpc")
-parser.add_argument("--readers", help="number of reader/enqueue threads", type=int, default=1)
 parser.add_argument("--steps", help="maximum number of steps", type=int, default=1000)
 parser.add_argument("--tensorboard", help="launch tensorboard process", action="store_true")
 
@@ -51,7 +49,7 @@ parser.add_argument("--output", help="HDFS path to save test/inference output", 
 
 # Execution Modes
 parser.add_argument("--train", help="train a model using Estimator", action="store_true")
-parser.add_argument("--inference_mode", help="type of inferencing (none|signature|direct)", choices=["none","signature","direct"], default="none")
+parser.add_argument("--inference_mode", help="type of inferencing (none|signature|direct|checkpoint)", choices=["none","signature","direct","checkpoint"], default="none")
 parser.add_argument("--inference_output", help="output of inferencing (predictions|features)", choices=["predictions","features"], default="predictions")
 
 args = parser.parse_args()
@@ -63,7 +61,7 @@ if args.format == "tfr":
   df = dfutil.loadTFRecords(sc, args.images)
 elif args.format == "csv":
   images = sc.textFile(args.images).map(lambda ln: [int(x) for x in ln.split(',')])
-  labels = sc.textFile(args.labels).map(lambda ln: [int(float(x)) for x in ln.split(',')])
+  labels = sc.textFile(args.labels).map(lambda ln: [float(x) for x in ln.split(',')])
   dataRDD = images.zip(labels)
   df = spark.createDataFrame(dataRDD, ['image', 'label'])
 else:
@@ -76,15 +74,13 @@ if args.train:
   print("{0} ===== Estimator.fit()".format(datetime.now().isoformat()))
   # dummy tf args (from imagenet/inception example)
   tf_args = { 'initial_learning_rate': 0.045, 'num_epochs_per_decay': 2.0, 'learning_rate_decay_factor': 0.94 }
-  estimator = TFEstimator(mnist_dist.map_fun, args, export_fn=mnist_dist.export_fun) \
+  estimator = TFEstimator(mnist_dist_pipeline.map_fun, tf_args) \
+          .setInputMapping({'image':'image', 'label':'label'}) \
           .setModelDir(args.model_dir) \
           .setExportDir(args.export_dir) \
           .setClusterSize(args.cluster_size) \
           .setNumPS(args.num_ps) \
-          .setInputMode(TFCluster.InputMode.TENSORFLOW) \
-          .setTFRecordDir(args.tfrecord_dir) \
           .setProtocol(args.protocol) \
-          .setReaders(args.readers) \
           .setTensorboard(args.tensorboard) \
           .setEpochs(args.epochs) \
           .setBatchSize(args.batch_size) \
@@ -100,7 +96,17 @@ else:
 if args.inference_mode == 'none':
   sys.exit(0)
 
-# INFER USING EXPORTED SIGNATURES OF TENSORFLOW SAVED_MODEL
+# INFER FROM TENSORFLOW CHECKPOINT
+elif args.inference_mode == 'checkpoint':
+  model.setModelDir(args.model_dir)                         # load model from checkpoint at args.model_dir
+  model.setExportDir(None)
+  model.setInputMapping({'image':'x'})                      # map DataFrame 'image' column to the 'x' input tensor
+  if args.inference_output == 'predictions':
+    model.setOutputMapping({'prediction':'col_out'})        # map 'prediction' output tensor to output DataFrame 'col_out' column
+  else:  # args.inference_output == 'features':
+    model.setOutputMapping({'prediction':'col_out', 'Relu':'col_out2'})   # add 'Relu' output tensor to output DataFrame 'col_out2' column
+
+# INFER USING TENSORFLOW SAVED_MODEL WITH EXPORTED SIGNATURES
 elif args.inference_mode == 'signature':
   model.setModelDir(None)
   model.setExportDir(args.export_dir)                       # load saved_model from args.export_dir
@@ -129,4 +135,3 @@ preds = model.transform(df)
 preds.write.json(args.output)
 
 print("{0} ===== Stop".format(datetime.now().isoformat()))
-
