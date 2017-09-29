@@ -205,6 +205,9 @@ class PipelineTest(test.SparkTest):
       """Basic linear regression in a distributed TF cluster using InputMode.SPARK"""
       import tensorflow as tf
       from tensorflowonspark import TFNode
+
+      tf.reset_default_graph()                          # reset graph in case we're re-using a Spark python worker
+
       cluster, server = TFNode.start_cluster_server(ctx)
       if ctx.job_name == "ps":
         server.join()
@@ -258,8 +261,10 @@ class PipelineTest(test.SparkTest):
       """Basic linear regression in a distributed TF cluster using InputMode.TENSORFLOW"""
       import tensorflow as tf
       from tensorflowonspark import TFNode
-      cluster, server = TFNode.start_cluster_server(ctx)
 
+      tf.reset_default_graph()                          # reset graph in case we're re-using a Spark python worker
+
+      cluster, server = TFNode.start_cluster_server(ctx)
       def _get_examples(batch_size):
         """Generate test data (mocking a queue_runner of file inputs)"""
         features = tf.random_uniform([batch_size,2])      # (batch_size x 2)
@@ -299,13 +304,14 @@ class PipelineTest(test.SparkTest):
               ckpt_name = args.model_dir + "/model.ckpt"
               print("Saving checkpoint to: {}".format(ckpt_name))
               saver.save(sess, ckpt_name)
+        sv.stop()
 
-    def _tf_export(args, argv):
+    def _tf_export(args):
       """Creates an inference graph w/ placeholder and loads weights from checkpoint"""
       import tensorflow as tf
       from tensorflowonspark import TFNode
 
-      tf.reset_default_graph()                          # reset graph in case we're re-using a Spark python worker from training
+      tf.reset_default_graph()                          # reset graph in case we're re-using a Spark python worker
       x = tf.placeholder(tf.float32, [None, 2], name='x')
       w = tf.Variable(tf.truncated_normal([2,1]), name='w')
       y = tf.matmul(x, w, name='y')
