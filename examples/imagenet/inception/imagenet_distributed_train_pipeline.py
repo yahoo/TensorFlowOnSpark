@@ -10,7 +10,7 @@ from pyspark.context import SparkContext
 from pyspark.conf import SparkConf
 from pyspark.sql import SparkSession
 from tensorflowonspark import TFCluster, TFNode, dfutil
-from tensorflowonspark.pipeline import TFEstimator, TFModel
+from tensorflowonspark.pipeline import TFEstimator
 from datetime import datetime
 
 import inception_export
