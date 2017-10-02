@@ -13,7 +13,6 @@ from pyspark.sql import Row, SparkSession
 
 import tensorflow as tf
 from tensorflow.contrib.saved_model.python.saved_model import reader, signature_def_utils
-from tensorflow.python.framework import ops as ops_lib
 from tensorflow.python.saved_model import loader
 from . import TFCluster, gpu_info, dfutil
 
@@ -334,11 +333,8 @@ class TFModel(Model, TFParams,
 
 # global to each python worker process on the executors
 global_sess = None
-
-def _clear_session(iterator):
-  """Clears the session cache"""
-  global global_sess
-  global_sess = None
+global_input_mapping = {}
+global_output_mapping = {}
 
 def _run_model(iterator, args):
   """Run single-node inferencing on a checkpoint/saved_model using input tensors obtained from a Spark partition iterator and returning output tensors."""
@@ -363,12 +359,13 @@ def _run_model(iterator, args):
 
   result = []
 
-  global global_sess
-  if global_sess:
-    # if graph/session already loaded/started, just reuse it
+  global global_sess, global_input_mapping, global_output_mapping
+  if global_sess and global_input_mapping == args.input_mapping and global_output_mapping == args.output_mapping:
+    # if graph/session already loaded/started (and using same input/output signatures), just reuse it
     sess = global_sess
   else:
     # otherwise, create new session and load graph from disk
+    tf.reset_default_graph()
     sess = tf.Session(graph=tf.get_default_graph())
     if args.export_dir:
       assert args.tag_set, "Inferencing from a saved_model requires --tag_set"
@@ -385,6 +382,8 @@ def _run_model(iterator, args):
     else:
       raise Exception("Inferencing requires either --model_dir or --export_dir argument")
     global_sess = sess
+    global_input_mapping = args.input_mapping
+    global_output_mapping = args.output_mapping
 
   # get list of input/output tensors (by name)
   if args.signature_def_key:
