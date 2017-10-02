@@ -90,32 +90,7 @@ def start_cluster_server(ctx, num_gpus=1, rdma=False):
   return (cluster, server)
 
 def next_batch(mgr, batch_size, qname='input'):
-    """
-    Invoked from the user-supplied TensorFlow main function, which should have been launched as a background thread in the start() method
-    with a multiprocessing.Manager as an argument.  This Manager and a unique queue name must be supplied to this function.
-    DEPRECATED: Use TFNode class instead.
-    """
-    logging.debug("next_batch() invoked")
-    queue = mgr.get_queue(qname)
-    batch = []
-    while len(batch) < batch_size:
-        item = queue.get(block=True)
-        if item is None:
-            logging.info("next_batch() got None")
-            queue.task_done()
-            break
-        elif type(item) is marker.EndPartition:
-            logging.info("next_batch() got EndPartition")
-            queue.task_done()
-            if len(batch) > 0:
-                break
-        else:
-            # logging.info("next_batch() got {0}".format(item))
-            batch.append(item)
-            queue.task_done()
-
-    logging.debug("next_batch() returning data")
-    return batch
+    raise Exception("DEPRECATED: Use TFNode.DataFeed class instead")
 
 def export_saved_model(sess, export_dir, tag_set, signatures):
     """Convenience function to export a saved_model using provided arguments"""
@@ -140,30 +115,10 @@ def export_saved_model(sess, export_dir, tag_set, signatures):
     builder.save()
 
 def batch_results(mgr, results, qname='output'):
-    """DEPRECATED: Use TFNode class instead"""
-    logging.debug("batch_results() invoked")
-    queue = mgr.get_queue(qname)
-    for item in results:
-        queue.put(item, block=True)
-    logging.debug("batch_results() returning data")
+    raise Exception("DEPRECATED: Use TFNode.DataFeed class instead")
 
 def terminate(mgr, qname='input'):
-    """DEPRECATED: Use TFNode class instead"""
-    logging.info("terminate() invoked")
-    mgr.set('state','terminating')
-
-    # drop remaining items in the queue
-    queue = mgr.get_queue(qname)
-    count = 0
-    done = False
-    while not done:
-        try:
-            queue.get(block=True, timeout=5)
-            queue.task_done()
-            count += 1
-        except Empty:
-            logging.info("dropped {0} items from queue".format(count))
-            done = True
+    raise Exception("DEPRECATED: Use TFNode.DataFeed class instead")
 
 class DataFeed(object):
     def __init__(self, mgr, train_mode=True, qname_in='input', qname_out='output', input_mapping=None):

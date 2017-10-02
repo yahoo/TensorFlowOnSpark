@@ -40,25 +40,7 @@ class TFCluster(object):
     server = None
 
     def start(self, map_fun, tf_args):
-        """
-        Starts the TensorFlow main function on each node/executor (per cluster_spec) in a background thread on the driver.
-        DEPRECATED: use run() method instead of reserve/start.
-        """
-        logging.info("Starting TensorFlow")
-        def _start():
-            self.nodeRDD.foreachPartition(TFSparkNode.start(map_fun,
-                                                            tf_args,
-                                                            self.cluster_info,
-                                                            self.defaultFS,
-                                                            self.working_dir,
-                                                            background=(self.input_mode == InputMode.SPARK)))
-
-        # start TF on a background thread (on Spark driver)
-        t = threading.Thread(target=_start)
-        t.start()
-
-        # sleep a bit to avoid having the next Spark job scheduled before the TFSparkNode.start() tasks on the background thread.
-        time.sleep(5)
+        raise Exception("DEPRECATED: use run() method instead of reserve/start.")
 
     def train(self, dataRDD, num_epochs=0, qname='input'):
         """
@@ -175,64 +157,7 @@ class TFCluster(object):
         return tb_url
 
 def reserve(sc, num_executors, num_ps, tensorboard=False, input_mode=InputMode.TENSORFLOW, queues=['input','output']):
-    """
-    Reserves ports, starts a multiprocessing.Manager per executor, and starts TensorBoard on worker/0 if requested.
-    DEPRECATED: use run() method instead of reserve/start.
-    """
-    logging.info("Reserving TFSparkNodes {0}".format("w/ TensorBoard" if tensorboard else ""))
-    assert num_ps < num_executors
-
-    # build a cluster_spec template using worker_nums
-    spec = {}
-    for i in range(num_executors):
-        if i < num_ps:
-            nodes = [] if 'ps' not in spec else spec['ps']
-            nodes.append(i)
-            spec['ps'] = nodes
-        else:
-            nodes = [] if 'worker' not in spec else spec['worker']
-            nodes.append(i)
-            spec['worker'] = nodes
-
-    # get default filesystem from spark
-    defaultFS = sc._jsc.hadoopConfiguration().get("fs.defaultFS")
-    # strip trailing "root" slash from "file:///" to be consistent w/ "hdfs://..."
-    if defaultFS.startswith("file://") and len(defaultFS) > 7 and defaultFS.endswith("/"):
-        defaultFS = defaultFS[:-1]
-
-    # create TFCluster object
-    cluster_id = random.getrandbits(64)
-    cluster = TFCluster()
-    cluster.sc = sc
-    cluster.defaultFS = sc._jsc.hadoopConfiguration().get("fs.defaultFS")
-    cluster.working_dir = os.getcwd()
-    cluster.nodeRDD = sc.parallelize(range(num_executors), num_executors)
-    cluster.cluster_id = cluster_id
-    cluster.input_mode = input_mode
-    cluster.queues = queues
-    cluster.cluster_info = cluster.nodeRDD.mapPartitions(TFSparkNode.reserve(spec, tensorboard, cluster_id, queues)).collect()
-
-    # print cluster_info and extract TensorBoard URL
-    tb_url = None
-    for node in cluster.cluster_info:
-      print(node)
-      if node['tb_port'] != 0:
-        tb_url = "http://{0}:{1}".format(node['host'], node['tb_port'])
-
-    if tb_url is not None:
-      logging.info("TensorBoard running at: {0}".format(tb_url))
-
-    # since our "primary key" for each executor's TFManager is (host, ppid), sanity check for duplicates
-    # Note: this may occur if Spark retries failed Python tasks on the same executor.
-    tb_nodes = set()
-    for node in cluster.cluster_info:
-      node_id = (node['host'],node['ppid'])
-      if node_id in tb_nodes:
-        raise Exception("Duplicate cluster node id detected (host={0}, ppid={1}).  Please ensure that the number of executors >= number of TensorFlow nodes, and TFCluster.shutdown() is successfully invoked when done.".format(node_id[0], node_id[1]))
-      else:
-        tb_nodes.add(node_id)
-
-    return cluster
+    raise Exception("DEPRECATED: use run() method instead of reserve/start.")
 
 def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mode=InputMode.TENSORFLOW, queues=['input', 'output']):
     """Runs TensorFlow processes on executors"""

@@ -119,8 +119,8 @@ def train(target, dataset, cluster_spec, ctx):
   with tf.device('/job:worker/task:%d' % FLAGS.task_id):
     # Variables and its related init/assign ops are assigned to ps.
     with slim.scopes.arg_scope(
-        [slim.variables.variable, slim.variables.global_step],
-        device=slim.variables.VariableDeviceChooser(num_parameter_servers)):
+          [slim.variables.variable, slim.variables.global_step],
+          device=slim.variables.VariableDeviceChooser(num_parameter_servers)):
       # Create a variable to count the number of train() calls. This equals the
       # number of updates applied to the variables.
       global_step = slim.variables.global_step()
@@ -148,20 +148,19 @@ def train(target, dataset, cluster_spec, ctx):
                                       epsilon=RMSPROP_EPSILON)
 
       if FLAGS.input_mode == 'spark':
-        def feed_dict(mgr, batch_size):
-          tmp = TFNode.next_batch(mgr, batch_size)
-          # extract TFRecords, since tmp array is [(TFRecord, None)]
+        def feed_dict(feed_batch):
+          # extract TFRecords, since feed_batch is [(TFRecord, None)]
           tfrecords = []
-          for elem in tmp:
+          for elem in feed_batch:
             tfrecords.append(str(elem[0]))
           return tfrecords
 
-        batch = tf.placeholder(tf.string, [FLAGS.batch_size/FLAGS.num_preprocess_threads])
+        batch = tf.placeholder(tf.string, [FLAGS.batch_size / FLAGS.num_preprocess_threads])
 
         # The following is adapted from image_processing.py to remove Readers/QueueRunners.
         # Note: this removes the RandomShuffledQueue, so the incoming data is not shuffled.
         # Presumably, this could be done on the Spark side or done in additional TF code.
-        examples = tf.unpack(batch)
+        examples = tf.unstack(batch)
         images, labels = [], []
         for example_serialized in examples:
           for thread_id in range(FLAGS.num_preprocess_threads):
@@ -277,7 +276,7 @@ def train(target, dataset, cluster_spec, ctx):
       # passing in None for summary_op to avoid a summary_thread being started.
       # Running summaries and training operations in parallel could run out of
       # GPU memory.
-      summary_writer = tf.summary.FileWriter("tensorboard_%d" %(ctx.worker_num), graph=tf.get_default_graph())
+      summary_writer = tf.summary.FileWriter("tensorboard_%d" % ctx.worker_num, graph=tf.get_default_graph())
       sv = tf.train.Supervisor(is_chief=is_chief,
                                logdir=FLAGS.train_dir,
                                init_op=init_op,
@@ -310,11 +309,12 @@ def train(target, dataset, cluster_spec, ctx):
       # specified interval. Note that the summary_op and train_op never run
       # simultaneously in order to prevent running out of GPU memory.
       next_summary_time = time.time() + FLAGS.save_summaries_secs
+      tf_feed = TFNode.DataFeed(ctx.mgr)
       while not sv.should_stop():
         try:
           start_time = time.time()
           if FLAGS.input_mode == 'spark':
-            tmp = feed_dict(ctx.mgr, FLAGS.batch_size/FLAGS.num_preprocess_threads)
+            tmp = feed_dict(tf_feed.next_batch(FLAGS.batch_size / FLAGS.num_preprocess_threads))
             feed = {batch: tmp}
             loss_value, step = sess.run([train_op, global_step], feed_dict=feed)
           else:
@@ -348,7 +348,7 @@ def train(target, dataset, cluster_spec, ctx):
 
       # Stop the TFNode data feed
       if FLAGS.input_mode == 'spark':
-        TFNode.terminate(ctx.mgr)
+        tf_feed.terminate()
 
       # Stop the supervisor.  This also waits for service threads to finish.
       sv.stop()
