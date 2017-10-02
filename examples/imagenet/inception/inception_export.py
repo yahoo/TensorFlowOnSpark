@@ -103,8 +103,8 @@ def export(args):
     # exported signatures defined in code
     signatures = {
       tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: {
-        'inputs': { 'jpegs': jpegs },
-        'outputs': { 'logits': logits },
+        'inputs': { 'jpegs': jpegs, 'labels': labels },
+        'outputs': { 'top_5_acc': top_5_op },
         'method_name': tf.saved_model.signature_constants.PREDICT_METHOD_NAME
       }
     }
