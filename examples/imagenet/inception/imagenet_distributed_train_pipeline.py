@@ -10,7 +10,7 @@ from pyspark.context import SparkContext
 from pyspark.conf import SparkConf
 from pyspark.sql import SparkSession
 from tensorflowonspark import TFCluster, TFNode, dfutil
-from tensorflowonspark.pipeline import TFEstimator
+from tensorflowonspark.pipeline import TFEstimator, TFModel
 from datetime import datetime
 
 import inception_export
@@ -82,25 +82,28 @@ if __name__ == '__main__':
 
   print("{0} ===== Start".format(datetime.now().isoformat()))
 
-  df = dfutil.loadTFRecords(sc, args.train_data, binary_features=['image/encoded'])
-  estimator = TFEstimator(main_fun, args, tf_argv=sys.argv, export_fn=inception_export.export) \
-          .setModelDir(args.train_dir) \
-          .setExportDir(args.export_dir) \
-          .setTFRecordDir(args.tfrecord_dir) \
-          .setClusterSize(args.cluster_size) \
-          .setNumPS(args.num_ps) \
-          .setInputMode(TFCluster.InputMode.TENSORFLOW) \
-          .setTensorboard(args.tensorboard) \
+#  df = dfutil.loadTFRecords(sc, args.train_data, binary_features=['image/encoded'])
+#  estimator = TFEstimator(main_fun, args, tf_argv=sys.argv, export_fn=inception_export.export) \
+#          .setModelDir(args.train_dir) \
+#          .setExportDir(args.export_dir) \
+#          .setTFRecordDir(args.tfrecord_dir) \
+#          .setClusterSize(args.cluster_size) \
+#          .setNumPS(args.num_ps) \
+#          .setInputMode(TFCluster.InputMode.TENSORFLOW) \
+#          .setTensorboard(args.tensorboard) \
+#
+#  print("{0} ===== Train".format(datetime.now().isoformat()))
+#  model = estimator.fit(df)
 
-  print("{0} ===== Train".format(datetime.now().isoformat()))
-  model = estimator.fit(df)
+  model = TFModel(args, tf_argv=sys.argv) \
+        .setExportDir(args.export_dir)
 
   print("{0} ===== Inference".format(datetime.now().isoformat()))
   df = dfutil.loadTFRecords(sc, args.validation_data, binary_features=['image/encoded'])
   preds = model.setTagSet(tf.saved_model.tag_constants.SERVING) \
               .setSignatureDefKey(tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY) \
-              .setInputMapping({'image/encoded': 'jpegs'}) \
-              .setOutputMapping({'logits': 'output'}) \
+              .setInputMapping({'image/encoded': 'jpegs', 'image/class/label': 'labels'}) \
+              .setOutputMapping({'top_5_acc': 'output'}) \
               .transform(df)
   preds.write.json(args.output)
 

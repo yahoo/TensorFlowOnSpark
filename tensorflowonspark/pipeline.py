@@ -331,6 +331,15 @@ class TFModel(Model, TFParams,
     rows_out = rdd_out.map(lambda x: Row(*x))
     return spark.createDataFrame(rows_out, output_cols)
 
+
+# global to each python worker process on the executors
+global_sess = None
+
+def _clear_session(iterator):
+  """Clears the session cache"""
+  global global_sess
+  global_sess = None
+
 def _run_model(iterator, args):
   """Run single-node inferencing on a checkpoint/saved_model using input tensors obtained from a Spark partition iterator and returning output tensors."""
   single_node_env(args)
@@ -353,7 +362,14 @@ def _run_model(iterator, args):
     logging.info("outputs_tensor_info: {0}".format(outputs_tensor_info))
 
   result = []
-  with tf.Session(graph=ops_lib.Graph()) as sess:
+
+  global global_sess
+  if global_sess:
+    # if graph/session already loaded/started, just reuse it
+    sess = global_sess
+  else:
+    # otherwise, create new session and load graph from disk
+    sess = tf.Session(graph=tf.get_default_graph())
     if args.export_dir:
       assert args.tag_set, "Inferencing from a saved_model requires --tag_set"
       # load graph from a saved_model
@@ -368,30 +384,32 @@ def _run_model(iterator, args):
       saver.restore(sess, ckpt)
     else:
       raise Exception("Inferencing requires either --model_dir or --export_dir argument")
+    global_sess = sess
 
-    # get list of input/output tensors (by name)
-    if args.signature_def_key:
-      input_tensors = [inputs_tensor_info[t].name for t in input_tensor_names]
-      output_tensors = [outputs_tensor_info[output_tensor_names[0]].name]
-    else:
-      input_tensors = [t + ':0' for t in input_tensor_names]
-      output_tensors = [t + ':0' for t in output_tensor_names]
+  # get list of input/output tensors (by name)
+  if args.signature_def_key:
+    input_tensors = [inputs_tensor_info[t].name for t in input_tensor_names]
+    output_tensors = [outputs_tensor_info[output_tensor_names[0]].name]
+  else:
+    input_tensors = [t + ':0' for t in input_tensor_names]
+    output_tensors = [t + ':0' for t in output_tensor_names]
 
-    logging.info("input_tensors: {0}".format(input_tensors))
-    logging.info("output_tensors: {0}".format(output_tensors))
+  logging.info("input_tensors: {0}".format(input_tensors))
+  logging.info("output_tensors: {0}".format(output_tensors))
 
-    # feed data in batches and return output tensors
-    for tensors in yield_batch(iterator, args.batch_size, len(input_tensor_names)):
-      inputs_feed_dict = {}
-      for i in range(len(input_tensors)):
-        inputs_feed_dict[input_tensors[i]] = tensors[i]
+  # feed data in batches and return output tensors
+  for tensors in yield_batch(iterator, args.batch_size, len(input_tensor_names)):
+    inputs_feed_dict = {}
+    for i in range(len(input_tensors)):
+      inputs_feed_dict[input_tensors[i]] = tensors[i]
 
-      outputs = sess.run(output_tensors, feed_dict=inputs_feed_dict)
-      lengths = [ len(output) for output in outputs ]
-      input_size = len(tensors[0])
-      assert all([ l == input_size for l in lengths ]), "Output array sizes {} must match input size: {}".format(lengths, input_size)
-      python_outputs = [ output.tolist() for output in outputs ]      # convert from numpy to standard python types
-      result.extend(zip(*python_outputs))                             # convert to an array of tuples of "output columns"
+    outputs = sess.run(output_tensors, feed_dict=inputs_feed_dict)
+    lengths = [ len(output) for output in outputs ]
+    input_size = len(tensors[0])
+    assert all([ l == input_size for l in lengths ]), "Output array sizes {} must match input size: {}".format(lengths, input_size)
+    python_outputs = [ output.tolist() for output in outputs ]      # convert from numpy to standard python types
+    result.extend(zip(*python_outputs))                             # convert to an array of tuples of "output columns"
+
   return result
 
 def single_node_env(args, argv=None):
