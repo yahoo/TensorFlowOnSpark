@@ -333,8 +333,7 @@ class TFModel(Model, TFParams,
 
 # global to each python worker process on the executors
 global_sess = None
-global_input_mapping = {}
-global_output_mapping = {}
+global_args = None
 
 def _run_model(iterator, args):
   """Run single-node inferencing on a checkpoint/saved_model using input tensors obtained from a Spark partition iterator and returning output tensors."""
@@ -359,8 +358,8 @@ def _run_model(iterator, args):
 
   result = []
 
-  global global_sess, global_input_mapping, global_output_mapping
-  if global_sess and global_input_mapping == args.input_mapping and global_output_mapping == args.output_mapping:
+  global global_sess, global_args
+  if global_sess and global_args == args:
     # if graph/session already loaded/started (and using same input/output signatures), just reuse it
     sess = global_sess
   else:
@@ -382,8 +381,7 @@ def _run_model(iterator, args):
     else:
       raise Exception("Inferencing requires either --model_dir or --export_dir argument")
     global_sess = sess
-    global_input_mapping = args.input_mapping
-    global_output_mapping = args.output_mapping
+    global_args = args
 
   # get list of input/output tensors (by name)
   if args.signature_def_key:
