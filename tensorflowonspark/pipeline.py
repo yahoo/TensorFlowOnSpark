@@ -360,7 +360,7 @@ def _run_model(iterator, args):
 
   global global_sess, global_args
   if global_sess and global_args == args:
-    # if graph/session already loaded/started (and using same input/output signatures), just reuse it
+    # if graph/session already loaded/started (and using same args), just reuse it
     sess = global_sess
   else:
     # otherwise, create new session and load graph from disk
