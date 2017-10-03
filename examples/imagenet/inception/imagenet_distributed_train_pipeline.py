@@ -99,8 +99,8 @@ if __name__ == '__main__':
   df = dfutil.loadTFRecords(sc, args.validation_data, binary_features=['image/encoded'])
   preds = model.setTagSet(tf.saved_model.tag_constants.SERVING) \
               .setSignatureDefKey(tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY) \
-              .setInputMapping({'image/encoded': 'jpegs'}) \
-              .setOutputMapping({'logits': 'output'}) \
+              .setInputMapping({'image/encoded': 'jpegs', 'image/class/label': 'labels'}) \
+              .setOutputMapping({'top_5_acc': 'output'}) \
               .transform(df)
   preds.write.json(args.output)
 
