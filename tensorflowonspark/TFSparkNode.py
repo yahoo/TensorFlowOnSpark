@@ -2,16 +2,7 @@
 # Licensed under the terms of the Apache 2.0 license.
 # Please see LICENSE file in the project root for terms.
 """
-This module provides Spark-compatible functions to launch TensorFlow on the executors.
-
-There are three main phases of operation:
-1. Reservation - reserves a port for the TensorFlow process on each executor and also starts a multiprocessing.Manager to
-listen for data/control messages.  For TensorFlow cluster applications, a cluster_spec "template" should be supplied.
-2. Startup - launches the Tensorflow main function on the executors.  Note: for cluster applications, this MUST be invoked from 
-a background thread on the Spark driver because the PS nodes will block until the job completes.
-3. Data feeding - sends RDD data to the TensorFlow nodes via each executor's multiprocessing.Manager.  Note: because the PS
-nodes block on startup, they will not receive any RDD partitions.
-4. Shutdown - sends a shutdown control message to the multiprocessing.Managers of the PS nodes.
+This module provides low-level Spark-compatible mapPartitions functions for managing the TensorFlowOnSpark cluster.
 """
 
 from __future__ import absolute_import
@@ -32,8 +23,22 @@ from . import marker
 from . import util
 
 class TFNodeContext:
-  """This encapsulates key metadata for each TF node"""
+  """Encapsulates unique metadata for each TensorFlowOnSpark node/executor.
+
+  An instance of this object will be passed to the TensorFlow "main" function via the `ctx` argument.
+  """
   def __init__(self, worker_num, job_name, task_index, cluster_spec, defaultFS, working_dir, mgr):
+    """TFNodeContext constructor
+
+    Args:
+      worker_num: integer indentifier for this executor, per `nodeRDD = sc.parallelize(range(num_executors), num_executors)`
+      job_name: 'ps' or 'worker' per cluster_spec
+      task_index: integer rank (per job_name, e.g. "worker:0", "worker:1", "ps:0")
+      cluster_spec: tf.train.ClusterSpec instance
+      defaultFS: string representation of default FileSystem, e.g. "file://" or "hdfs://<namenode>:8020/"
+      working_dir: the current working directory for local filesystems, or YARN containers
+      mgr: TFManager instance for this Python worker
+    """
     self.worker_num = worker_num
     self.job_name = job_name
     self.task_index = task_index
@@ -43,16 +48,24 @@ class TFNodeContext:
     self.mgr = mgr
 
 class TFSparkNode(object):
+  """INTERNAL_USE.  Low-level functions intended to be used by the high-level TFCluster APIs to manage cluster state.
+
+  This class contains a reference to the TFManager "singleton" per executor/python-worker.  However, Spark may spawn more than one python-worker
+  per executor, so these functions will reconnect to the "singleton" instance, as needed.
   """
-  This class contains the TFManager "singleton" per executor/python-worker.  Note that Spark may spawn more than one python-worker
-  per executor, so these module functions will reconnect to the "singleton", if needed.
-  """
-  mgr = None
-  cluster_id = None
+  mgr = None                # TFManager instance
+  cluster_id = None         # Unique ID for a given TensorFlowOnSpark cluster, used for invalidating state
 
 def _get_manager(cluster_info, host, ppid):
-  """
-  Returns this executor's "singleton" instance of the multiprocessing.Manager, reconnecting per python-worker if needed.
+  """Returns this executor's "singleton" instance of the multiprocessing.Manager, reconnecting per python-worker if needed.
+
+  Args:
+    cluster_info: cluster node reservations
+    host: host IP
+    ppid: parent (executor JVM) PID
+
+  Returns:
+    TFManager instance for this executor/python-worker
   """
   for node in cluster_info:
     if node['host'] == host and node['ppid'] == ppid:
@@ -70,8 +83,18 @@ def start(fn, tf_args, cluster_info, defaultFS, working_dir, background):
   raise Exception("DEPRECATED: use run() method instead of reserve/start")
 
 def run(fn, tf_args, cluster_meta, tensorboard, queues, background):
-  """
-  Wraps the TensorFlow main function in a Spark mapPartitions-compatible function.
+  """Wraps the TensorFlow main function in a Spark mapPartitions-compatible function.
+
+  Args:
+    fn: TensorFlow "main" function provided by the user
+    tf_args: argparse args, or command line ARGV.  These will be passed ot the `fn`
+    cluster_meta: dictionary of cluster metadata (e.g. cluster_id, reservation.Server address, etc)
+    tensorboard: boolean indicating if the chief worker should spawn a Tensorboard server
+    queues: INTERNAL_USE
+    background: boolean indicating if the TensorFlow "main" function should be run in a background process.
+
+  Returns:
+    A nodeRDD.mapPartitions() function.
   """
   def _mapfn(iter):
     # Note: consuming the input iterator helps Pyspark re-use this worker,
@@ -88,7 +111,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, queues, background):
       if worker_num in nodes:
         job_name = jobtype
         task_index = nodes.index(worker_num)
-        break;
+        break
 
     # get unique id (hostname,ppid) for this executor's JVM
     host = util.get_ip_address()
@@ -245,8 +268,15 @@ def run(fn, tf_args, cluster_meta, tensorboard, queues, background):
   return _mapfn
 
 def train(cluster_info, cluster_meta, qname='input'):
-  """
-  Feeds Spark partitions into the shared multiprocessing.Queue.
+  """Feeds Spark partitions into the shared multiprocessing.Queue.
+
+  Args:
+    cluster_info: node reservation information for the cluster (e.g. host, ppid, pid, ports, etc)
+    cluster_meta: dictionary of cluster metadata (e.g. cluster_id, reservation.Server address, etc)
+    qname: INTERNAL_USE
+
+  Returns:
+    A dataRDD.mapPartitions() function
   """
   def _train(iter):
     # get shared queue, reconnecting if necessary
@@ -289,8 +319,13 @@ def train(cluster_info, cluster_meta, qname='input'):
   return _train
 
 def inference(cluster_info, qname='input'):
-  """
-  Feeds Spark partitions into the shared multiprocessing.Queue and returns inference results.
+  """Feeds Spark partitions into the shared multiprocessing.Queue and returns inference results.
+
+  Args:
+    cluster_info: node reservation information for the cluster (e.g. host, ppid, pid, ports, etc)
+
+  Returns:
+    A dataRDD.mapPartitions() function
   """
   def _inference(iter):
     # get shared queue, reconnecting if necessary
@@ -329,10 +364,15 @@ def inference(cluster_info, qname='input'):
   return _inference
 
 def shutdown(cluster_info, queues=['input']):
+  """Stops all TensorFlow nodes by feeding None into the multiprocessing.Queues
+
+  Args:
+    cluster_info: node reservation information for the cluster (e.g. host, ppid, pid, ports, etc)
+
+  Returns:
+    A nodeRDD.mapPartitions() function
+  """
   def _shutdown(iter):
-    """
-    Stops all TensorFlow nodes by feeding None into the multiprocessing.Queues.
-    """
     host = util.get_ip_address()
     ppid = os.getppid()
 

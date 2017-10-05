@@ -25,6 +25,7 @@ import sys
 ##### TensorFlowOnSpark Params
 
 class TFTypeConverters(object):
+  """Custom DataFrame TypeConverter for dictionary types"""
   @staticmethod
   def toDict(value):
     if type(value) == dict:
@@ -182,6 +183,7 @@ class HasTagSet(Params):
 class Namespace(object):
   """
   Utility class to convert dictionaries to Namespace-like objects
+
   Based on https://docs.python.org/dev/library/types.html#types.SimpleNamespace
   """
   def __init__(self, d):
@@ -213,15 +215,31 @@ class TFParams(Params):
 class TFEstimator(Estimator, TFParams, HasInputMapping,
                   HasClusterSize, HasNumPS, HasInputMode, HasProtocol, HasTensorboard, HasModelDir, HasExportDir, HasTFRecordDir,
                   HasBatchSize, HasEpochs, HasReaders, HasSteps):
-  """Spark ML Pipeline Estimator which launches a TensorFlowOnSpark cluster for training"""
+  """Spark ML Pipeline Estimator which launches a TensorFlowOnSpark cluster for distributed training.
+
+  The columns of the DataFrame passed to the `fit()` method will be mapped to TensorFlow tensors according to the`setInputMapping()` method.
+
+  If an `export_fn` was provided to the constructor, it will be run on a single executor immediately after the distributed training has completed.
+  This allows users to export a TensorFlow saved_model with a different execution graph for inferencing, e.g. replacing an input graph of 
+  TFReaders and QueueRunners with Placeholders.
+
+  For InputMode.TENSORFLOW, the input DataFrame will be exported as TFRecords to a temporary location specified by the `tfrecord_dir`.
+  The TensorFlow code will then be expected to read directly from this location during training.  However, if the input DataFrame was
+  produced by the `dfutil.loadTFRecords()` method, i.e. originated from TFRecords on disk, then the `tfrecord_dir` will be set to the
+  original source location of the TFRecords with an additional export step.
+  """
 
   train_fn = None
   export_fn = None
 
   def __init__(self, train_fn, tf_args, tf_argv=None, export_fn=None):
-    """
-      :param train_fn: TensorFlow "main" function for training.
-      :param tf_args: Dictionary of arguments specific to TensorFlow "main" function.
+    """TFEstimator constructor
+
+    Args:
+      train_fn: TensorFlow "main" function for training.
+      tf_args: Dictionary of arguments specific to TensorFlow "main" function.
+      tf_argv: Command line arguments as an array of string.
+      export_fn: TensorFlow function for exporting a saved_model.
     """
     super(TFEstimator, self).__init__()
     self.train_fn = train_fn
@@ -243,8 +261,13 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
                     steps=1000)
 
   def _fit(self, dataset):
-    """Trains a TensorFlow model and returns a TFModel instance with params/args pointing to a checkpoint/saved_model on disk.
-    Note: for input_mode == InputMode.TENSORFLOW, the dataset input is ignored, and it's assumed that the TF train_fn is responsible for reading input data.
+    """Trains a TensorFlow model and returns a TFModel instance with the same args/params pointing to a checkpoint or saved_model on disk.
+
+    Args:
+      dataset: A Spark DataFrame with columns that will be mapped to TensorFlow tensors.
+
+    Returns:
+      A TFModel representing the trained model, backed on disk by a TensorFlow checkpoint or saved_model.
     """
     sc = SparkContext.getOrCreate()
 
@@ -294,11 +317,22 @@ class TFModel(Model, TFParams,
               HasInputMapping, HasOutputMapping,
               HasBatchSize,
               HasModelDir, HasExportDir, HasSignatureDefKey, HasTagSet):
-  """Spark ML Pipeline Model which runs single-node inferencing of a TensorFlow Model checkpoint/saved_model on disk."""
+  """Spark ML Pipeline Model which runs inferencing of a TensorFlow Model checkpoint/saved_model on disk.
+
+  Each executor will run an independent, single-node instance of TensorFlow in parallel, so the model must fit in memory.
+  The model/session will be loaded/initialized just once for each Spark Python worker, and the session will be cached for
+  subsequent tasks/partitions to avoid re-loading the model for each partition.
+  """
 
   def __init__(self, tf_args, tf_argv=None):
-    """
-      :param tf_args: Dictionary of arguments specific to TensorFlow graph
+    """TFModel constructor
+
+    Args:
+      tf_args: Dictionary of arguments specific to TensorFlow "main" function.
+      tf_argv: Command line arguments as an array of string.
+
+    Returns:
+      A TFModel representing a trained model, backed on disk by a TensorFlow checkpoint or saved_model.
     """
     super(TFModel, self).__init__()
     self.args = Namespace(tf_args) if isinstance(tf_args, dict) else tf_args
@@ -309,6 +343,7 @@ class TFModel(Model, TFParams,
                     tag_set=None)
 
   def _transform(self, dataset):
+    """Transforms the input DataFrame by applying the _run_model() mapPartitions function"""
     spark = SparkSession.builder.getOrCreate()
 
     logging.info("===== 1. inference args: {0}".format(self.args))
@@ -332,11 +367,12 @@ class TFModel(Model, TFParams,
 
 
 # global to each python worker process on the executors
-global_sess = None
-global_args = None
+global_sess = None            # tf.Session cache
+global_args = None            # args provided to the _run_model() method.  Any change will invalidate the global_sess cache.
 
 def _run_model(iterator, args):
-  """Run single-node inferencing on a checkpoint/saved_model using input tensors obtained from a Spark partition iterator and returning output tensors."""
+  """Run single-node inferencing on a checkpoint/saved_model using input tensors obtained from a Spark partition iterator and returns output tensors
+  """
   single_node_env(args)
 
   logging.info("===== input_mapping: {}".format(args.input_mapping))
@@ -410,7 +446,12 @@ def _run_model(iterator, args):
   return result
 
 def single_node_env(args, argv=None):
-  """Sets up environment for a single-node TF session"""
+  """Sets up environment for a single-node TF session
+
+  Args:
+    args: command line arguments as argparse args
+    argv: command line arguments as ARGV (array of string)
+  """
   if argv:
       sys.argv = argv
 
@@ -437,9 +478,16 @@ def single_node_env(args, argv=None):
     os.environ['CUDA_VISIBLE_DEVICES'] = ''
 
 def get_meta_graph_def(saved_model_dir, tag_set):
-  """
-  Utility function to read a meta_graph_def from disk.
+  """Utility function to read a meta_graph_def from disk.
+
   From https://github.com/tensorflow/tensorflow/blob/8e0e8d41a3a8f2d4a6100c2ea1dc9d6c6c4ad382/tensorflow/python/tools/saved_model_cli.py#L186
+
+  Args:
+    saved_model_dir: path to saved_model
+    tag_set: tag set identifying the TensorFlow graph within the saved_model
+
+  Returns:
+    A TensorFlow meta_graph_def, or raises an Exception otherwise
   """
   saved_model = reader.read_saved_model(saved_model_dir)
   set_of_tags = set(tag_set.split(','))
@@ -449,7 +497,16 @@ def get_meta_graph_def(saved_model_dir, tag_set):
   raise RuntimeError("MetaGraphDef associated with tag-set {0} could not be found in SavedModel".format(tag_set))
 
 def yield_batch(iterable, batch_size, num_tensors=1):
-  """Generator that yields batches of an iterator"""
+  """Generator that yields batches of a DataFrame iterator.
+
+  Args:
+    iterable: Spark partition iterator
+    batch_size: number of items to retrieve per invocation
+    num_tensors: number of tensors (columns) expected in each item
+
+  Returns:
+    An array of `num_tensors` arrays, each of length `batch_size`
+  """
   tensors = [ [] for i in range(num_tensors) ]
   for item in iterable:
     if item is None:

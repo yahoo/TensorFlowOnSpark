@@ -17,7 +17,9 @@ import time
 MAX_RETRIES = 3
 
 def get_gpu():
-  """Allocates first available GPU using cudaSetDevice(), or returns 0 otherwise"""
+  """DEPRECATED: 2018-01-01
+  Allocates first available GPU using cudaSetDevice(), or returns 0 otherwise
+  """
   # Note: this code executes, but Tensorflow subsequently complains that the "current context was not created by the StreamExecutor cuda_driver API"
   system = platform.system()
   if system == "Linux":
@@ -39,7 +41,17 @@ def get_gpu():
   return gpu
 
 def get_gpus(num_gpu=1):
-  """Returns list of free GPUs according to nvidia-smi"""
+  """Get list of free GPUs according to nvidia-smi.
+
+  This will retry for MAX_RETRIES times until the requested number of GPUs are available.
+
+  Args:
+    num_gpu: number of GPUs desired
+
+  Returns:
+    Comma-delimited string of GPU ids, or raises an Exception if the requested number of GPUs could not be found.
+  """
+
   try:
     # get list of gpus (index, uuid)
     list_gpus = subprocess.check_output(["nvidia-smi", "--list-gpus"]).decode()
@@ -85,6 +97,18 @@ def get_gpus(num_gpu=1):
 
 # Function to get the gpu information
 def get_free_gpu(max_gpu_utilization=40, min_free_memory=0.5, num_gpu=1):
+  """Get available GPUs according to utilization thresholds
+
+  Args:
+    max_gpu_utilization: percent utilization threshold to consider a GPU "free"
+    min_free_memory: percent free memory to consider a GPU "free"
+    num_gpu: number of requested GPUs
+
+  Returns:
+    A tuple of (available_gpus, minimum_free_memory), where available_gpus is a comma-delimited string of GPU ids, and minimum_free_memory
+    is the lowest amount of free memory available on the available_gpus.
+
+  """
   def get_gpu_info():
     # Get the gpu information
     gpu_info = subprocess.check_output(["nvidia-smi", "--format=csv,noheader,nounits", "--query-gpu=index,memory.total,memory.free,memory.used,utilization.gpu"]).decode()
@@ -125,7 +149,7 @@ def get_free_gpu(max_gpu_utilization=40, min_free_memory=0.5, num_gpu=1):
   gpus_found = 0
   gpus_to_use = ""
   free_memory = 1.0
-  # Return the least utilized GPUs if it's utilized less than max_gpu_utilization and amount of free memory is at most min_free_memory
+  # Return the least utilized GPUs if it's utilized less than max_gpu_utilization and amount of free memory is at least min_free_memory
   # Otherwise, run in cpu only mode
   for current_gpu in avg_array:
     if current_gpu[0] < max_gpu_utilization and (1 - current_gpu[1]) > min_free_memory:

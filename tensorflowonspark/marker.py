@@ -8,8 +8,10 @@ from __future__ import nested_scopes
 from __future__ import print_function
 
 class Marker(object):
+  """Base class for special marker objects in a data queue"""
   pass
 
 class EndPartition(Marker):
+  """Marks the end of an RDD Partition during data feeding"""
   pass
 

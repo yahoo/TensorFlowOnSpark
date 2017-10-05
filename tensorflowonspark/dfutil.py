@@ -36,6 +36,8 @@ def loadTFRecords(sc, input_dir, binary_features=[]):
   from the caller in the binary_features argument.
 
   Args:
+    sc: SparkContext
+    input_dir: location of TFRecords on disk
     binary_features: a list of tf.train.Example features which are expected to be binary/bytearrays.
 
   Returns:
@@ -112,8 +114,16 @@ def toTFExample(dtypes):
 
 
 def infer_schema(example, binary_features=[]):
+  """Given a tf.train.Example, infer the Spark DataFrame schema (StructFields)
+
+  Args:
+    example: a tf.train.Example
+    binary_features: a list of tf.train.Example features which are expected to be binary/bytearrays.
+
+  Returns:
+    A DataFrame StructType schema
+  """
   def _infer_sql_type(k, v):
-    """Given a tf.Example, infer the Spark DataFrame StructFields for schema"""
     # special handling for binary features
     if k in binary_features:
       return BinaryType()
@@ -137,7 +147,15 @@ def infer_schema(example, binary_features=[]):
 
 
 def fromTFExample(iter, binary_features=[]):
-  """mapPartition function to convert an RDD of `tf.train.Example' bytestring to an RDD of Row."""
+  """mapPartition function to convert an RDD of `tf.train.Example' bytestring into an RDD of Row.
+
+  Args:
+    iter: the RDD partition iterator
+    binary_features: a list of tf.train.Example features which are expected to be binary/bytearrays.
+
+  Returns:
+    An array/iterator of DataFrame Row with features converted into columns.
+  """
   # convert from protobuf-like dict to DataFrame-friendly dict
   def _get_value(k, v):
     # special handling for binary features

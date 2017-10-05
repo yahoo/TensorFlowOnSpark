@@ -3,6 +3,13 @@
 # Please see LICENSE file in the project root for terms.
 """
 This module provides a high-level API to manage the TensorFlowOnSpark cluster.
+
+There are three main phases of operation:
+1. Reservation/Startup - reserves a port for the TensorFlow process on each executor and starts a multiprocessing.Manager to
+listen for data/control messages.  Then, launches the Tensorflow main function on the executors.
+2. Data feeding - For InputMode.SPARK only.  Sends RDD data to the TensorFlow nodes via each executor's multiprocessing.Manager.  Note: the PS
+nodes block their executors, so they will not receive any subsequent data feeding tasks.
+4. Shutdown - sends a shutdown control message to the multiprocessing.Managers of the PS nodes and pushes end-of-feed markers into the data queues of the worker nodes.
 """
 
 from __future__ import absolute_import
@@ -21,29 +28,44 @@ from . import TFManager
 from . import TFSparkNode
 
 class InputMode(object):
-    TENSORFLOW = 0
-    SPARK = 1
+  """Enum for the input modes of data feeding.
+
+  TENSORFLOW: the TensorFlow application is responsible for reading any data.
+  SPARK: Spark will feed data to the TensorFlow application via an RDD.
+  """
+  TENSORFLOW = 0
+  SPARK = 1
 
 class TFCluster(object):
 
-  sc = None
-  defaultFS = None
-  working_dir = None
-  num_executors = None
-  nodeRDD = None
-  cluster_id = None
-  cluster_info = None
-  cluster_meta = None
-  input_mode = None
-  queues = None
-  server = None
+  sc = None                     # SparkContext
+  defaultFS = None              # default FileSystem string, e.g. "file://" or "hdfs://<namenode>/"
+  working_dir = None            # current working directory
+  num_executors = None          # number of executors in the Spark job (and therefore, TensorFlow cluster)
+  nodeRDD = None                # cache of `sc.parallelize(range(num_executors), num_executors)`
+  cluster_id = None             # unique ID for a started cluster, used to invalidate state for new clusters
+  cluster_info = None           # cluster node reservations
+  cluster_meta = None           # cluster metadata, e.g. cluster_id, defaultFS, reservation.Server address, etc
+  input_mode = None             # TFCluster.InputMode
+  queues = None                 # INTERNAL_USE
+  server = None                 # reservation.Server
 
   def start(self, map_fun, tf_args):
     raise Exception("DEPRECATED: use run() method instead of reserve/start.")
 
   def train(self, dataRDD, num_epochs=0, qname='input'):
-    """
-    Feeds Spark data partitions into the TensorFlow worker nodes.
+    """(InputMode.SPARK) Feeds Spark RDD partitions into the TensorFlow worker nodes
+
+    It is the responsibility of the TensorFlow "main" function to interpret the rows of the RDD.
+
+    Since epochs are implemented via `RDD.union()` and the entire RDD must generally be processed in full, it is recommended
+    to set `num_epochs` to closely match your training termination condition (e.g. steps or accuracy).  See `TFNode.DataFeed`
+    for more details.
+
+    Args:
+      dataRDD: input data as a Spark RDD
+      num_epochs: number of times to repeat the dataset during training
+      qname: (INTERNAL USE)
     """
     logging.info("Feeding training data")
     assert(self.input_mode == InputMode.SPARK)
@@ -66,8 +88,19 @@ class TFCluster(object):
       unionRDD.foreachPartition(TFSparkNode.train(self.cluster_info, self.cluster_meta, qname))
 
   def inference(self, dataRDD, qname='input'):
-    """
-    Feeds Spark data partitions into the TensorFlow worker nodes and returns an RDD of results.
+    """(InputMode.SPARK) Feeds Spark RDD partitions into the TensorFlow worker nodes and returns an RDD of results
+
+    It is the responsibility of the TensorFlow "main" function to interpret the rows of the RDD and provide valid data for the output RDD.
+
+    This will use the distributed TensorFlow cluster for inferencing, so the TensorFlow "main" function should be capable of inferencing.
+    Per Spark design, the output RDD will be lazily-executed only when a Spark action is invoked on the RDD.
+
+    Args:
+      dataRDD: input data as a Spark RDD
+      qname: (INTERNAL_USE)
+
+    Returns:
+      A Spark RDD representing the output of the TensorFlow inferencing
     """
     logging.info("Feeding inference data")
     assert(self.input_mode == InputMode.SPARK)
@@ -75,8 +108,10 @@ class TFCluster(object):
     return dataRDD.mapPartitions(TFSparkNode.inference(self.cluster_info, qname))
 
   def shutdown(self, ssc=None):
-    """
-    Stops TensorFlow nodes
+    """Stops TensorFlow cluster
+
+    Args:
+      ssc: Spark StreamingContext, for streaming applications only.
     """
     logging.info("Stopping TensorFlow nodes")
 
@@ -146,9 +181,7 @@ class TFCluster(object):
         break
 
   def tensorboard_url(self):
-    """
-    Utility function to get Tensorboard URL
-    """
+    """Utility function to get the Tensorboard URL"""
     tb_url = None
     for node in self.cluster_info:
       if node['tb_port'] != 0:
@@ -159,7 +192,21 @@ def reserve(sc, num_executors, num_ps, tensorboard=False, input_mode=InputMode.T
   raise Exception("DEPRECATED: use run() method instead of reserve/start.")
 
 def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mode=InputMode.TENSORFLOW, queues=['input', 'output']):
-  """Runs TensorFlow processes on executors"""
+  """Starts the TensorFlowOnSpark cluster and Runs the TensorFlow "main" function on the Spark executors
+
+  Args:
+    sc: SparkContext
+    map_fun: user-supplied TensorFlow "main" function
+    tf_args: argparse args, or command-line ARGV.  These will be passed to the `map_fun`.
+    num_executors: number of Spark executors.  This should match your Spark job's `--num_executors`.
+    num_ps: number of Spark executors which are reserved for TensorFlow PS nodes.  All other executors will become TensorFlow worker nodes.
+    tensorboard: boolean indicating if the chief worker should spawn a Tensorboard server.
+    input_mode: TFCluster.InputMode
+    queues: (INTERNAL_USE)
+
+  Returns:
+    A TFCluster object representing the started cluster.
+  """
   logging.info("Reserving TFSparkNodes {0}".format("w/ TensorBoard" if tensorboard else ""))
   assert num_ps < num_executors
 

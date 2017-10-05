@@ -20,25 +20,40 @@ BUFSIZE = 1024
 MAX_RETRIES = 3
 
 class Reservations:
+  """Thread-safe store for node reservations"""
 
   def __init__(self, required):
+    """Reservation constructor
+
+    Args:
+      required: expected number of nodes in the cluster.
+    """
+
     self.required = required
     self.lock = threading.RLock()
     self.reservations = []
 
   def add(self, meta):
+    """Add a reservation
+
+    Args:
+      meta: a dict of metadata about a node
+    """
     with self.lock:
       self.reservations.append(meta)
 
   def done(self):
+    """Returns true if the `required` number of reservations have occurred"""
     with self.lock:
       return len(self.reservations) >= self.required
 
   def get(self):
+    """Get the list of current reservations"""
     with self.lock:
       return self.reservations
 
   def remaining(self):
+    """Get a count of remaining/unfulfilled reservations"""
     with self.lock:
       return self.required - len(self.reservations)
 
@@ -78,11 +93,16 @@ class Server(MessageSocket):
   done = False
 
   def __init__(self, count):
+    """Server constructor
+
+    Args:
+      count: expected number of nodes in the cluster
+    """
     assert count > 0
     self.reservations = Reservations(count)
 
   def await_reservations(self):
-    """Block until all reservations done"""
+    """Block until all reservations are done"""
     while not self.reservations.done():
       logging.info("waiting for {0} reservations".format(self.reservations.remaining()))
       time.sleep(1)
@@ -108,7 +128,11 @@ class Server(MessageSocket):
       MessageSocket.send(self, sock, 'ERR')
 
   def start(self):
-    """Start listener in a background thread"""
+    """Start listener in a background thread
+
+    Returns:
+      a tuple of (host, port) of the Server
+    """
     server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_sock.bind(('',0))
@@ -149,7 +173,7 @@ class Server(MessageSocket):
     return addr
 
   def stop(self):
-    """Stop the socket listener"""
+    """Stop the Server's socket listener"""
     self.done = True
 
 class Client(MessageSocket):
@@ -158,6 +182,11 @@ class Client(MessageSocket):
   server_addr = None
 
   def __init__(self, server_addr):
+    """Client constructor
+
+    Args:
+      server_addr: a tuple of (host, port) pointing to the Server
+    """
     self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     self.sock.connect(server_addr)
     self.server_addr = server_addr
@@ -191,6 +220,7 @@ class Client(MessageSocket):
     return resp
 
   def close(self):
+    """Close the client socket"""
     self.sock.close()
 
   def register(self, reservation):
@@ -204,7 +234,7 @@ class Client(MessageSocket):
     return cluster_info
 
   def await_reservations(self):
-    """Poll until all reservations completed, then return cluster_info"""
+    """Poll until all reservations complete, then return cluster_info"""
     done = False
     while not done:
       done = self._request('QUERY')
@@ -212,5 +242,6 @@ class Client(MessageSocket):
     return self.get_reservations()
 
   def request_stop(self):
+    """Request server stop"""
     resp = self._request('STOP')
     return resp

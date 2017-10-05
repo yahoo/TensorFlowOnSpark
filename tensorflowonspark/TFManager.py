@@ -11,12 +11,14 @@ from multiprocessing.managers import BaseManager
 from multiprocessing import JoinableQueue
 
 class TFManager(BaseManager):
-    pass
+  """Python multiprocessing.Manager for distributed, multi-process communication"""
+  pass
 
 
-mgr = None
-qdict = {}
-kdict = {}
+# global to each Spark executor's python worker
+mgr = None        # TFManager
+qdict = {}        # dictionary of queues
+kdict = {}        # dictionary of key-values
 
 def _get(key):
   return kdict[key]
@@ -25,8 +27,15 @@ def _set(key, value):
   kdict[key] = value
 
 def start(authkey, queues, mode='local'):
-  """
-  Create a new multiprocess.Manager (or return existing one).
+  """Create a new multiprocess.Manager (or return existing one)
+
+  Args:
+    authkey: string authorization key
+    queues: INTERNAL_USE
+    mode: 'local' indicates that the manager will only be accessible from the same host, otherwise remotely accessible
+
+  Returns:
+    A TFManager instance, which is also cached in local memory of the Python worker process.
   """
   global mgr, qdict, kdict
   qdict.clear()
@@ -44,8 +53,13 @@ def start(authkey, queues, mode='local'):
   return mgr
 
 def connect(address, authkey):
-  """
-  Connect to a multiprocess.Manager
+  """Connect to a multiprocess.Manager
+
+  Args:
+    address: unique address to the TFManager, either a unique connection string for 'local', or (host, port) tuple for remote
+
+  Returns:
+    A TFManager instance referencing the remote TFManager at the supplied `address`.
   """
   TFManager.register('get_queue')
   TFManager.register('get')
