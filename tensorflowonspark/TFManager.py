@@ -10,45 +10,47 @@ from __future__ import print_function
 from multiprocessing.managers import BaseManager
 from multiprocessing import JoinableQueue
 
-class TFManager(BaseManager): pass
+class TFManager(BaseManager):
+    pass
+
 
 mgr = None
 qdict = {}
 kdict = {}
 
 def _get(key):
-    return kdict[key]
+  return kdict[key]
 
 def _set(key, value):
-    kdict[key] = value
+  kdict[key] = value
 
 def start(authkey, queues, mode='local'):
-    """
-    Create a new multiprocess.Manager (or return existing one).
-    """
-    global mgr, qdict, kdict
-    qdict.clear()
-    kdict.clear()
-    for q in queues:
-      qdict[q] = JoinableQueue()
-    TFManager.register('get_queue', callable=lambda qname: qdict[qname])
-    TFManager.register('get', callable=lambda key: _get(key))
-    TFManager.register('set', callable=lambda key, value: _set(key, value))
-    if mode == 'remote':
-        mgr = TFManager(address=('',0), authkey=authkey)
-    else:
-        mgr = TFManager(authkey=authkey)
-    mgr.start()
-    return mgr
+  """
+  Create a new multiprocess.Manager (or return existing one).
+  """
+  global mgr, qdict, kdict
+  qdict.clear()
+  kdict.clear()
+  for q in queues:
+    qdict[q] = JoinableQueue()
+  TFManager.register('get_queue', callable=lambda qname: qdict[qname])
+  TFManager.register('get', callable=lambda key: _get(key))
+  TFManager.register('set', callable=lambda key, value: _set(key, value))
+  if mode == 'remote':
+    mgr = TFManager(address=('',0), authkey=authkey)
+  else:
+    mgr = TFManager(authkey=authkey)
+  mgr.start()
+  return mgr
 
 def connect(address, authkey):
-    """
-    Connect to a multiprocess.Manager
-    """
-    TFManager.register('get_queue')
-    TFManager.register('get')
-    TFManager.register('set')
-    m = TFManager(address, authkey=authkey)
-    m.connect()
-    return m
+  """
+  Connect to a multiprocess.Manager
+  """
+  TFManager.register('get_queue')
+  TFManager.register('get')
+  TFManager.register('set')
+  m = TFManager(address, authkey=authkey)
+  m.connect()
+  return m
 

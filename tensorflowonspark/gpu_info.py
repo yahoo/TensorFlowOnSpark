@@ -14,7 +14,7 @@ import random
 import subprocess
 import time
 
-MAX_RETRIES=3
+MAX_RETRIES = 3
 
 def get_gpu():
   """Allocates first available GPU using cudaSetDevice(), or returns 0 otherwise"""
@@ -35,7 +35,7 @@ def get_gpu():
   for i in range(device_count.value):
     if (0 == libcudart.cudaSetDevice(i) and 0 == libcudart.cudaFree(0)):
       gpu = i
-      break;
+      break
   return gpu
 
 def get_gpus(num_gpu=1):
@@ -47,6 +47,7 @@ def get_gpus(num_gpu=1):
 
     # parse index and guid
     gpus = [ x for x in list_gpus.split('\n') if len(x) > 0 ]
+
     def parse_gpu(gpu_str):
       cols = gpu_str.split(' ')
       return cols[5].split(')')[0], cols[1].split(':')[0]
@@ -62,14 +63,14 @@ def get_gpus(num_gpu=1):
       logging.debug("busy GPUs:\n{0}".format(smi_output))
       busy_uuids = [x for x in smi_output.split('\n') if len(x) > 0 ]
       for uuid, index in gpu_list:
-        if not uuid in busy_uuids:
+        if uuid not in busy_uuids:
           free_gpus.append(index)
 
       if len(free_gpus) < num_gpu:
         # keep trying indefinitely
         logging.warn("Unable to find available GPUs: requested={0}, available={1}".format(num_gpu, len(free_gpus)))
         retries += 1
-        time.sleep(30*retries)
+        time.sleep(30 * retries)
         free_gpus = []
 
     # if still can't find GPUs, raise exception
@@ -94,10 +95,8 @@ def get_free_gpu(max_gpu_utilization=40, min_free_memory=0.5, num_gpu=1):
     # Check each gpu
     for line in gpu_info:
       if len(line) > 0:
-        val = line.split(',')
         gpu_id, total_memory, free_memory, used_memory, gpu_util = line.split(',')
-
-        gpu_memory_util = float(used_memory)/float(total_memory)
+        gpu_memory_util = float(used_memory) / float(total_memory)
         gpu_info_array.append((float(gpu_util), gpu_memory_util, gpu_id))
 
     return(gpu_info_array)
@@ -129,13 +128,13 @@ def get_free_gpu(max_gpu_utilization=40, min_free_memory=0.5, num_gpu=1):
   # Return the least utilized GPUs if it's utilized less than max_gpu_utilization and amount of free memory is at most min_free_memory
   # Otherwise, run in cpu only mode
   for current_gpu in avg_array:
-    if current_gpu[0] < max_gpu_utilization and (1-current_gpu[1]) > min_free_memory:
+    if current_gpu[0] < max_gpu_utilization and (1 - current_gpu[1]) > min_free_memory:
       if gpus_found == 0:
         gpus_to_use = current_gpu[2]
-        free_memory = 1-current_gpu[1]
+        free_memory = 1 - current_gpu[1]
       else:
         gpus_to_use = gpus_to_use + "," + current_gpu[2]
-        free_memory = min(free_memory, 1-current_gpu[1])
+        free_memory = min(free_memory, 1 - current_gpu[1])
 
       gpus_found = gpus_found + 1
 

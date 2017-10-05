@@ -7,7 +7,9 @@ from __future__ import division
 from __future__ import nested_scopes
 from __future__ import print_function
 
-class Marker(object): pass
+class Marker(object):
+  pass
 
-class EndPartition(Marker): pass
+class EndPartition(Marker):
+  pass
 

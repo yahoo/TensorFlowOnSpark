@@ -90,108 +90,108 @@ def start_cluster_server(ctx, num_gpus=1, rdma=False):
   return (cluster, server)
 
 def next_batch(mgr, batch_size, qname='input'):
-    raise Exception("DEPRECATED: Use TFNode.DataFeed class instead")
+  raise Exception("DEPRECATED: Use TFNode.DataFeed class instead")
 
 def export_saved_model(sess, export_dir, tag_set, signatures):
-    """Convenience function to export a saved_model using provided arguments"""
-    import tensorflow as tf
-    g = sess.graph
-    g._unsafe_unfinalize()           # https://github.com/tensorflow/serving/issues/363
-    builder = tf.saved_model.builder.SavedModelBuilder(export_dir)
+  """Convenience function to export a saved_model using provided arguments"""
+  import tensorflow as tf
+  g = sess.graph
+  g._unsafe_unfinalize()           # https://github.com/tensorflow/serving/issues/363
+  builder = tf.saved_model.builder.SavedModelBuilder(export_dir)
 
-    logging.info("===== signatures: {}".format(signatures))
-    signature_def_map = {}
-    for key, sig in signatures.items():
-        signature_def_map[key] = tf.saved_model.signature_def_utils.build_signature_def(
-                  inputs={ name:tf.saved_model.utils.build_tensor_info(tensor) for name, tensor in sig['inputs'].items() },
-                  outputs={ name:tf.saved_model.utils.build_tensor_info(tensor) for name, tensor in sig['outputs'].items() },
-                  method_name=sig['method_name'] if 'method_name' in sig else key)
-    logging.info("===== signature_def_map: {}".format(signature_def_map))
-    builder.add_meta_graph_and_variables(sess,
-                  tag_set.split(','),
-                  signature_def_map=signature_def_map,
-                  clear_devices=True)
-    g.finalize()
-    builder.save()
+  logging.info("===== signatures: {}".format(signatures))
+  signature_def_map = {}
+  for key, sig in signatures.items():
+    signature_def_map[key] = tf.saved_model.signature_def_utils.build_signature_def(
+              inputs={ name:tf.saved_model.utils.build_tensor_info(tensor) for name, tensor in sig['inputs'].items() },
+              outputs={ name:tf.saved_model.utils.build_tensor_info(tensor) for name, tensor in sig['outputs'].items() },
+              method_name=sig['method_name'] if 'method_name' in sig else key)
+  logging.info("===== signature_def_map: {}".format(signature_def_map))
+  builder.add_meta_graph_and_variables(sess,
+              tag_set.split(','),
+              signature_def_map=signature_def_map,
+              clear_devices=True)
+  g.finalize()
+  builder.save()
 
 def batch_results(mgr, results, qname='output'):
-    raise Exception("DEPRECATED: Use TFNode.DataFeed class instead")
+  raise Exception("DEPRECATED: Use TFNode.DataFeed class instead")
 
 def terminate(mgr, qname='input'):
-    raise Exception("DEPRECATED: Use TFNode.DataFeed class instead")
+  raise Exception("DEPRECATED: Use TFNode.DataFeed class instead")
 
 class DataFeed(object):
-    def __init__(self, mgr, train_mode=True, qname_in='input', qname_out='output', input_mapping=None):
-        self.mgr = mgr
-        self.train_mode = train_mode
-        self.qname_in = qname_in
-        self.qname_out = qname_out
-        self.done_feeding = False
-        self.input_tensors = [ tensor for col, tensor in sorted(input_mapping.items()) ] if input_mapping is not None else None
+  def __init__(self, mgr, train_mode=True, qname_in='input', qname_out='output', input_mapping=None):
+    self.mgr = mgr
+    self.train_mode = train_mode
+    self.qname_in = qname_in
+    self.qname_out = qname_out
+    self.done_feeding = False
+    self.input_tensors = [ tensor for col, tensor in sorted(input_mapping.items()) ] if input_mapping is not None else None
 
-    def next_batch(self, batch_size):
-        """
-        Returns a batch of items from the input RDD as either an array or a dict (depending on the input_mapping).
+  def next_batch(self, batch_size):
+    """
+    Returns a batch of items from the input RDD as either an array or a dict (depending on the input_mapping).
 
-        If multiple tensors are provided per row, e.g. tuple of (tensor1, tensor2, ..., tensorN) and no input_mapping
-        is provided, the caller will be responsible for separating the tensors from the resulting array of tuples.
+    If multiple tensors are provided per row, e.g. tuple of (tensor1, tensor2, ..., tensorN) and no input_mapping
+    is provided, the caller will be responsible for separating the tensors from the resulting array of tuples.
 
-        If an input_mapping is provided to the DataFeed constructor, this will return a dictionary of tensors,
-        where the tensors will be constructed/named in the same order as specified in the input_mapping.
-        """
-        logging.debug("next_batch() invoked")
-        queue = self.mgr.get_queue(self.qname_in)
-        tensors = [] if self.input_tensors is None else { tensor:[] for tensor in self.input_tensors }
-        count = 0
-        while count < batch_size:
-            item = queue.get(block=True)
-            if item is None:
-                logging.info("next_batch() got None")
-                queue.task_done()
-                self.done_feeding = True
-                break
-            elif type(item) is marker.EndPartition:
-                logging.info("next_batch() got EndPartition")
-                queue.task_done()
-                if not self.train_mode and count > 0:
-                    break
-            else:
-                # logging.info("next_batch() got {0}".format(item))
-                if self.input_tensors is None:
-                  tensors.append(item)
-                else:
-                  for i in range(len(self.input_tensors)):
-                    tensors[self.input_tensors[i]].append(item[i])
-                count += 1
-                queue.task_done()
-        logging.debug("next_batch() returning {0} items".format(count))
-        return tensors
+    If an input_mapping is provided to the DataFeed constructor, this will return a dictionary of tensors,
+    where the tensors will be constructed/named in the same order as specified in the input_mapping.
+    """
+    logging.debug("next_batch() invoked")
+    queue = self.mgr.get_queue(self.qname_in)
+    tensors = [] if self.input_tensors is None else { tensor:[] for tensor in self.input_tensors }
+    count = 0
+    while count < batch_size:
+      item = queue.get(block=True)
+      if item is None:
+        logging.info("next_batch() got None")
+        queue.task_done()
+        self.done_feeding = True
+        break
+      elif type(item) is marker.EndPartition:
+        logging.info("next_batch() got EndPartition")
+        queue.task_done()
+        if not self.train_mode and count > 0:
+          break
+      else:
+        # logging.info("next_batch() got {0}".format(item))
+        if self.input_tensors is None:
+          tensors.append(item)
+        else:
+          for i in range(len(self.input_tensors)):
+            tensors[self.input_tensors[i]].append(item[i])
+        count += 1
+        queue.task_done()
+    logging.debug("next_batch() returning {0} items".format(count))
+    return tensors
 
-    def should_stop(self):
-        """Check if the feed process was told to stop."""
-        return self.done_feeding
+  def should_stop(self):
+    """Check if the feed process was told to stop."""
+    return self.done_feeding
 
-    def batch_results(self, results):
-        logging.debug("batch_results() invoked")
-        queue = self.mgr.get_queue(self.qname_out)
-        for item in results:
-            queue.put(item, block=True)
-        logging.debug("batch_results() returning data")
+  def batch_results(self, results):
+    logging.debug("batch_results() invoked")
+    queue = self.mgr.get_queue(self.qname_out)
+    for item in results:
+      queue.put(item, block=True)
+    logging.debug("batch_results() returning data")
 
-    def terminate(self):
-        logging.info("terminate() invoked")
-        self.mgr.set('state', 'terminating')
+  def terminate(self):
+    logging.info("terminate() invoked")
+    self.mgr.set('state', 'terminating')
 
-        # drop remaining items in the queue
-        queue = self.mgr.get_queue(self.qname_in)
-        count = 0
-        done = False
-        while not done:
-            try:
-                queue.get(block=True, timeout=5)
-                queue.task_done()
-                count += 1
-            except Empty:
-                logging.info("dropped {0} items from queue".format(count))
-                done = True
+    # drop remaining items in the queue
+    queue = self.mgr.get_queue(self.qname_in)
+    count = 0
+    done = False
+    while not done:
+      try:
+        queue.get(block=True, timeout=5)
+        queue.task_done()
+        count += 1
+      except Empty:
+        logging.info("dropped {0} items from queue".format(count))
+        done = True
 
