@@ -2,16 +2,7 @@
 # Licensed under the terms of the Apache 2.0 license.
 # Please see LICENSE file in the project root for terms.
 """
-This module provides Spark-compatible functions to launch TensorFlow on the executors.
-
-There are three main phases of operation:
-1. Reservation - reserves a port for the TensorFlow process on each executor and also starts a multiprocessing.Manager to
-listen for data/control messages.  For TensorFlow cluster applications, a cluster_spec "template" should be supplied.
-2. Startup - launches the Tensorflow main function on the executors.  Note: for cluster applications, this MUST be invoked from 
-a background thread on the Spark driver because the PS nodes will block until the job completes.
-3. Data feeding - sends RDD data to the TensorFlow nodes via each executor's multiprocessing.Manager.  Note: because the PS
-nodes block on startup, they will not receive any RDD partitions.
-4. Shutdown - sends a shutdown control message to the multiprocessing.Managers of the PS nodes.
+This module provides low-level Spark-compatible mapPartitions functions for managing the TensorFlowOnSpark cluster.
 """
 
 from __future__ import absolute_import
@@ -19,15 +10,12 @@ from __future__ import division
 from __future__ import nested_scopes
 from __future__ import print_function
 
-import getpass
 import logging
 import os
 import platform
-import random
 import socket
 import subprocess
 import multiprocessing
-import time
 import uuid
 from . import TFManager
 from . import reservation
@@ -35,330 +23,380 @@ from . import marker
 from . import util
 
 class TFNodeContext:
-    """This encapsulates key metadata for each TF node"""
-    def __init__(self, worker_num, job_name, task_index, cluster_spec, defaultFS, working_dir, mgr):
-        self.worker_num = worker_num
-        self.job_name = job_name
-        self.task_index = task_index
-        self.cluster_spec = cluster_spec
-        self.defaultFS = defaultFS
-        self.working_dir = working_dir
-        self.mgr = mgr
+  """Encapsulates unique metadata for each TensorFlowOnSpark node/executor.
+
+  An instance of this object will be passed to the TensorFlow "main" function via the `ctx` argument.
+  """
+  def __init__(self, worker_num, job_name, task_index, cluster_spec, defaultFS, working_dir, mgr):
+    """TFNodeContext constructor
+
+    Args:
+      worker_num: integer indentifier for this executor, per `nodeRDD = sc.parallelize(range(num_executors), num_executors)`
+      job_name: 'ps' or 'worker' per cluster_spec
+      task_index: integer rank (per job_name, e.g. "worker:0", "worker:1", "ps:0")
+      cluster_spec: tf.train.ClusterSpec instance
+      defaultFS: string representation of default FileSystem, e.g. "file://" or "hdfs://<namenode>:8020/"
+      working_dir: the current working directory for local filesystems, or YARN containers
+      mgr: TFManager instance for this Python worker
+    """
+    self.worker_num = worker_num
+    self.job_name = job_name
+    self.task_index = task_index
+    self.cluster_spec = cluster_spec
+    self.defaultFS = defaultFS
+    self.working_dir = working_dir
+    self.mgr = mgr
 
 class TFSparkNode(object):
-    """
-    This class contains the TFManager "singleton" per executor/python-worker.  Note that Spark may spawn more than one python-worker
-    per executor, so these module functions will reconnect to the "singleton", if needed.
-    """
-    mgr = None
-    cluster_id = None
+  """INTERNAL_USE.  Low-level functions intended to be used by the high-level TFCluster APIs to manage cluster state.
+
+  This class contains a reference to the TFManager "singleton" per executor/python-worker.  However, Spark may spawn more than one python-worker
+  per executor, so these functions will reconnect to the "singleton" instance, as needed.
+  """
+  mgr = None                # TFManager instance
+  cluster_id = None         # Unique ID for a given TensorFlowOnSpark cluster, used for invalidating state
 
 def _get_manager(cluster_info, host, ppid):
-    """
-    Returns this executor's "singleton" instance of the multiprocessing.Manager, reconnecting per python-worker if needed.
-    """
-    for node in cluster_info:
-        if node['host'] == host and node['ppid'] == ppid:
-            addr = node['addr']
-            authkey = node['authkey']
-            TFSparkNode.mgr = TFManager.connect(addr,authkey)
-            break;
-    logging.info("Connected to TFSparkNode.mgr on {0}, ppid={1}, state={2}".format(host, ppid, str(TFSparkNode.mgr.get('state'))))
-    return TFSparkNode.mgr
+  """Returns this executor's "singleton" instance of the multiprocessing.Manager, reconnecting per python-worker if needed.
+
+  Args:
+    cluster_info: cluster node reservations
+    host: host IP
+    ppid: parent (executor JVM) PID
+
+  Returns:
+    TFManager instance for this executor/python-worker
+  """
+  for node in cluster_info:
+    if node['host'] == host and node['ppid'] == ppid:
+      addr = node['addr']
+      authkey = node['authkey']
+      TFSparkNode.mgr = TFManager.connect(addr,authkey)
+      break
+  logging.info("Connected to TFSparkNode.mgr on {0}, ppid={1}, state={2}".format(host, ppid, str(TFSparkNode.mgr.get('state'))))
+  return TFSparkNode.mgr
 
 def reserve(cluster_spec, tensorboard, cluster_id, queues=['input', 'output']):
-    raise Exception("DEPRECATED: use run() method instead of reserve/start")
+  raise Exception("DEPRECATED: use run() method instead of reserve/start")
 
 def start(fn, tf_args, cluster_info, defaultFS, working_dir, background):
-    raise Exception("DEPRECATED: use run() method instead of reserve/start")
+  raise Exception("DEPRECATED: use run() method instead of reserve/start")
 
 def run(fn, tf_args, cluster_meta, tensorboard, queues, background):
-    """
-    Wraps the TensorFlow main function in a Spark mapPartitions-compatible function.
-    """
-    def _mapfn(iter):
-        # Note: consuming the input iterator helps Pyspark re-use this worker,
-        for i in iter:
-            worker_num = i
+  """Wraps the TensorFlow main function in a Spark mapPartitions-compatible function.
 
-        # assign TF job/task based on provided cluster_spec template (or use default/null values)
-        job_name = 'default'
-        task_index = -1
-        cluster_id = cluster_meta['id']
-        cluster_template = cluster_meta['cluster_template']
-        for jobtype in cluster_template:
-            nodes = cluster_template[jobtype]
-            if worker_num in nodes:
-               job_name = jobtype
-               task_index = nodes.index(worker_num)
-               break;
+  Args:
+    fn: TensorFlow "main" function provided by the user
+    tf_args: argparse args, or command line ARGV.  These will be passed ot the `fn`
+    cluster_meta: dictionary of cluster metadata (e.g. cluster_id, reservation.Server address, etc)
+    tensorboard: boolean indicating if the chief worker should spawn a Tensorboard server
+    queues: INTERNAL_USE
+    background: boolean indicating if the TensorFlow "main" function should be run in a background process.
 
-        # get unique id (hostname,ppid) for this executor's JVM
-        host = util.get_ip_address()
-        ppid = os.getppid()
-        port = 0
+  Returns:
+    A nodeRDD.mapPartitions() function.
+  """
+  def _mapfn(iter):
+    # Note: consuming the input iterator helps Pyspark re-use this worker,
+    for i in iter:
+      worker_num = i
 
-        # check for existing TFManagers
-        if TFSparkNode.mgr is not None and str(TFSparkNode.mgr.get('state')) != "'stopped'":
-            if TFSparkNode.cluster_id == cluster_id:
-                # raise an exception to force Spark to retry this "reservation" task on another executor
-                raise Exception("TFManager already started on {0}, ppid={1}, state={2}".format(host, ppid, str(TFSparkNode.mgr.get("state"))))
-            else:
-                # old state, just continue with creating new manager
-                logging.warn("Ignoring old TFManager with cluster_id {0}, requested cluster_id {1}".format(TFSparkNode.cluster_id, cluster_id))
+    # assign TF job/task based on provided cluster_spec template (or use default/null values)
+    job_name = 'default'
+    task_index = -1
+    cluster_id = cluster_meta['id']
+    cluster_template = cluster_meta['cluster_template']
+    for jobtype in cluster_template:
+      nodes = cluster_template[jobtype]
+      if worker_num in nodes:
+        job_name = jobtype
+        task_index = nodes.index(worker_num)
+        break
 
-        # start a TFManager and get a free port
-        # use a random uuid as the authkey
-        authkey = uuid.uuid4().bytes
-        addr = None
-        if job_name == 'ps':
-            # PS nodes must be remotely accessible in order to shutdown from Spark driver.
-            TFSparkNode.mgr = TFManager.start(authkey, ['control'], 'remote')
-            addr = (host, TFSparkNode.mgr.address[1])
-        else:
-            # worker nodes only need to be locally accessible within the executor for data feeding
-            TFSparkNode.mgr = TFManager.start(authkey, queues)
-            addr = TFSparkNode.mgr.address
+    # get unique id (hostname,ppid) for this executor's JVM
+    host = util.get_ip_address()
+    ppid = os.getppid()
+    port = 0
 
-        # initialize mgr state
-        TFSparkNode.mgr.set('state', 'running')
-        TFSparkNode.cluster_id = cluster_id
+    # check for existing TFManagers
+    if TFSparkNode.mgr is not None and str(TFSparkNode.mgr.get('state')) != "'stopped'":
+      if TFSparkNode.cluster_id == cluster_id:
+        # raise an exception to force Spark to retry this "reservation" task on another executor
+        raise Exception("TFManager already started on {0}, ppid={1}, state={2}".format(host, ppid, str(TFSparkNode.mgr.get("state"))))
+      else:
+        # old state, just continue with creating new manager
+        logging.warn("Ignoring old TFManager with cluster_id {0}, requested cluster_id {1}".format(TFSparkNode.cluster_id, cluster_id))
 
-        # expand Hadoop classpath wildcards for JNI (Spark 2.x)
-        if 'HADOOP_PREFIX' in os.environ:
-            classpath = os.environ['CLASSPATH']
-            hadoop_path = os.path.join(os.environ['HADOOP_PREFIX'], 'bin', 'hadoop')
-            hadoop_classpath = subprocess.check_output([hadoop_path, 'classpath', '--glob']).decode()
-            logging.debug("CLASSPATH: {0}".format(hadoop_classpath))
-            os.environ['CLASSPATH'] = classpath + os.pathsep + hadoop_classpath
+    # start a TFManager and get a free port
+    # use a random uuid as the authkey
+    authkey = uuid.uuid4().bytes
+    addr = None
+    if job_name == 'ps':
+      # PS nodes must be remotely accessible in order to shutdown from Spark driver.
+      TFSparkNode.mgr = TFManager.start(authkey, ['control'], 'remote')
+      addr = (host, TFSparkNode.mgr.address[1])
+    else:
+      # worker nodes only need to be locally accessible within the executor for data feeding
+      TFSparkNode.mgr = TFManager.start(authkey, queues)
+      addr = TFSparkNode.mgr.address
 
-        # start TensorBoard if requested
-        tb_pid = 0
-        tb_port = 0
-        if tensorboard and job_name == 'worker' and task_index == 0:
-            tb_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            tb_sock.bind(('',0))
-            tb_port = tb_sock.getsockname()[1]
-            tb_sock.close()
-            logdir = "tensorboard_%d" %(worker_num)
+    # initialize mgr state
+    TFSparkNode.mgr.set('state', 'running')
+    TFSparkNode.cluster_id = cluster_id
 
-            if 'PYSPARK_PYTHON' in os.environ:
-              # user-specified Python (typically Python.zip)
-              pypath = os.environ['PYSPARK_PYTHON']
-              logging.info("PYSPARK_PYTHON: {0}".format(pypath))
-              pydir = os.path.dirname(pypath)
-              tb_proc = subprocess.Popen([pypath, "%s/tensorboard"%pydir, "--logdir=%s"%logdir, "--port=%d"%tb_port, "--debug"], env=os.environ)
-            else:
-              # system-installed Python & tensorboard
-              python_path = os.environ['PYTHONPATH'].split(os.pathsep)
-              for path in python_path:
-                  os.environ['PATH'] = os.environ['PATH'] + os.pathsep + os.path.dirname(path)
-              tb_proc = subprocess.Popen(["tensorboard", "--logdir=%s"%logdir, "--port=%d"%tb_port, "--debug"], env=os.environ)
-            tb_pid = tb_proc.pid
+    # expand Hadoop classpath wildcards for JNI (Spark 2.x)
+    if 'HADOOP_PREFIX' in os.environ:
+      classpath = os.environ['CLASSPATH']
+      hadoop_path = os.path.join(os.environ['HADOOP_PREFIX'], 'bin', 'hadoop')
+      hadoop_classpath = subprocess.check_output([hadoop_path, 'classpath', '--glob']).decode()
+      logging.debug("CLASSPATH: {0}".format(hadoop_classpath))
+      os.environ['CLASSPATH'] = classpath + os.pathsep + hadoop_classpath
 
-        # check server to see if this task is being retried (i.e. already reserved)
-        client = reservation.Client(cluster_meta['server_addr'])
-        cluster_info = client.get_reservations()
-        tmp_sock = None
-        node_meta = None
-        for node in cluster_info:
-            (nhost, nppid) = (node['host'], node['ppid'])
-            if nhost == host and nppid == ppid:
-              node_meta = node
-              port = node['port']
+    # start TensorBoard if requested
+    tb_pid = 0
+    tb_port = 0
+    if tensorboard and job_name == 'worker' and task_index == 0:
+      tb_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+      tb_sock.bind(('',0))
+      tb_port = tb_sock.getsockname()[1]
+      tb_sock.close()
+      logdir = "tensorboard_%d" % worker_num
 
-        # if not already done, register everything we need to set up the cluster
-        if node_meta is None:
-          # first, find a free port for TF
-          tmp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-          tmp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-          tmp_sock.bind(('',port))
-          port = tmp_sock.getsockname()[1]
+      if 'PYSPARK_PYTHON' in os.environ:
+        # user-specified Python (typically Python.zip)
+        pypath = os.environ['PYSPARK_PYTHON']
+        logging.info("PYSPARK_PYTHON: {0}".format(pypath))
+        pydir = os.path.dirname(pypath)
+        tb_proc = subprocess.Popen([pypath, "%s/tensorboard" % pydir, "--logdir=%s" % logdir, "--port=%d" % tb_port, "--debug"], env=os.environ)
+      else:
+        # system-installed Python & tensorboard
+        python_path = os.environ['PYTHONPATH'].split(os.pathsep)
+        for path in python_path:
+            os.environ['PATH'] = os.environ['PATH'] + os.pathsep + os.path.dirname(path)
+        tb_proc = subprocess.Popen(["tensorboard", "--logdir=%s" % logdir, "--port=%d" % tb_port, "--debug"], env=os.environ)
+      tb_pid = tb_proc.pid
 
-          node_meta = {
-              'worker_num': worker_num,
-              'host': host,
-              'ppid': ppid,
-              'job_name': job_name,
-              'task_index': task_index,
-              'port': port,
-              'tb_pid': tb_pid,
-              'tb_port': tb_port,
-              'addr': addr,
-              'authkey': authkey
-          }
-          # register node metadata with server
-          logging.info("TFSparkNode.reserve: {0}".format(node_meta))
-          client.register(node_meta)
-          # wait for other nodes to finish reservations
-          cluster_info = client.await_reservations()
-          client.close()
+    # check server to see if this task is being retried (i.e. already reserved)
+    client = reservation.Client(cluster_meta['server_addr'])
+    cluster_info = client.get_reservations()
+    tmp_sock = None
+    node_meta = None
+    for node in cluster_info:
+      (nhost, nppid) = (node['host'], node['ppid'])
+      if nhost == host and nppid == ppid:
+        node_meta = node
+        port = node['port']
 
-        # construct a TensorFlow clusterspec from cluster_info
-        sorted_cluster_info = sorted(cluster_info, key=lambda k: k['worker_num'])
-        spec = {}
-        for node in sorted_cluster_info:
-            logging.info("node: {0}".format(node))
-            (njob, nhost, nport) = (node['job_name'], node['host'], node['port'])
-            hosts = [] if njob not in spec else spec[njob]
-            hosts.append("{0}:{1}".format(nhost, nport))
-            spec[njob] = hosts
+    # if not already done, register everything we need to set up the cluster
+    if node_meta is None:
+      # first, find a free port for TF
+      tmp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+      tmp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+      tmp_sock.bind(('',port))
+      port = tmp_sock.getsockname()[1]
 
-        # create a context object to hold metadata for TF
-        ctx = TFNodeContext(worker_num, job_name, task_index, spec, cluster_meta['default_fs'], cluster_meta['working_dir'], TFSparkNode.mgr)
+      node_meta = {
+          'worker_num': worker_num,
+          'host': host,
+          'ppid': ppid,
+          'job_name': job_name,
+          'task_index': task_index,
+          'port': port,
+          'tb_pid': tb_pid,
+          'tb_port': tb_port,
+          'addr': addr,
+          'authkey': authkey
+      }
+      # register node metadata with server
+      logging.info("TFSparkNode.reserve: {0}".format(node_meta))
+      client.register(node_meta)
+      # wait for other nodes to finish reservations
+      cluster_info = client.await_reservations()
+      client.close()
 
-        # release port reserved for TF as late as possible
-        if tmp_sock is not None:
-          tmp_sock.close()
+    # construct a TensorFlow clusterspec from cluster_info
+    sorted_cluster_info = sorted(cluster_info, key=lambda k: k['worker_num'])
+    spec = {}
+    for node in sorted_cluster_info:
+      logging.info("node: {0}".format(node))
+      (njob, nhost, nport) = (node['job_name'], node['host'], node['port'])
+      hosts = [] if njob not in spec else spec[njob]
+      hosts.append("{0}:{1}".format(nhost, nport))
+      spec[njob] = hosts
 
-        # Background mode relies reuse of python worker in Spark.
-        if background:
-            # However, reuse of python worker can't work on Windows, we need to check if the current
-            # script runs on Windows or not.
-            if os.name == 'nt' or platform.system() == 'Windows':
-                raise Exception("Background mode is not supported on Windows.")
-            # Check if the config of reuse python worker is enabled on Spark.
-            if not os.environ.get("SPARK_REUSE_WORKER"):
-                raise Exception("Background mode relies reuse of python worker on Spark. This config 'spark.python.worker.reuse' is not enabled on Spark. Please enable it before using background.")
+    # create a context object to hold metadata for TF
+    ctx = TFNodeContext(worker_num, job_name, task_index, spec, cluster_meta['default_fs'], cluster_meta['working_dir'], TFSparkNode.mgr)
 
-        if job_name == 'ps' or background:
-            # invoke the TensorFlow main function in a background thread
-            logging.info("Starting TensorFlow {0}:{1} on cluster node {2} on background process".format(job_name, task_index, worker_num))
-            p = multiprocessing.Process(target=fn, args=(tf_args, ctx))
-            p.start()
+    # release port reserved for TF as late as possible
+    if tmp_sock is not None:
+      tmp_sock.close()
 
-            # for ps nodes only, wait indefinitely in foreground thread for a "control" event (None == "stop")
-            if job_name == 'ps':
-                queue = TFSparkNode.mgr.get_queue('control')
-                done = False
-                while not done:
-                    msg =  queue.get(block=True)
-                    logging.info("Got msg: {0}".format(msg))
-                    if msg == None:
-                        logging.info("Terminating PS")
-                        TFSparkNode.mgr.set('state', 'stopped')
-                        done = True
-                    queue.task_done()
-        else:
-            # otherwise, just run TF function in the main executor/worker thread
-            logging.info("Starting TensorFlow {0}:{1} on cluster node {2} on foreground thread".format(job_name, task_index, worker_num))
-            fn(tf_args, ctx)
-            logging.info("Finished TensorFlow {0}:{1} on cluster node {2}".format(job_name, task_index, worker_num))
+    # Background mode relies reuse of python worker in Spark.
+    if background:
+      # However, reuse of python worker can't work on Windows, we need to check if the current
+      # script runs on Windows or not.
+      if os.name == 'nt' or platform.system() == 'Windows':
+        raise Exception("Background mode is not supported on Windows.")
+      # Check if the config of reuse python worker is enabled on Spark.
+      if not os.environ.get("SPARK_REUSE_WORKER"):
+        raise Exception("Background mode relies reuse of python worker on Spark. This config 'spark.python.worker.reuse' is not enabled on Spark. Please enable it before using background.")
 
-    return _mapfn
+    if job_name == 'ps' or background:
+      # invoke the TensorFlow main function in a background thread
+      logging.info("Starting TensorFlow {0}:{1} on cluster node {2} on background process".format(job_name, task_index, worker_num))
+      p = multiprocessing.Process(target=fn, args=(tf_args, ctx))
+      p.start()
+
+      # for ps nodes only, wait indefinitely in foreground thread for a "control" event (None == "stop")
+      if job_name == 'ps':
+        queue = TFSparkNode.mgr.get_queue('control')
+        done = False
+        while not done:
+          msg = queue.get(block=True)
+          logging.info("Got msg: {0}".format(msg))
+          if msg is None:
+            logging.info("Terminating PS")
+            TFSparkNode.mgr.set('state', 'stopped')
+            done = True
+          queue.task_done()
+    else:
+      # otherwise, just run TF function in the main executor/worker thread
+      logging.info("Starting TensorFlow {0}:{1} on cluster node {2} on foreground thread".format(job_name, task_index, worker_num))
+      fn(tf_args, ctx)
+      logging.info("Finished TensorFlow {0}:{1} on cluster node {2}".format(job_name, task_index, worker_num))
+
+  return _mapfn
 
 def train(cluster_info, cluster_meta, qname='input'):
-    """
-    Feeds Spark partitions into the shared multiprocessing.Queue.
-    """
-    def _train(iter):
-        # get shared queue, reconnecting if necessary
-        mgr = _get_manager(cluster_info, util.get_ip_address(), os.getppid())
-        queue = mgr.get_queue(qname)
-        state = str(mgr.get('state'))
-        logging.info("mgr.state={0}".format(state))
-        terminating = state == "'terminating'"
-        if terminating:
-            logging.info("mgr is terminating, skipping partition")
-            count = 0
-            for item in iter:
-                count += 1
-            logging.info("Skipped {0} items from partition".format(count))
+  """Feeds Spark partitions into the shared multiprocessing.Queue.
 
-        else:
-            logging.info("Feeding partition {0} into {1} queue {2}".format(iter, qname, queue))
-            count = 0
-            for item in iter:
-                count += 1
-                queue.put(item, block=True)
-            # wait for consumers to finish processing all items in queue before "finishing" this iterator
-            queue.join()
-            logging.info("Processed {0} items in partition".format(count))
+  Args:
+    cluster_info: node reservation information for the cluster (e.g. host, ppid, pid, ports, etc)
+    cluster_meta: dictionary of cluster metadata (e.g. cluster_id, reservation.Server address, etc)
+    qname: INTERNAL_USE
 
-        # check if TF is terminating feed after this partition
-        state = str(mgr.get('state'))
-        terminating = state == "'terminating'"
-        if terminating:
-            try:
-                logging.info("TFSparkNode: requesting stop")
-                client = reservation.Client(cluster_meta['server_addr'])
-                client.request_stop()
-                client.close()
-            except Exception as e:
-                # ignore any errors while requesting stop
-                logging.debug("Error while requesting stop: {0}".format(e))
-        return [terminating]
+  Returns:
+    A dataRDD.mapPartitions() function
+  """
+  def _train(iter):
+    # get shared queue, reconnecting if necessary
+    mgr = _get_manager(cluster_info, util.get_ip_address(), os.getppid())
+    queue = mgr.get_queue(qname)
+    state = str(mgr.get('state'))
+    logging.info("mgr.state={0}".format(state))
+    terminating = state == "'terminating'"
+    if terminating:
+      logging.info("mgr is terminating, skipping partition")
+      count = 0
+      for item in iter:
+        count += 1
+      logging.info("Skipped {0} items from partition".format(count))
 
-    return _train
+    else:
+      logging.info("Feeding partition {0} into {1} queue {2}".format(iter, qname, queue))
+      count = 0
+      for item in iter:
+        count += 1
+        queue.put(item, block=True)
+      # wait for consumers to finish processing all items in queue before "finishing" this iterator
+      queue.join()
+      logging.info("Processed {0} items in partition".format(count))
+
+    # check if TF is terminating feed after this partition
+    state = str(mgr.get('state'))
+    terminating = state == "'terminating'"
+    if terminating:
+      try:
+        logging.info("TFSparkNode: requesting stop")
+        client = reservation.Client(cluster_meta['server_addr'])
+        client.request_stop()
+        client.close()
+      except Exception as e:
+        # ignore any errors while requesting stop
+        logging.debug("Error while requesting stop: {0}".format(e))
+    return [terminating]
+
+  return _train
 
 def inference(cluster_info, qname='input'):
-    """
-    Feeds Spark partitions into the shared multiprocessing.Queue and returns inference results.
-    """
-    def _inference(iter):
-        # get shared queue, reconnecting if necessary
-        mgr = _get_manager(cluster_info, util.get_ip_address(), os.getppid())
-        queue_in = mgr.get_queue(qname)
+  """Feeds Spark partitions into the shared multiprocessing.Queue and returns inference results.
 
-        logging.info("Feeding partition {0} into {1} queue {2}".format(iter, qname, queue_in))
-        count = 0
-        for item in iter:
-            count += 1
-            queue_in.put(item, block=True)
+  Args:
+    cluster_info: node reservation information for the cluster (e.g. host, ppid, pid, ports, etc)
 
-        # signal "end of partition"
-        queue_in.put(marker.EndPartition())
+  Returns:
+    A dataRDD.mapPartitions() function
+  """
+  def _inference(iter):
+    # get shared queue, reconnecting if necessary
+    mgr = _get_manager(cluster_info, util.get_ip_address(), os.getppid())
+    queue_in = mgr.get_queue(qname)
 
-        # skip empty partitions
-        if count == 0:
-            return []
+    logging.info("Feeding partition {0} into {1} queue {2}".format(iter, qname, queue_in))
+    count = 0
+    for item in iter:
+      count += 1
+      queue_in.put(item, block=True)
 
-        # wait for consumers to finish processing all items in queue before "finishing" this iterator
-        queue_in.join()
-        logging.info("Processed {0} items in partition".format(count))
+    # signal "end of partition"
+    queue_in.put(marker.EndPartition())
 
-        # read result queue
-        results = []
-        queue_out = mgr.get_queue('output')
-        while count > 0:
-            result = queue_out.get(block=True)
-            results.append(result)
-            count -= 1
-            queue_out.task_done()
+    # skip empty partitions
+    if count == 0:
+      return []
 
-        logging.info("Finished processing partition")
-        return results
+    # wait for consumers to finish processing all items in queue before "finishing" this iterator
+    queue_in.join()
+    logging.info("Processed {0} items in partition".format(count))
 
-    return _inference
+    # read result queue
+    results = []
+    queue_out = mgr.get_queue('output')
+    while count > 0:
+      result = queue_out.get(block=True)
+      results.append(result)
+      count -= 1
+      queue_out.task_done()
+
+    logging.info("Finished processing partition")
+    return results
+
+  return _inference
 
 def shutdown(cluster_info, queues=['input']):
-    def _shutdown(iter):
-        """
-        Stops all TensorFlow nodes by feeding None into the multiprocessing.Queues.
-        """
-        host = util.get_ip_address()
-        ppid = os.getppid()
+  """Stops all TensorFlow nodes by feeding None into the multiprocessing.Queues
 
-        # reconnect to shared queue
-        mgr = _get_manager(cluster_info, host, ppid)
+  Args:
+    cluster_info: node reservation information for the cluster (e.g. host, ppid, pid, ports, etc)
 
-        # send SIGTERM to Tensorboard proc (if running)
-        for node in cluster_info:
-           if node['host'] == host and node['ppid'] == ppid:
-              tb_pid = node['tb_pid']
-              if tb_pid != 0:
-                  logging.info("Stopping tensorboard (pid={0})".format(tb_pid))
-                  subprocess.Popen(["kill", str(tb_pid)])
+  Returns:
+    A nodeRDD.mapPartitions() function
+  """
+  def _shutdown(iter):
+    host = util.get_ip_address()
+    ppid = os.getppid()
 
-        # terminate any listening queues
-        logging.info("Stopping all queues")
-        for q in queues:
-            queue = mgr.get_queue(q)
-            logging.info("Feeding None into {0} queue".format(q))
-            queue.put(None, block=True)
+    # reconnect to shared queue
+    mgr = _get_manager(cluster_info, host, ppid)
 
-        logging.info("Setting mgr.state to 'stopped'")
-        mgr.set('state', 'stopped')
-        return [True]
-    return _shutdown
+    # send SIGTERM to Tensorboard proc (if running)
+    for node in cluster_info:
+      if node['host'] == host and node['ppid'] == ppid:
+        tb_pid = node['tb_pid']
+        if tb_pid != 0:
+          logging.info("Stopping tensorboard (pid={0})".format(tb_pid))
+          subprocess.Popen(["kill", str(tb_pid)])
+
+    # terminate any listening queues
+    logging.info("Stopping all queues")
+    for q in queues:
+      queue = mgr.get_queue(q)
+      logging.info("Feeding None into {0} queue".format(q))
+      queue.put(None, block=True)
+
+    logging.info("Setting mgr.state to 'stopped'")
+    mgr.set('state', 'stopped')
+    return [True]
+
+  return _shutdown
 
