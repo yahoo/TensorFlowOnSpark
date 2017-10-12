@@ -1,6 +1,7 @@
 # Copyright 2017 Yahoo Inc.
 # Licensed under the terms of the Apache 2.0 license.
 # Please see LICENSE file in the project root for terms.
+"""A collection of utility functions for loading/saving TensorFlow TFRecords files as Spark DataFrames."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -15,12 +16,25 @@ loadedDF = {}       # Stores origin paths of loaded DataFrames (df => path)
 
 
 def isLoadedDF(df):
-  """Returns true if the DataFrame was produced by the loadTFRecords() method"""
+  """Returns True if the input DataFrame was produced by the loadTFRecords() method.
+
+  This is primarily used by the Spark ML Pipelines APIs.
+
+  Args:
+    :df: Spark Dataframe
+  """
   return df in loadedDF
 
 
 def saveAsTFRecords(df, output_dir):
-  """Helper function to persist a Spark DataFrame as TFRecords"""
+  """Save a Spark DataFrame as TFRecords.
+
+  This will convert the DataFrame rows to TFRecords prior to saving.
+
+  Args:
+    :df: Spark DataFrame
+    :output_dir: Path to save TFRecords
+  """
   tf_rdd = df.rdd.mapPartitions(toTFExample(df.dtypes))
   tf_rdd.saveAsNewAPIHadoopFile(output_dir, "org.tensorflow.hadoop.io.TFRecordFileOutputFormat",
                             keyClass="org.apache.hadoop.io.BytesWritable",
@@ -28,17 +42,18 @@ def saveAsTFRecords(df, output_dir):
 
 
 def loadTFRecords(sc, input_dir, binary_features=[]):
-  """Helper function to load TFRecords from disk into a DataFrame.  This will attempt to automatically
-  convert the tf.train.Example features into Spark DataFrame columns of equivalent types.
+  """Load TFRecords from disk into a Spark DataFrame.
 
-  Note: TensorFlow represents both strings and binary types as `tf.train.BytesList`, and we need to 
+  This will attempt to automatically convert the tf.train.Example features into Spark DataFrame columns of equivalent types.
+
+  Note: TensorFlow represents both strings and binary types as tf.train.BytesList, and we need to
   disambiguate these types for Spark DataFrames DTypes (StringType and BinaryType), so we require a "hint"
-  from the caller in the binary_features argument.
+  from the caller in the ``binary_features`` argument.
 
   Args:
-    sc: SparkContext
-    input_dir: location of TFRecords on disk
-    binary_features: a list of tf.train.Example features which are expected to be binary/bytearrays.
+    :sc: SparkContext
+    :input_dir: location of TFRecords on disk.
+    :binary_features: a list of tf.train.Example features which are expected to be binary/bytearrays.
 
   Returns:
     A Spark DataFrame mirroring the tf.train.Example schema.
@@ -67,16 +82,16 @@ def loadTFRecords(sc, input_dir, binary_features=[]):
 
 
 def toTFExample(dtypes):
-  """mapPartition function to convert a Spark RDD of Row into an RDD of serialized `tf.train.Example` bytestring.
+  """mapPartition function to convert a Spark RDD of Row into an RDD of serialized tf.train.Example bytestring.
 
-  Note that `tf.train.Example` is a fairly flat structure with limited datatypes, e.g. `tf.train.FloatList`,
-  `tf.train.Int64List`, and `tf.train.BytesList`, so most DataFrame types will be coerced into one of these types.
+  Note that tf.train.Example is a fairly flat structure with limited datatypes, e.g. tf.train.FloatList,
+  tf.train.Int64List, and tf.train.BytesList, so most DataFrame types will be coerced into one of these types.
 
   Args:
-    dtypes: the `DataFrame.dtypes` of the source DataFrame.
+    :dtypes: the DataFrame.dtypes of the source DataFrame.
 
   Returns:
-    A mapPartition lambda function which converts the source DataFrame into `tf.train.Example` bytestring.
+    A mapPartition function which converts the source DataFrame into tf.train.Example bytestrings.
   """
   def _toTFExample(iter):
 
@@ -114,11 +129,15 @@ def toTFExample(dtypes):
 
 
 def infer_schema(example, binary_features=[]):
-  """Given a tf.train.Example, infer the Spark DataFrame schema (StructFields)
+  """Given a tf.train.Example, infer the Spark DataFrame schema (StructFields).
+
+  Note: TensorFlow represents both strings and binary types as tf.train.BytesList, and we need to
+  disambiguate these types for Spark DataFrames DTypes (StringType and BinaryType), so we require a "hint"
+  from the caller in the ``binary_features`` argument.
 
   Args:
-    example: a tf.train.Example
-    binary_features: a list of tf.train.Example features which are expected to be binary/bytearrays.
+    :example: a tf.train.Example
+    :binary_features: a list of tf.train.Example features which are expected to be binary/bytearrays.
 
   Returns:
     A DataFrame StructType schema
@@ -147,11 +166,15 @@ def infer_schema(example, binary_features=[]):
 
 
 def fromTFExample(iter, binary_features=[]):
-  """mapPartition function to convert an RDD of `tf.train.Example' bytestring into an RDD of Row.
+  """mapPartition function to convert an RDD of serialized tf.train.Example bytestring into an RDD of Row.
+
+  Note: TensorFlow represents both strings and binary types as tf.train.BytesList, and we need to
+  disambiguate these types for Spark DataFrames DTypes (StringType and BinaryType), so we require a "hint"
+  from the caller in the ``binary_features`` argument.
 
   Args:
-    iter: the RDD partition iterator
-    binary_features: a list of tf.train.Example features which are expected to be binary/bytearrays.
+    :iter: the RDD partition iterator
+    :binary_features: a list of tf.train.Example features which are expected to be binary/bytearrays.
 
   Returns:
     An array/iterator of DataFrame Row with features converted into columns.

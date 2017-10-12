@@ -1,0 +1,254 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>tensorflowonspark.gpu_info &#8212; TensorFlowOnSpark 1.0.5 documentation</title>
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0.5',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.0.5 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for tensorflowonspark.gpu_info</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2017 Yahoo Inc.</span>
+<span class="c1"># Licensed under the terms of the Apache 2.0 license.</span>
+<span class="c1"># Please see LICENSE file in the project root for terms.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">nested_scopes</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+
+<span class="kn">import</span> <span class="nn">ctypes</span> <span class="k">as</span> <span class="nn">ct</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">platform</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="n">MAX_RETRIES</span> <span class="o">=</span> <span class="mi">3</span>           <span class="c1">#: Maximum retries to allocate GPUs</span>
+
+<span class="k">def</span> <span class="nf">_get_gpu</span><span class="p">():</span>
+  <span class="sd">&quot;&quot;&quot;*DEPRECATED*. Allocates first available GPU using cudaSetDevice(), or returns 0 otherwise.&quot;&quot;&quot;</span>
+  <span class="c1"># Note: this code executes, but Tensorflow subsequently complains that the &quot;current context was not created by the StreamExecutor cuda_driver API&quot;</span>
+  <span class="n">system</span> <span class="o">=</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span>
+  <span class="k">if</span> <span class="n">system</span> <span class="o">==</span> <span class="s2">&quot;Linux&quot;</span><span class="p">:</span>
+    <span class="n">libcudart</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">cdll</span><span class="o">.</span><span class="n">LoadLibrary</span><span class="p">(</span><span class="s2">&quot;libcudart.so&quot;</span><span class="p">)</span>
+  <span class="k">elif</span> <span class="n">system</span> <span class="o">==</span> <span class="s2">&quot;Darwin&quot;</span><span class="p">:</span>
+    <span class="n">libcudart</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">cdll</span><span class="o">.</span><span class="n">LoadLibrary</span><span class="p">(</span><span class="s2">&quot;libcudart.dylib&quot;</span><span class="p">)</span>
+  <span class="k">elif</span> <span class="n">system</span> <span class="o">==</span> <span class="s2">&quot;Windows&quot;</span><span class="p">:</span>
+    <span class="n">libcudart</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">windll</span><span class="o">.</span><span class="n">LoadLibrary</span><span class="p">(</span><span class="s2">&quot;libcudart.dll&quot;</span><span class="p">)</span>
+  <span class="k">else</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Cannot identify system.&quot;</span><span class="p">)</span>
+
+  <span class="n">device_count</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">c_int</span><span class="p">()</span>
+  <span class="n">libcudart</span><span class="o">.</span><span class="n">cudaGetDeviceCount</span><span class="p">(</span><span class="n">ct</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">device_count</span><span class="p">))</span>
+  <span class="n">gpu</span> <span class="o">=</span> <span class="mi">0</span>
+  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">device_count</span><span class="o">.</span><span class="n">value</span><span class="p">):</span>
+    <span class="k">if</span> <span class="p">(</span><span class="mi">0</span> <span class="o">==</span> <span class="n">libcudart</span><span class="o">.</span><span class="n">cudaSetDevice</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="ow">and</span> <span class="mi">0</span> <span class="o">==</span> <span class="n">libcudart</span><span class="o">.</span><span class="n">cudaFree</span><span class="p">(</span><span class="mi">0</span><span class="p">)):</span>
+      <span class="n">gpu</span> <span class="o">=</span> <span class="n">i</span>
+      <span class="k">break</span>
+  <span class="k">return</span> <span class="n">gpu</span>
+
+<div class="viewcode-block" id="get_gpus"><a class="viewcode-back" href="../../tensorflowonspark.gpu_info.html#tensorflowonspark.gpu_info.get_gpus">[docs]</a><span class="k">def</span> <span class="nf">get_gpus</span><span class="p">(</span><span class="n">num_gpu</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Get list of free GPUs according to nvidia-smi.</span>
+
+<span class="sd">  This will retry for ``MAX_RETRIES`` times until the requested number of GPUs are available.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    :num_gpu: number of GPUs desired.</span>
+
+<span class="sd">  Returns:</span>
+<span class="sd">    Comma-delimited string of GPU ids, or raises an Exception if the requested number of GPUs could not be found.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+
+  <span class="k">try</span><span class="p">:</span>
+    <span class="c1"># get list of gpus (index, uuid)</span>
+    <span class="n">list_gpus</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">check_output</span><span class="p">([</span><span class="s2">&quot;nvidia-smi&quot;</span><span class="p">,</span> <span class="s2">&quot;--list-gpus&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;all GPUs:</span><span class="se">\n</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">list_gpus</span><span class="p">))</span>
+
+    <span class="c1"># parse index and guid</span>
+    <span class="n">gpus</span> <span class="o">=</span> <span class="p">[</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">list_gpus</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">parse_gpu</span><span class="p">(</span><span class="n">gpu_str</span><span class="p">):</span>
+      <span class="n">cols</span> <span class="o">=</span> <span class="n">gpu_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+      <span class="k">return</span> <span class="n">cols</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;)&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cols</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">gpu_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">parse_gpu</span><span class="p">(</span><span class="n">gpu</span><span class="p">)</span> <span class="k">for</span> <span class="n">gpu</span> <span class="ow">in</span> <span class="n">gpus</span><span class="p">]</span>
+
+    <span class="c1"># randomize the search order to get a better distribution of GPUs</span>
+    <span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">gpu_list</span><span class="p">)</span>
+
+    <span class="n">free_gpus</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">retries</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">free_gpus</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">num_gpu</span> <span class="ow">and</span> <span class="n">retries</span> <span class="o">&lt;</span> <span class="n">MAX_RETRIES</span><span class="p">:</span>
+      <span class="n">smi_output</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">check_output</span><span class="p">([</span><span class="s2">&quot;nvidia-smi&quot;</span><span class="p">,</span> <span class="s2">&quot;--format=csv,noheader,nounits&quot;</span><span class="p">,</span> <span class="s2">&quot;--query-compute-apps=gpu_uuid&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+      <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;busy GPUs:</span><span class="se">\n</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">smi_output</span><span class="p">))</span>
+      <span class="n">busy_uuids</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">smi_output</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="p">]</span>
+      <span class="k">for</span> <span class="n">uuid</span><span class="p">,</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">gpu_list</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">uuid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">busy_uuids</span><span class="p">:</span>
+          <span class="n">free_gpus</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+
+      <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">free_gpus</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">num_gpu</span><span class="p">:</span>
+        <span class="c1"># keep trying indefinitely</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Unable to find available GPUs: requested=</span><span class="si">{0}</span><span class="s2">, available=</span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num_gpu</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">free_gpus</span><span class="p">)))</span>
+        <span class="n">retries</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">30</span> <span class="o">*</span> <span class="n">retries</span><span class="p">)</span>
+        <span class="n">free_gpus</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># if still can&#39;t find GPUs, raise exception</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">free_gpus</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">num_gpu</span><span class="p">:</span>
+      <span class="n">smi_output</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">check_output</span><span class="p">([</span><span class="s2">&quot;nvidia-smi&quot;</span><span class="p">,</span> <span class="s2">&quot;--format=csv&quot;</span><span class="p">,</span> <span class="s2">&quot;--query-compute-apps=gpu_uuid,pid,process_name,used_gpu_memory&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+      <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">smi_output</span><span class="p">))</span>
+      <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Unable to find free GPU:</span><span class="se">\n</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">smi_output</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">free_gpus</span><span class="p">[:</span><span class="n">num_gpu</span><span class="p">])</span>
+  <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CalledProcessError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;nvidia-smi error&quot;</span><span class="p">,</span> <span class="n">e</span><span class="o">.</span><span class="n">output</span><span class="p">)</span></div>
+
+<span class="c1"># Function to get the gpu information</span>
+<span class="k">def</span> <span class="nf">_get_free_gpu</span><span class="p">(</span><span class="n">max_gpu_utilization</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">min_free_memory</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">num_gpu</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Get available GPUs according to utilization thresholds.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    :max_gpu_utilization: percent utilization threshold to consider a GPU &quot;free&quot;</span>
+<span class="sd">    :min_free_memory: percent free memory to consider a GPU &quot;free&quot;</span>
+<span class="sd">    :num_gpu: number of requested GPUs</span>
+
+<span class="sd">  Returns:</span>
+<span class="sd">    A tuple of (available_gpus, minimum_free_memory), where available_gpus is a comma-delimited string of GPU ids, and minimum_free_memory</span>
+<span class="sd">    is the lowest amount of free memory available on the available_gpus.</span>
+
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">def</span> <span class="nf">get_gpu_info</span><span class="p">():</span>
+    <span class="c1"># Get the gpu information</span>
+    <span class="n">gpu_info</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">check_output</span><span class="p">([</span><span class="s2">&quot;nvidia-smi&quot;</span><span class="p">,</span> <span class="s2">&quot;--format=csv,noheader,nounits&quot;</span><span class="p">,</span> <span class="s2">&quot;--query-gpu=index,memory.total,memory.free,memory.used,utilization.gpu&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+    <span class="n">gpu_info</span> <span class="o">=</span> <span class="n">gpu_info</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">gpu_info_array</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Check each gpu</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">gpu_info</span><span class="p">:</span>
+      <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">gpu_id</span><span class="p">,</span> <span class="n">total_memory</span><span class="p">,</span> <span class="n">free_memory</span><span class="p">,</span> <span class="n">used_memory</span><span class="p">,</span> <span class="n">gpu_util</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+        <span class="n">gpu_memory_util</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">used_memory</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">total_memory</span><span class="p">)</span>
+        <span class="n">gpu_info_array</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="nb">float</span><span class="p">(</span><span class="n">gpu_util</span><span class="p">),</span> <span class="n">gpu_memory_util</span><span class="p">,</span> <span class="n">gpu_id</span><span class="p">))</span>
+
+    <span class="k">return</span><span class="p">(</span><span class="n">gpu_info_array</span><span class="p">)</span>
+
+  <span class="c1"># Read the gpu information multiple times</span>
+  <span class="n">num_times_to_average</span> <span class="o">=</span> <span class="mi">5</span>
+  <span class="n">current_array</span> <span class="o">=</span> <span class="p">[]</span>
+  <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">num_times_to_average</span><span class="p">):</span>
+    <span class="n">current_array</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">get_gpu_info</span><span class="p">())</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+  <span class="c1"># Get number of gpus</span>
+  <span class="n">num_gpus</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">current_array</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+  <span class="c1"># Average the gpu information</span>
+  <span class="n">avg_array</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">num_gpus</span><span class="p">)]</span>
+  <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">num_times_to_average</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">gpu_ind</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">num_gpus</span><span class="p">):</span>
+      <span class="n">avg_array</span><span class="p">[</span><span class="n">gpu_ind</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">avg_array</span><span class="p">[</span><span class="n">gpu_ind</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">current_array</span><span class="p">[</span><span class="n">ind</span><span class="p">][</span><span class="n">gpu_ind</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">avg_array</span><span class="p">[</span><span class="n">gpu_ind</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">current_array</span><span class="p">[</span><span class="n">ind</span><span class="p">][</span><span class="n">gpu_ind</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">avg_array</span><span class="p">[</span><span class="n">gpu_ind</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
+
+  <span class="k">for</span> <span class="n">gpu_ind</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">num_gpus</span><span class="p">):</span>
+    <span class="n">avg_array</span><span class="p">[</span><span class="n">gpu_ind</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">avg_array</span><span class="p">[</span><span class="n">gpu_ind</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="n">num_times_to_average</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">avg_array</span><span class="p">[</span><span class="n">gpu_ind</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="n">num_times_to_average</span><span class="p">,</span> <span class="n">avg_array</span><span class="p">[</span><span class="n">gpu_ind</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
+
+  <span class="n">avg_array</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+
+  <span class="n">gpus_found</span> <span class="o">=</span> <span class="mi">0</span>
+  <span class="n">gpus_to_use</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+  <span class="n">free_memory</span> <span class="o">=</span> <span class="mf">1.0</span>
+  <span class="c1"># Return the least utilized GPUs if it&#39;s utilized less than max_gpu_utilization and amount of free memory is at least min_free_memory</span>
+  <span class="c1"># Otherwise, run in cpu only mode</span>
+  <span class="k">for</span> <span class="n">current_gpu</span> <span class="ow">in</span> <span class="n">avg_array</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">current_gpu</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">max_gpu_utilization</span> <span class="ow">and</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">current_gpu</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&gt;</span> <span class="n">min_free_memory</span><span class="p">:</span>
+      <span class="k">if</span> <span class="n">gpus_found</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">gpus_to_use</span> <span class="o">=</span> <span class="n">current_gpu</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">free_memory</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">current_gpu</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+      <span class="k">else</span><span class="p">:</span>
+        <span class="n">gpus_to_use</span> <span class="o">=</span> <span class="n">gpus_to_use</span> <span class="o">+</span> <span class="s2">&quot;,&quot;</span> <span class="o">+</span> <span class="n">current_gpu</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">free_memory</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">free_memory</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">current_gpu</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+      <span class="n">gpus_found</span> <span class="o">=</span> <span class="n">gpus_found</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="n">gpus_found</span> <span class="o">==</span> <span class="n">num_gpu</span><span class="p">:</span>
+      <span class="k">break</span>
+
+  <span class="k">return</span> <span class="n">gpus_to_use</span><span class="p">,</span> <span class="n">free_memory</span>
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.0.5 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Yahoo Inc.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.4.
+    </div>
+  </body>
+</html>

@@ -14,12 +14,10 @@ import random
 import subprocess
 import time
 
-MAX_RETRIES = 3
+MAX_RETRIES = 3           #: Maximum retries to allocate GPUs
 
-def get_gpu():
-  """DEPRECATED: 2018-01-01
-  Allocates first available GPU using cudaSetDevice(), or returns 0 otherwise
-  """
+def _get_gpu():
+  """*DEPRECATED*. Allocates first available GPU using cudaSetDevice(), or returns 0 otherwise."""
   # Note: this code executes, but Tensorflow subsequently complains that the "current context was not created by the StreamExecutor cuda_driver API"
   system = platform.system()
   if system == "Linux":
@@ -43,10 +41,10 @@ def get_gpu():
 def get_gpus(num_gpu=1):
   """Get list of free GPUs according to nvidia-smi.
 
-  This will retry for MAX_RETRIES times until the requested number of GPUs are available.
+  This will retry for ``MAX_RETRIES`` times until the requested number of GPUs are available.
 
   Args:
-    num_gpu: number of GPUs desired
+    :num_gpu: number of GPUs desired.
 
   Returns:
     Comma-delimited string of GPU ids, or raises an Exception if the requested number of GPUs could not be found.
@@ -96,13 +94,13 @@ def get_gpus(num_gpu=1):
     print ("nvidia-smi error", e.output)
 
 # Function to get the gpu information
-def get_free_gpu(max_gpu_utilization=40, min_free_memory=0.5, num_gpu=1):
-  """Get available GPUs according to utilization thresholds
+def _get_free_gpu(max_gpu_utilization=40, min_free_memory=0.5, num_gpu=1):
+  """Get available GPUs according to utilization thresholds.
 
   Args:
-    max_gpu_utilization: percent utilization threshold to consider a GPU "free"
-    min_free_memory: percent free memory to consider a GPU "free"
-    num_gpu: number of requested GPUs
+    :max_gpu_utilization: percent utilization threshold to consider a GPU "free"
+    :min_free_memory: percent free memory to consider a GPU "free"
+    :num_gpu: number of requested GPUs
 
   Returns:
     A tuple of (available_gpus, minimum_free_memory), where available_gpus is a comma-delimited string of GPU ids, and minimum_free_memory

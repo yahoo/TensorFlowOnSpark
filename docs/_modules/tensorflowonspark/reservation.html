@@ -1,0 +1,334 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>tensorflowonspark.reservation &#8212; TensorFlowOnSpark 1.0.5 documentation</title>
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0.5',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.0.5 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for tensorflowonspark.reservation</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2017 Yahoo Inc.</span>
+<span class="c1"># Licensed under the terms of the Apache 2.0 license.</span>
+<span class="c1"># Please see LICENSE file in the project root for terms.</span>
+<span class="sd">&quot;&quot;&quot;This module contains client/server methods to manage node reservations during TFCluster startup.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">nested_scopes</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">select</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">struct</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">util</span>
+
+<span class="n">BUFSIZE</span> <span class="o">=</span> <span class="mi">1024</span>
+<span class="n">MAX_RETRIES</span> <span class="o">=</span> <span class="mi">3</span>
+
+<div class="viewcode-block" id="Reservations"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.Reservations">[docs]</a><span class="k">class</span> <span class="nc">Reservations</span><span class="p">:</span>
+  <span class="sd">&quot;&quot;&quot;Thread-safe store for node reservations.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    :required: expected number of nodes in the cluster.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">required</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">required</span> <span class="o">=</span> <span class="n">required</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">RLock</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">reservations</span> <span class="o">=</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="Reservations.add"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.Reservations.add">[docs]</a>  <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">meta</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Add a reservation.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      :meta: a dictonary of metadata about a node</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">reservations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">meta</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Reservations.done"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.Reservations.done">[docs]</a>  <span class="k">def</span> <span class="nf">done</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns True if the ``required`` number of reservations have been fulfilled.&quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span>
+      <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reservations</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">required</span></div>
+
+<div class="viewcode-block" id="Reservations.get"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.Reservations.get">[docs]</a>  <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get the list of current reservations.&quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span>
+      <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">reservations</span></div>
+
+<div class="viewcode-block" id="Reservations.remaining"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.Reservations.remaining">[docs]</a>  <span class="k">def</span> <span class="nf">remaining</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get a count of remaining/unfulfilled reservations.&quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span>
+      <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">required</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reservations</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="MessageSocket"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.MessageSocket">[docs]</a><span class="k">class</span> <span class="nc">MessageSocket</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Abstract class w/ length-prefixed socket send/receive functions.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="MessageSocket.receive"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.MessageSocket.receive">[docs]</a>  <span class="k">def</span> <span class="nf">receive</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sock</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Receive a message on ``sock``.&quot;&quot;&quot;</span>
+    <span class="n">msg</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;&#39;</span>
+    <span class="n">recv_done</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">recv_len</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">while</span> <span class="ow">not</span> <span class="n">recv_done</span><span class="p">:</span>
+      <span class="n">buf</span> <span class="o">=</span> <span class="n">sock</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="n">BUFSIZE</span><span class="p">)</span>
+      <span class="k">if</span> <span class="n">buf</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;socket closed&quot;</span><span class="p">)</span>
+      <span class="k">if</span> <span class="n">recv_len</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">recv_len</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;&gt;I&#39;</span><span class="p">,</span> <span class="n">buf</span><span class="p">[:</span><span class="mi">4</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">data</span> <span class="o">+=</span> <span class="n">buf</span><span class="p">[</span><span class="mi">4</span><span class="p">:]</span>
+        <span class="n">recv_len</span> <span class="o">-=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+      <span class="k">else</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">+=</span> <span class="n">buf</span>
+        <span class="n">recv_len</span> <span class="o">-=</span> <span class="nb">len</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span>
+      <span class="n">recv_done</span> <span class="o">=</span> <span class="p">(</span><span class="n">recv_len</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">msg</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">msg</span></div>
+
+<div class="viewcode-block" id="MessageSocket.send"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.MessageSocket.send">[docs]</a>  <span class="k">def</span> <span class="nf">send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sock</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Send ``msg`` to destination ``sock``.&quot;&quot;&quot;</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    <span class="n">buf</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s1">&#39;&gt;I&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span> <span class="o">+</span> <span class="n">data</span>
+    <span class="n">sock</span><span class="o">.</span><span class="n">sendall</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="Server"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.Server">[docs]</a><span class="k">class</span> <span class="nc">Server</span><span class="p">(</span><span class="n">MessageSocket</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Simple socket server with length-prefixed pickle messages.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    :count: expected number of nodes in the cluster.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">reservations</span> <span class="o">=</span> <span class="kc">None</span>             <span class="c1">#: List of reservations managed by this server.</span>
+  <span class="n">done</span> <span class="o">=</span> <span class="kc">False</span>                    <span class="c1">#: boolean indicating if server should be shutdown.</span>
+
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">count</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">count</span> <span class="o">&gt;</span> <span class="mi">0</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">reservations</span> <span class="o">=</span> <span class="n">Reservations</span><span class="p">(</span><span class="n">count</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Server.await_reservations"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.Server.await_reservations">[docs]</a>  <span class="k">def</span> <span class="nf">await_reservations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Block until all reservations are received.&quot;&quot;&quot;</span>
+    <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">reservations</span><span class="o">.</span><span class="n">done</span><span class="p">():</span>
+      <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;waiting for </span><span class="si">{0}</span><span class="s2"> reservations&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reservations</span><span class="o">.</span><span class="n">remaining</span><span class="p">()))</span>
+      <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;all reservations completed&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">reservations</span><span class="o">.</span><span class="n">get</span><span class="p">()</span></div>
+
+  <span class="k">def</span> <span class="nf">_handle_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sock</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;received: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">msg</span><span class="p">))</span>
+    <span class="n">msg_type</span> <span class="o">=</span> <span class="n">msg</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">msg_type</span> <span class="o">==</span> <span class="s1">&#39;REG&#39;</span><span class="p">:</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">reservations</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">msg</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">])</span>
+      <span class="n">MessageSocket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sock</span><span class="p">,</span> <span class="s1">&#39;OK&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">msg_type</span> <span class="o">==</span> <span class="s1">&#39;QUERY&#39;</span><span class="p">:</span>
+      <span class="n">MessageSocket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sock</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">reservations</span><span class="o">.</span><span class="n">done</span><span class="p">())</span>
+    <span class="k">elif</span> <span class="n">msg_type</span> <span class="o">==</span> <span class="s1">&#39;QINFO&#39;</span><span class="p">:</span>
+      <span class="n">rinfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reservations</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+      <span class="n">MessageSocket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sock</span><span class="p">,</span> <span class="n">rinfo</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">msg_type</span> <span class="o">==</span> <span class="s1">&#39;STOP&#39;</span><span class="p">:</span>
+      <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;setting server.done&quot;</span><span class="p">)</span>
+      <span class="n">MessageSocket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sock</span><span class="p">,</span> <span class="s1">&#39;OK&#39;</span><span class="p">)</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">done</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+      <span class="n">MessageSocket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sock</span><span class="p">,</span> <span class="s1">&#39;ERR&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Server.start"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.Server.start">[docs]</a>  <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Start listener in a background thread</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      address of the Server as a tuple of (host, port)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">server_sock</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+    <span class="n">server_sock</span><span class="o">.</span><span class="n">setsockopt</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">SOL_SOCKET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SO_REUSEADDR</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">server_sock</span><span class="o">.</span><span class="n">bind</span><span class="p">((</span><span class="s1">&#39;&#39;</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+    <span class="n">server_sock</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+
+    <span class="c1"># hostname may not be resolvable but IP address probably will be</span>
+    <span class="n">host</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">get_ip_address</span><span class="p">()</span>
+    <span class="n">port</span> <span class="o">=</span> <span class="n">server_sock</span><span class="o">.</span><span class="n">getsockname</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">addr</span> <span class="o">=</span> <span class="p">(</span><span class="n">host</span><span class="p">,</span><span class="n">port</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;listening for reservations at </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">addr</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_listen</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sock</span><span class="p">):</span>
+      <span class="n">CONNECTIONS</span> <span class="o">=</span> <span class="p">[]</span>
+      <span class="n">CONNECTIONS</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sock</span><span class="p">)</span>
+
+      <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">done</span><span class="p">:</span>
+        <span class="n">read_socks</span><span class="p">,</span> <span class="n">write_socks</span><span class="p">,</span> <span class="n">err_socks</span> <span class="o">=</span> <span class="n">select</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">CONNECTIONS</span><span class="p">,</span> <span class="p">[],</span> <span class="p">[],</span> <span class="mi">60</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">sock</span> <span class="ow">in</span> <span class="n">read_socks</span><span class="p">:</span>
+          <span class="k">if</span> <span class="n">sock</span> <span class="o">==</span> <span class="n">server_sock</span><span class="p">:</span>
+            <span class="n">client_sock</span><span class="p">,</span> <span class="n">client_addr</span> <span class="o">=</span> <span class="n">sock</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
+            <span class="n">CONNECTIONS</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">client_sock</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;client connected from </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">client_addr</span><span class="p">))</span>
+          <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+              <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">receive</span><span class="p">(</span><span class="n">sock</span><span class="p">)</span>
+              <span class="bp">self</span><span class="o">.</span><span class="n">_handle_message</span><span class="p">(</span><span class="n">sock</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+              <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+              <span class="n">sock</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+              <span class="n">CONNECTIONS</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">sock</span><span class="p">)</span>
+
+      <span class="n">server_sock</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="n">t</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">_listen</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">server_sock</span><span class="p">))</span>
+    <span class="n">t</span><span class="o">.</span><span class="n">daemon</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">t</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">addr</span></div>
+
+<div class="viewcode-block" id="Server.stop"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.Server.stop">[docs]</a>  <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Stop the Server&#39;s socket listener.&quot;&quot;&quot;</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">done</span> <span class="o">=</span> <span class="kc">True</span></div></div>
+
+<div class="viewcode-block" id="Client"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.Client">[docs]</a><span class="k">class</span> <span class="nc">Client</span><span class="p">(</span><span class="n">MessageSocket</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Client to register and await node reservations.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    :server_addr: a tuple of (host, port) pointing to the Server.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">sock</span> <span class="o">=</span> <span class="kc">None</span>                   <span class="c1">#: socket to server TCP connection</span>
+  <span class="n">server_addr</span> <span class="o">=</span> <span class="kc">None</span>            <span class="c1">#: address of server</span>
+
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">server_addr</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">sock</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">server_addr</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">server_addr</span> <span class="o">=</span> <span class="n">server_addr</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;connected to server at </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">server_addr</span><span class="p">))</span>
+
+  <span class="k">def</span> <span class="nf">_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg_type</span><span class="p">,</span> <span class="n">msg_data</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Helper function to wrap msg w/ msg_type.&quot;&quot;&quot;</span>
+    <span class="n">msg</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">msg</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">msg_type</span>
+    <span class="k">if</span> <span class="n">msg_data</span><span class="p">:</span>
+      <span class="n">msg</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">msg_data</span>
+
+    <span class="n">done</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">tries</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="ow">not</span> <span class="n">done</span> <span class="ow">and</span> <span class="n">tries</span> <span class="o">&lt;</span> <span class="n">MAX_RETRIES</span><span class="p">:</span>
+      <span class="k">try</span><span class="p">:</span>
+        <span class="n">MessageSocket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
+        <span class="n">done</span> <span class="o">=</span> <span class="kc">True</span>
+      <span class="k">except</span> <span class="n">socket</span><span class="o">.</span><span class="n">error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">tries</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">tries</span> <span class="o">&gt;=</span> <span class="n">MAX_RETRIES</span><span class="p">:</span>
+          <span class="k">raise</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Socket error: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">server_addr</span><span class="p">)</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;sent: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">msg</span><span class="p">))</span>
+    <span class="n">resp</span> <span class="o">=</span> <span class="n">MessageSocket</span><span class="o">.</span><span class="n">receive</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;received: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">resp</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">resp</span>
+
+<div class="viewcode-block" id="Client.close"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.Client.close">[docs]</a>  <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Close the client socket.&quot;&quot;&quot;</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Client.register"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.Client.register">[docs]</a>  <span class="k">def</span> <span class="nf">register</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reservation</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Register ``reservation`` with server.&quot;&quot;&quot;</span>
+    <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">(</span><span class="s1">&#39;REG&#39;</span><span class="p">,</span> <span class="n">reservation</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">resp</span></div>
+
+<div class="viewcode-block" id="Client.get_reservations"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.Client.get_reservations">[docs]</a>  <span class="k">def</span> <span class="nf">get_reservations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get current list of reservations.&quot;&quot;&quot;</span>
+    <span class="n">cluster_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">(</span><span class="s1">&#39;QINFO&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">cluster_info</span></div>
+
+<div class="viewcode-block" id="Client.await_reservations"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.Client.await_reservations">[docs]</a>  <span class="k">def</span> <span class="nf">await_reservations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Poll until all reservations completed, then return cluster_info.&quot;&quot;&quot;</span>
+    <span class="n">done</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">while</span> <span class="ow">not</span> <span class="n">done</span><span class="p">:</span>
+      <span class="n">done</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">(</span><span class="s1">&#39;QUERY&#39;</span><span class="p">)</span>
+      <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_reservations</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Client.request_stop"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.Client.request_stop">[docs]</a>  <span class="k">def</span> <span class="nf">request_stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Request server stop.&quot;&quot;&quot;</span>
+    <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">(</span><span class="s1">&#39;STOP&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">resp</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.0.5 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Yahoo Inc.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.4.
+    </div>
+  </body>
+</html>
