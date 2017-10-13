@@ -1,0 +1,304 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>tensorflowonspark.reservation module &#8212; TensorFlowOnSpark 1.0.6 documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="tensorflowonspark.reservation_client module" href="tensorflowonspark.reservation_client.html" />
+    <link rel="prev" title="tensorflowonspark.pipeline module" href="tensorflowonspark.pipeline.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="tensorflowonspark.reservation_client.html" title="tensorflowonspark.reservation_client module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="tensorflowonspark.pipeline.html" title="tensorflowonspark.pipeline module"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TensorFlowOnSpark 1.0.6 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="tensorflowonspark.html" accesskey="U">tensorflowonspark package</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-tensorflowonspark.reservation">
+<span id="tensorflowonspark-reservation-module"></span><h1>tensorflowonspark.reservation module<a class="headerlink" href="#module-tensorflowonspark.reservation" title="Permalink to this headline">¶</a></h1>
+<p>This module contains client/server methods to manage node reservations during TFCluster startup.</p>
+<dl class="class">
+<dt id="tensorflowonspark.reservation.Client">
+<em class="property">class </em><code class="descname">Client</code><span class="sig-paren">(</span><em>server_addr</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/reservation.html#Client"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.reservation.Client" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#tensorflowonspark.reservation.MessageSocket" title="tensorflowonspark.reservation.MessageSocket"><code class="xref py py-class docutils literal"><span class="pre">tensorflowonspark.reservation.MessageSocket</span></code></a></p>
+<p>Client to register and await node reservations.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><table class="first last docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">server_addr:</th><td class="field-body">a tuple of (host, port) pointing to the Server.</td>
+</tr>
+</tbody>
+</table>
+</dd>
+</dl>
+<dl class="method">
+<dt id="tensorflowonspark.reservation.Client.await_reservations">
+<code class="descname">await_reservations</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/reservation.html#Client.await_reservations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.reservation.Client.await_reservations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Poll until all reservations completed, then return cluster_info.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorflowonspark.reservation.Client.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/reservation.html#Client.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.reservation.Client.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close the client socket.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorflowonspark.reservation.Client.get_reservations">
+<code class="descname">get_reservations</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/reservation.html#Client.get_reservations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.reservation.Client.get_reservations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get current list of reservations.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorflowonspark.reservation.Client.register">
+<code class="descname">register</code><span class="sig-paren">(</span><em>reservation</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/reservation.html#Client.register"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.reservation.Client.register" title="Permalink to this definition">¶</a></dt>
+<dd><p>Register <code class="docutils literal"><span class="pre">reservation</span></code> with server.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorflowonspark.reservation.Client.request_stop">
+<code class="descname">request_stop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/reservation.html#Client.request_stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.reservation.Client.request_stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Request server stop.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tensorflowonspark.reservation.Client.server_addr">
+<code class="descname">server_addr</code><em class="property"> = None</em><a class="headerlink" href="#tensorflowonspark.reservation.Client.server_addr" title="Permalink to this definition">¶</a></dt>
+<dd><p>address of server</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tensorflowonspark.reservation.Client.sock">
+<code class="descname">sock</code><em class="property"> = None</em><a class="headerlink" href="#tensorflowonspark.reservation.Client.sock" title="Permalink to this definition">¶</a></dt>
+<dd><p>socket to server TCP connection</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="tensorflowonspark.reservation.MessageSocket">
+<em class="property">class </em><code class="descname">MessageSocket</code><a class="reference internal" href="_modules/tensorflowonspark/reservation.html#MessageSocket"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.reservation.MessageSocket" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Abstract class w/ length-prefixed socket send/receive functions.</p>
+<dl class="method">
+<dt id="tensorflowonspark.reservation.MessageSocket.receive">
+<code class="descname">receive</code><span class="sig-paren">(</span><em>sock</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/reservation.html#MessageSocket.receive"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.reservation.MessageSocket.receive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive a message on <code class="docutils literal"><span class="pre">sock</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorflowonspark.reservation.MessageSocket.send">
+<code class="descname">send</code><span class="sig-paren">(</span><em>sock</em>, <em>msg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/reservation.html#MessageSocket.send"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.reservation.MessageSocket.send" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send <code class="docutils literal"><span class="pre">msg</span></code> to destination <code class="docutils literal"><span class="pre">sock</span></code>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="tensorflowonspark.reservation.Reservations">
+<em class="property">class </em><code class="descname">Reservations</code><span class="sig-paren">(</span><em>required</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/reservation.html#Reservations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.reservation.Reservations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Thread-safe store for node reservations.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><table class="first last docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">required:</th><td class="field-body">expected number of nodes in the cluster.</td>
+</tr>
+</tbody>
+</table>
+</dd>
+</dl>
+<dl class="method">
+<dt id="tensorflowonspark.reservation.Reservations.add">
+<code class="descname">add</code><span class="sig-paren">(</span><em>meta</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/reservation.html#Reservations.add"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.reservation.Reservations.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a reservation.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><table class="first last docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">meta:</th><td class="field-body">a dictonary of metadata about a node</td>
+</tr>
+</tbody>
+</table>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorflowonspark.reservation.Reservations.done">
+<code class="descname">done</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/reservation.html#Reservations.done"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.reservation.Reservations.done" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if the <code class="docutils literal"><span class="pre">required</span></code> number of reservations have been fulfilled.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorflowonspark.reservation.Reservations.get">
+<code class="descname">get</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/reservation.html#Reservations.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.reservation.Reservations.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the list of current reservations.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorflowonspark.reservation.Reservations.remaining">
+<code class="descname">remaining</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/reservation.html#Reservations.remaining"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.reservation.Reservations.remaining" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a count of remaining/unfulfilled reservations.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="tensorflowonspark.reservation.Server">
+<em class="property">class </em><code class="descname">Server</code><span class="sig-paren">(</span><em>count</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/reservation.html#Server"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.reservation.Server" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#tensorflowonspark.reservation.MessageSocket" title="tensorflowonspark.reservation.MessageSocket"><code class="xref py py-class docutils literal"><span class="pre">tensorflowonspark.reservation.MessageSocket</span></code></a></p>
+<p>Simple socket server with length-prefixed pickle messages.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><table class="first last docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">count:</th><td class="field-body">expected number of nodes in the cluster.</td>
+</tr>
+</tbody>
+</table>
+</dd>
+</dl>
+<dl class="method">
+<dt id="tensorflowonspark.reservation.Server.await_reservations">
+<code class="descname">await_reservations</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/reservation.html#Server.await_reservations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.reservation.Server.await_reservations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Block until all reservations are received.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tensorflowonspark.reservation.Server.done">
+<code class="descname">done</code><em class="property"> = False</em><a class="headerlink" href="#tensorflowonspark.reservation.Server.done" title="Permalink to this definition">¶</a></dt>
+<dd><p>boolean indicating if server should be shutdown.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tensorflowonspark.reservation.Server.reservations">
+<code class="descname">reservations</code><em class="property"> = None</em><a class="headerlink" href="#tensorflowonspark.reservation.Server.reservations" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of reservations managed by this server.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorflowonspark.reservation.Server.start">
+<code class="descname">start</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/reservation.html#Server.start"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.reservation.Server.start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start listener in a background thread</p>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd>address of the Server as a tuple of (host, port)</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorflowonspark.reservation.Server.stop">
+<code class="descname">stop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/reservation.html#Server.stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.reservation.Server.stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stop the Server’s socket listener.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="tensorflowonspark.pipeline.html"
+                        title="previous chapter">tensorflowonspark.pipeline module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="tensorflowonspark.reservation_client.html"
+                        title="next chapter">tensorflowonspark.reservation_client module</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/tensorflowonspark.reservation.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="tensorflowonspark.reservation_client.html" title="tensorflowonspark.reservation_client module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="tensorflowonspark.pipeline.html" title="tensorflowonspark.pipeline module"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TensorFlowOnSpark 1.0.6 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="tensorflowonspark.html" >tensorflowonspark package</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Yahoo Inc.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.4.
+    </div>
+  </body>
+</html>

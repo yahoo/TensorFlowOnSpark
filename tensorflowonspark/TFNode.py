@@ -1,8 +1,12 @@
 # Copyright 2017 Yahoo Inc.
 # Licensed under the terms of the Apache 2.0 license.
 # Please see LICENSE file in the project root for terms.
-"""
-This module provides TensorFlow helper functions for allocating GPUs and interacting with the Spark executor.
+"""This module provides helper functions for the TensorFlow application.
+
+Primarily, these functions help with:
+
+* starting the TensorFlow ``tf.train.Server`` for the node (allocating GPUs as desired, and determining the node's role in the cluster).
+* managing input/output data for *InputMode.SPARK*.
 """
 
 from __future__ import absolute_import
@@ -21,8 +25,8 @@ def hdfs_path(ctx, path):
   """Convenience function to create a Tensorflow-compatible absolute HDFS path from relative paths
 
   Args:
-    ctx: TFNodeContext containing the metadata specific to this node in the cluster.
-    path: path to convert
+    :ctx: TFNodeContext containing the metadata specific to this node in the cluster.
+    :path: path to convert
 
   Returns:
     An absolute path prefixed with the correct filesystem scheme.
@@ -44,15 +48,15 @@ def hdfs_path(ctx, path):
       return "{0}/{1}".format(ctx.defaultFS, path)
 
 def start_cluster_server(ctx, num_gpus=1, rdma=False):
-  """Function that wraps the creation of TensorFlow tf.train.Server for a node in a distributed TensorFlow cluster.
+  """Function that wraps the creation of TensorFlow ``tf.train.Server`` for a node in a distributed TensorFlow cluster.
 
-  This is intended to be invoked from within the TF map_fun, replacing explicit code to instantiate `tf.train.ClusterSpec`
-  and `tf.train.Server` objects.
+  This is intended to be invoked from within the TF ``map_fun``, replacing explicit code to instantiate ``tf.train.ClusterSpec``
+  and ``tf.train.Server`` objects.
 
   Args:
-    ctx: TFNodeContext containing the metadata specific to this node in the cluster.
-    num_gpu: number of GPUs desired
-    rdma: boolean indicating if RDMA 'iverbs' should be used for cluster communications.
+    :ctx: TFNodeContext containing the metadata specific to this node in the cluster.
+    :num_gpu: number of GPUs desired
+    :rdma: boolean indicating if RDMA 'iverbs' should be used for cluster communications.
 
   Returns:
     A tuple of (cluster_spec, server)
@@ -108,12 +112,13 @@ def start_cluster_server(ctx, num_gpus=1, rdma=False):
   return (cluster, server)
 
 def next_batch(mgr, batch_size, qname='input'):
+  """*DEPRECATED*. Use TFNode.DataFeed class instead."""
   raise Exception("DEPRECATED: Use TFNode.DataFeed class instead")
 
 def export_saved_model(sess, export_dir, tag_set, signatures):
   """Convenience function to export a saved_model using provided arguments
 
-  The caller specifies the saved_model signatures in a simplified python dictionary form, as follows:
+  The caller specifies the saved_model signatures in a simplified python dictionary form, as follows::
 
     signatures = {
       'signature_def_key': {
@@ -126,13 +131,13 @@ def export_saved_model(sess, export_dir, tag_set, signatures):
   And this function will generate the `signature_def_map` and export the saved_model.
 
   Args:
-    sess: a tf.Session instance
-    export_dir: path to save exported saved_model
-    tag_set: string tag_set to identify the exported graph
-    signatures: simplified dictionary representation of a TensorFlow `signature_def_map`
+    :sess: a tf.Session instance
+    :export_dir: path to save exported saved_model
+    :tag_set: string tag_set to identify the exported graph
+    :signatures: simplified dictionary representation of a TensorFlow signature_def_map
 
   Returns:
-    A saved_model exported to disk at `export_dir`.
+    A saved_model exported to disk at ``export_dir``.
   """
   import tensorflow as tf
   g = sess.graph
@@ -155,23 +160,25 @@ def export_saved_model(sess, export_dir, tag_set, signatures):
   builder.save()
 
 def batch_results(mgr, results, qname='output'):
+  """*DEPRECATED*. Use TFNode.DataFeed class instead."""
   raise Exception("DEPRECATED: Use TFNode.DataFeed class instead")
 
 def terminate(mgr, qname='input'):
+  """*DEPRECATED*. Use TFNode.DataFeed class instead."""
   raise Exception("DEPRECATED: Use TFNode.DataFeed class instead")
 
 class DataFeed(object):
-  """Manages the InputMode.SPARK data feeding process from the perspective of the TensorFlow application"""
-  def __init__(self, mgr, train_mode=True, qname_in='input', qname_out='output', input_mapping=None):
-    """DataFeed constructor
+  """This class manages the *InputMode.SPARK* data feeding process from the perspective of the TensorFlow application.
 
-    Args:
-      mgr: the TFManager associated with this Python worker process
-      train_mode: boolean indicating if the data feed is expecting an output response (e.g. inferencing)
-      qname_in: INTERNAL_USE
-      qname_out: INTERNAL_USE
-      input_mapping: For Spark ML Pipelines ONLY.  Specifies the mapping of input DataFrame colums to input tensors
-    """
+  Args:
+    :mgr: TFManager instance associated with this Python worker process.
+    :train_mode: boolean indicating if the data feed is expecting an output response (e.g. inferencing).
+    :qname_in: *INTERNAL_USE*
+    :qname_out: *INTERNAL_USE*
+    :input_mapping: *For Spark ML Pipelines only*.  Dictionary of input DataFrame columns to input TensorFlow tensors.
+  """
+  def __init__(self, mgr, train_mode=True, qname_in='input', qname_out='output', input_mapping=None):
+
     self.mgr = mgr
     self.train_mode = train_mode
     self.qname_in = qname_in
@@ -180,19 +187,22 @@ class DataFeed(object):
     self.input_tensors = [ tensor for col, tensor in sorted(input_mapping.items()) ] if input_mapping is not None else None
 
   def next_batch(self, batch_size):
-    """Gets a batch of items from the input RDD as either an array of items or a dict of tensors (depending on the input_mapping).
+    """Gets a batch of items from the input RDD.
 
-    If multiple tensors are provided per row, e.g. tuple of (tensor1, tensor2, ..., tensorN) and:
-    - no input_mapping is provided, this will just return an array of tuples, and the caller is responsible for separating the tensors.
-    - an input_mapping is provided, this will return a dictionary of tensors.
+    If multiple tensors are provided per row in the input RDD, e.g. tuple of (tensor1, tensor2, ..., tensorN) and:
 
-    Note: if the end of the data is reached, this may return with fewer than `batch_size` items.
+    * no ``input_mapping`` was provided to the DataFeed constructor, this will return an array of ``batch_size`` tuples,
+      and the caller is responsible for separating the tensors.
+    * an ``input_mapping`` was provided to the DataFeed constructor, this will return a dictionary of N tensors,
+      with tensor names as keys and arrays of length ``batch_size`` as values.
+
+    Note: if the end of the data is reached, this may return with fewer than ``batch_size`` items.
 
     Args:
-      batch_size: number of items to return.
+      :batch_size: number of items to retrieve.
 
     Returns:
-      A batch of items or an array of tensors.
+      A batch of items or a dictionary of tensors.
     """
     logging.debug("next_batch() invoked")
     queue = self.mgr.get_queue(self.qname_in)
@@ -225,13 +235,17 @@ class DataFeed(object):
     return tensors
 
   def should_stop(self):
-    """Check if the feed process was told to stop."""
+    """Check if the feed process was told to stop (by a call to ``terminate``)."""
     return self.done_feeding
 
   def batch_results(self, results):
-    """Push a batch of output results back to Spark.
+    """Push a batch of output results to the Spark output RDD of ``TFCluster.inference()``.
 
-    Note: this currently expects a one-to-one mapping of input data to output data.
+    Note: this currently expects a one-to-one mapping of input to output data, so the length of the ``results`` array should match the length of
+    the previously retrieved batch of input data.
+
+    Args:
+      :results: array of output data for the equivalent batch of input data.
     """
     logging.debug("batch_results() invoked")
     queue = self.mgr.get_queue(self.qname_out)
@@ -240,11 +254,12 @@ class DataFeed(object):
     logging.debug("batch_results() returning data")
 
   def terminate(self):
-    """Terminate data feeding early
+    """Terminate data feeding early.
 
     Since TensorFlow applications can often terminate on conditions unrelated to the training data (e.g. steps, accuracy, etc),
-    this method signals the data feeding process to drop any further incoming data.  Note that Spark itself does not have a mechanism
-    to terminate an RDD operation early, so the extra partitions will still be sent to the executors (but will be ignored).
+    this method signals the data feeding process to ignore any further incoming data.  Note that Spark itself does not have a mechanism
+    to terminate an RDD operation early, so the extra partitions will still be sent to the executors (but will be ignored).  Because
+    of this, you should size your input data accordingly to avoid excessive overhead.
     """
     logging.info("terminate() invoked")
     self.mgr.set('state', 'terminating')

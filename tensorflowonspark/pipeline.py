@@ -1,6 +1,17 @@
 # Copyright 2017 Yahoo Inc.
 # Licensed under the terms of the Apache 2.0 license.
 # Please see LICENSE file in the project root for terms.
+"""This module extends the TensorFlowOnSpark API to support Spark ML Pipelines.
+
+It provides a TFEstimator class to fit a TFModel using TensorFlow.  The TFEstimator will actually spawn a TensorFlowOnSpark cluster
+to conduct distributed training, but due to architectural limitations, the TFModel will only run single-node TensorFlow instances
+when inferencing on the executors.  The executors will run in parallel, but the TensorFlow model must fit in the memory
+of each executor.
+
+There is also an option to provide a separate "export" function, which allows users to export a different graph for inferencing vs. training.
+This is useful when the training graph uses InputMode.TENSORFLOW with queue_runners, but the inferencing graph needs placeholders.
+And this is especially useful for exporting saved_models for TensorFlow Serving.
+"""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -25,7 +36,7 @@ import sys
 ##### TensorFlowOnSpark Params
 
 class TFTypeConverters(object):
-  """Custom DataFrame TypeConverter for dictionary types"""
+  """Custom DataFrame TypeConverter for dictionary types (since this is not provided by Spark core)."""
   @staticmethod
   def toDict(value):
     if type(value) == dict:
@@ -182,7 +193,7 @@ class HasTagSet(Params):
 
 class Namespace(object):
   """
-  Utility class to convert dictionaries to Namespace-like objects
+  Utility class to convert dictionaries to Namespace-like objects.
 
   Based on https://docs.python.org/dev/library/types.html#types.SimpleNamespace
   """
@@ -202,7 +213,7 @@ class Namespace(object):
     return self.__dict__ == other.__dict__
 
 class TFParams(Params):
-  """Mix-in class to store namespace-style args and merge w/ SparkML-style params"""
+  """Mix-in class to store namespace-style args and merge w/ SparkML-style params."""
   args = None
   argv = None
   def merge_args_params(self):
@@ -215,32 +226,30 @@ class TFParams(Params):
 class TFEstimator(Estimator, TFParams, HasInputMapping,
                   HasClusterSize, HasNumPS, HasInputMode, HasProtocol, HasTensorboard, HasModelDir, HasExportDir, HasTFRecordDir,
                   HasBatchSize, HasEpochs, HasReaders, HasSteps):
-  """Spark ML Pipeline Estimator which launches a TensorFlowOnSpark cluster for distributed training.
+  """Spark ML Estimator which launches a TensorFlowOnSpark cluster for distributed training.
 
-  The columns of the DataFrame passed to the `fit()` method will be mapped to TensorFlow tensors according to the`setInputMapping()` method.
+  The columns of the DataFrame passed to the ``fit()`` method will be mapped to TensorFlow tensors according to the ``setInputMapping()`` method.
 
-  If an `export_fn` was provided to the constructor, it will be run on a single executor immediately after the distributed training has completed.
-  This allows users to export a TensorFlow saved_model with a different execution graph for inferencing, e.g. replacing an input graph of 
+  If an ``export_fn`` was provided to the constructor, it will be run on a single executor immediately after the distributed training has completed.
+  This allows users to export a TensorFlow saved_model with a different execution graph for inferencing, e.g. replacing an input graph of
   TFReaders and QueueRunners with Placeholders.
 
-  For InputMode.TENSORFLOW, the input DataFrame will be exported as TFRecords to a temporary location specified by the `tfrecord_dir`.
-  The TensorFlow code will then be expected to read directly from this location during training.  However, if the input DataFrame was
-  produced by the `dfutil.loadTFRecords()` method, i.e. originated from TFRecords on disk, then the `tfrecord_dir` will be set to the
-  original source location of the TFRecords with an additional export step.
+  For InputMode.TENSORFLOW, the input DataFrame will be exported as TFRecords to a temporary location specified by the ``tfrecord_dir``.
+  The TensorFlow application will then be expected to read directly from this location during training.  However, if the input DataFrame was
+  produced by the ``dfutil.loadTFRecords()`` method, i.e. originated from TFRecords on disk, then the `tfrecord_dir` will be set to the
+  original source location of the TFRecords with the additional export step.
+
+  Args:
+    :train_fn: TensorFlow "main" function for training.
+    :tf_args: Dictionary of arguments specific to TensorFlow "main" function.
+    :tf_argv: Command line ARGV arguments.
+    :export_fn: TensorFlow function for exporting a saved_model.
   """
 
   train_fn = None
   export_fn = None
 
   def __init__(self, train_fn, tf_args, tf_argv=None, export_fn=None):
-    """TFEstimator constructor
-
-    Args:
-      train_fn: TensorFlow "main" function for training.
-      tf_args: Dictionary of arguments specific to TensorFlow "main" function.
-      tf_argv: Command line arguments as an array of string.
-      export_fn: TensorFlow function for exporting a saved_model.
-    """
     super(TFEstimator, self).__init__()
     self.train_fn = train_fn
     self.export_fn = export_fn
@@ -264,7 +273,7 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
     """Trains a TensorFlow model and returns a TFModel instance with the same args/params pointing to a checkpoint or saved_model on disk.
 
     Args:
-      dataset: A Spark DataFrame with columns that will be mapped to TensorFlow tensors.
+      :dataset: A Spark DataFrame with columns that will be mapped to TensorFlow tensors.
 
     Returns:
       A TFModel representing the trained model, backed on disk by a TensorFlow checkpoint or saved_model.
@@ -317,23 +326,18 @@ class TFModel(Model, TFParams,
               HasInputMapping, HasOutputMapping,
               HasBatchSize,
               HasModelDir, HasExportDir, HasSignatureDefKey, HasTagSet):
-  """Spark ML Pipeline Model which runs inferencing of a TensorFlow Model checkpoint/saved_model on disk.
+  """Spark ML Model backed by a TensorFlow model checkpoint/saved_model on disk.
 
-  Each executor will run an independent, single-node instance of TensorFlow in parallel, so the model must fit in memory.
+  During ``transform()``, each executor will run an independent, single-node instance of TensorFlow in parallel, so the model must fit in memory.
   The model/session will be loaded/initialized just once for each Spark Python worker, and the session will be cached for
   subsequent tasks/partitions to avoid re-loading the model for each partition.
+
+  Args:
+    :tf_args: Dictionary of arguments specific to TensorFlow "main" function.
+    :tf_argv: Command line arguments as an array of string.
   """
 
   def __init__(self, tf_args, tf_argv=None):
-    """TFModel constructor
-
-    Args:
-      tf_args: Dictionary of arguments specific to TensorFlow "main" function.
-      tf_argv: Command line arguments as an array of string.
-
-    Returns:
-      A TFModel representing a trained model, backed on disk by a TensorFlow checkpoint or saved_model.
-    """
     super(TFModel, self).__init__()
     self.args = Namespace(tf_args) if isinstance(tf_args, dict) else tf_args
     self._setDefault(batch_size=100,
@@ -343,7 +347,11 @@ class TFModel(Model, TFParams,
                     tag_set=None)
 
   def _transform(self, dataset):
-    """Transforms the input DataFrame by applying the _run_model() mapPartitions function"""
+    """Transforms the input DataFrame by applying the _run_model() mapPartitions function.
+
+    Args:
+      :dataset: A Spark DataFrame for TensorFlow inferencing.
+    """
     spark = SparkSession.builder.getOrCreate()
 
     logging.info("===== 1. inference args: {0}".format(self.args))
@@ -371,7 +379,14 @@ global_sess = None            # tf.Session cache
 global_args = None            # args provided to the _run_model() method.  Any change will invalidate the global_sess cache.
 
 def _run_model(iterator, args):
-  """Run single-node inferencing on a checkpoint/saved_model using input tensors obtained from a Spark partition iterator and returns output tensors
+  """mapPartitions function to run single-node inferencing from a checkpoint/saved_model, using the model's input/output mappings.
+
+  Args:
+    :iterator: input RDD partition iterator.
+    :args: a merged view of command-line args and ML Params.
+
+  Returns:
+    An iterator of result data.
   """
   single_node_env(args)
 
@@ -446,11 +461,11 @@ def _run_model(iterator, args):
   return result
 
 def single_node_env(args, argv=None):
-  """Sets up environment for a single-node TF session
+  """Sets up environment for a single-node TF session.
 
   Args:
-    args: command line arguments as argparse args
-    argv: command line arguments as ARGV (array of string)
+    :args: command line arguments as argparse args.
+    :argv: command line arguments as ARGV (array of string).
   """
   if argv:
       sys.argv = argv
@@ -480,14 +495,14 @@ def single_node_env(args, argv=None):
 def get_meta_graph_def(saved_model_dir, tag_set):
   """Utility function to read a meta_graph_def from disk.
 
-  From https://github.com/tensorflow/tensorflow/blob/8e0e8d41a3a8f2d4a6100c2ea1dc9d6c6c4ad382/tensorflow/python/tools/saved_model_cli.py#L186
+  From `saved_model_cli.py <https://github.com/tensorflow/tensorflow/blob/8e0e8d41a3a8f2d4a6100c2ea1dc9d6c6c4ad382/tensorflow/python/tools/saved_model_cli.py#L186>`_
 
   Args:
-    saved_model_dir: path to saved_model
-    tag_set: tag set identifying the TensorFlow graph within the saved_model
+    :saved_model_dir: path to saved_model.
+    :tag_set: list of string tags identifying the TensorFlow graph within the saved_model.
 
   Returns:
-    A TensorFlow meta_graph_def, or raises an Exception otherwise
+    A TensorFlow meta_graph_def, or raises an Exception otherwise.
   """
   saved_model = reader.read_saved_model(saved_model_dir)
   set_of_tags = set(tag_set.split(','))
@@ -500,12 +515,12 @@ def yield_batch(iterable, batch_size, num_tensors=1):
   """Generator that yields batches of a DataFrame iterator.
 
   Args:
-    iterable: Spark partition iterator
-    batch_size: number of items to retrieve per invocation
-    num_tensors: number of tensors (columns) expected in each item
+    :iterable: Spark partition iterator.
+    :batch_size: number of items to retrieve per invocation.
+    :num_tensors: number of tensors (columns) expected in each item.
 
   Returns:
-    An array of `num_tensors` arrays, each of length `batch_size`
+    An array of ``num_tensors`` arrays, each of length `batch_size`
   """
   tensors = [ [] for i in range(num_tensors) ]
   for item in iterable:

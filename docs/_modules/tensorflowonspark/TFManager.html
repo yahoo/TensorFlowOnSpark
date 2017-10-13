@@ -1,0 +1,158 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>tensorflowonspark.TFManager &#8212; TensorFlowOnSpark 1.0.6 documentation</title>
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.0.6 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for tensorflowonspark.TFManager</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2017 Yahoo Inc.</span>
+<span class="c1"># Licensed under the terms of the Apache 2.0 license.</span>
+<span class="c1"># Please see LICENSE file in the project root for terms.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">nested_scopes</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+
+<span class="kn">from</span> <span class="nn">multiprocessing.managers</span> <span class="k">import</span> <span class="n">BaseManager</span>
+<span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="k">import</span> <span class="n">JoinableQueue</span>
+
+<div class="viewcode-block" id="TFManager"><a class="viewcode-back" href="../../tensorflowonspark.TFManager.html#tensorflowonspark.TFManager.TFManager">[docs]</a><span class="k">class</span> <span class="nc">TFManager</span><span class="p">(</span><span class="n">BaseManager</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Python multiprocessing.Manager for distributed, multi-process communication.&quot;&quot;&quot;</span>
+  <span class="k">pass</span></div>
+
+
+<span class="c1"># global to each Spark executor&#39;s python worker</span>
+<span class="n">mgr</span> <span class="o">=</span> <span class="kc">None</span>        <span class="c1"># TFManager</span>
+<span class="n">qdict</span> <span class="o">=</span> <span class="p">{}</span>        <span class="c1"># dictionary of queues</span>
+<span class="n">kdict</span> <span class="o">=</span> <span class="p">{}</span>        <span class="c1"># dictionary of key-values</span>
+
+<span class="k">def</span> <span class="nf">_get</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+  <span class="k">return</span> <span class="n">kdict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+<span class="k">def</span> <span class="nf">_set</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+  <span class="n">kdict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+<div class="viewcode-block" id="start"><a class="viewcode-back" href="../../tensorflowonspark.TFManager.html#tensorflowonspark.TFManager.start">[docs]</a><span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="n">authkey</span><span class="p">,</span> <span class="n">queues</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;local&#39;</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Create a new multiprocess.Manager (or return existing one).</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    :authkey: string authorization key</span>
+<span class="sd">    :queues: *INTERNAL_USE*</span>
+<span class="sd">    :mode: &#39;local&#39; indicates that the manager will only be accessible from the same host, otherwise remotely accessible.</span>
+
+<span class="sd">  Returns:</span>
+<span class="sd">    A TFManager instance, which is also cached in local memory of the Python worker process.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">global</span> <span class="n">mgr</span><span class="p">,</span> <span class="n">qdict</span><span class="p">,</span> <span class="n">kdict</span>
+  <span class="n">qdict</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+  <span class="n">kdict</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+  <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">queues</span><span class="p">:</span>
+    <span class="n">qdict</span><span class="p">[</span><span class="n">q</span><span class="p">]</span> <span class="o">=</span> <span class="n">JoinableQueue</span><span class="p">()</span>
+  <span class="n">TFManager</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s1">&#39;get_queue&#39;</span><span class="p">,</span> <span class="n">callable</span><span class="o">=</span><span class="k">lambda</span> <span class="n">qname</span><span class="p">:</span> <span class="n">qdict</span><span class="p">[</span><span class="n">qname</span><span class="p">])</span>
+  <span class="n">TFManager</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s1">&#39;get&#39;</span><span class="p">,</span> <span class="n">callable</span><span class="o">=</span><span class="k">lambda</span> <span class="n">key</span><span class="p">:</span> <span class="n">_get</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+  <span class="n">TFManager</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s1">&#39;set&#39;</span><span class="p">,</span> <span class="n">callable</span><span class="o">=</span><span class="k">lambda</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">_set</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span>
+  <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;remote&#39;</span><span class="p">:</span>
+    <span class="n">mgr</span> <span class="o">=</span> <span class="n">TFManager</span><span class="p">(</span><span class="n">address</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="n">authkey</span><span class="o">=</span><span class="n">authkey</span><span class="p">)</span>
+  <span class="k">else</span><span class="p">:</span>
+    <span class="n">mgr</span> <span class="o">=</span> <span class="n">TFManager</span><span class="p">(</span><span class="n">authkey</span><span class="o">=</span><span class="n">authkey</span><span class="p">)</span>
+  <span class="n">mgr</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+  <span class="k">return</span> <span class="n">mgr</span></div>
+
+<div class="viewcode-block" id="connect"><a class="viewcode-back" href="../../tensorflowonspark.TFManager.html#tensorflowonspark.TFManager.connect">[docs]</a><span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="n">authkey</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Connect to a multiprocess.Manager.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    :address: unique address to the TFManager, either a unique connection string for &#39;local&#39;, or a (host, port) tuple for remote.</span>
+<span class="sd">    :authkey: string authorization key</span>
+
+<span class="sd">  Returns:</span>
+<span class="sd">    A TFManager instance referencing the remote TFManager at the supplied address.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">TFManager</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s1">&#39;get_queue&#39;</span><span class="p">)</span>
+  <span class="n">TFManager</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s1">&#39;get&#39;</span><span class="p">)</span>
+  <span class="n">TFManager</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s1">&#39;set&#39;</span><span class="p">)</span>
+  <span class="n">m</span> <span class="o">=</span> <span class="n">TFManager</span><span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="n">authkey</span><span class="o">=</span><span class="n">authkey</span><span class="p">)</span>
+  <span class="n">m</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+  <span class="k">return</span> <span class="n">m</span></div>
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.0.6 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Yahoo Inc.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.4.
+    </div>
+  </body>
+</html>

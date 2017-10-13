@@ -11,7 +11,7 @@ from multiprocessing.managers import BaseManager
 from multiprocessing import JoinableQueue
 
 class TFManager(BaseManager):
-  """Python multiprocessing.Manager for distributed, multi-process communication"""
+  """Python multiprocessing.Manager for distributed, multi-process communication."""
   pass
 
 
@@ -27,12 +27,12 @@ def _set(key, value):
   kdict[key] = value
 
 def start(authkey, queues, mode='local'):
-  """Create a new multiprocess.Manager (or return existing one)
+  """Create a new multiprocess.Manager (or return existing one).
 
   Args:
-    authkey: string authorization key
-    queues: INTERNAL_USE
-    mode: 'local' indicates that the manager will only be accessible from the same host, otherwise remotely accessible
+    :authkey: string authorization key
+    :queues: *INTERNAL_USE*
+    :mode: 'local' indicates that the manager will only be accessible from the same host, otherwise remotely accessible.
 
   Returns:
     A TFManager instance, which is also cached in local memory of the Python worker process.
@@ -53,13 +53,14 @@ def start(authkey, queues, mode='local'):
   return mgr
 
 def connect(address, authkey):
-  """Connect to a multiprocess.Manager
+  """Connect to a multiprocess.Manager.
 
   Args:
-    address: unique address to the TFManager, either a unique connection string for 'local', or (host, port) tuple for remote
+    :address: unique address to the TFManager, either a unique connection string for 'local', or a (host, port) tuple for remote.
+    :authkey: string authorization key
 
   Returns:
-    A TFManager instance referencing the remote TFManager at the supplied `address`.
+    A TFManager instance referencing the remote TFManager at the supplied address.
   """
   TFManager.register('get_queue')
   TFManager.register('get')
