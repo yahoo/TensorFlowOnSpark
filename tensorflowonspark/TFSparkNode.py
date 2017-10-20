@@ -172,13 +172,13 @@ def run(fn, tf_args, cluster_meta, tensorboard, queues, background):
         pypath = os.environ['PYSPARK_PYTHON']
         logging.info("PYSPARK_PYTHON: {0}".format(pypath))
         pydir = os.path.dirname(pypath)
-        tb_proc = subprocess.Popen([pypath, "%s/tensorboard" % pydir, "--logdir=%s" % logdir, "--port=%d" % tb_port, "--debug"], env=os.environ)
+        tb_proc = subprocess.Popen([pypath, "%s/tensorboard" % pydir, "--logdir=%s" % logdir, "--port=%d" % tb_port], env=os.environ)
       else:
         # system-installed Python & tensorboard
         python_path = os.environ['PYTHONPATH'].split(os.pathsep)
         for path in python_path:
             os.environ['PATH'] = os.environ['PATH'] + os.pathsep + os.path.dirname(path)
-        tb_proc = subprocess.Popen(["tensorboard", "--logdir=%s" % logdir, "--port=%d" % tb_port, "--debug"], env=os.environ)
+        tb_proc = subprocess.Popen(["tensorboard", "--logdir=%s" % logdir, "--port=%d" % tb_port], env=os.environ)
       tb_pid = tb_proc.pid
 
     # check server to see if this task is being retried (i.e. already reserved)
