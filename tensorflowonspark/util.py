@@ -7,11 +7,20 @@ from __future__ import division
 from __future__ import nested_scopes
 from __future__ import print_function
 
+import os
 import socket
 
 def get_ip_address():
-  """Simple utility to get host IP address"""
+  """Simple utility to get host IP address."""
   s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
   s.connect(("8.8.8.8", 80))
   return s.getsockname()[0]
 
+
+def find_in_path(path, file):
+  """Find a file in a given path string."""
+  for p in path.split(os.pathsep):
+    candidate = os.path.join(p, file)
+    if (os.path.exists(os.path.join(p, file))):
+      return candidate
+  return False

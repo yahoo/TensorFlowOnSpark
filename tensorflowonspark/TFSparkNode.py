@@ -13,6 +13,7 @@ import os
 import platform
 import socket
 import subprocess
+import sys
 import multiprocessing
 import uuid
 from . import TFManager
@@ -167,18 +168,16 @@ def run(fn, tf_args, cluster_meta, tensorboard, queues, background):
       tb_sock.close()
       logdir = "tensorboard_%d" % worker_num
 
-      if 'PYSPARK_PYTHON' in os.environ:
-        # user-specified Python (typically Python.zip)
-        pypath = os.environ['PYSPARK_PYTHON']
-        logging.info("PYSPARK_PYTHON: {0}".format(pypath))
-        pydir = os.path.dirname(pypath)
-        tb_proc = subprocess.Popen([pypath, "%s/tensorboard" % pydir, "--logdir=%s" % logdir, "--port=%d" % tb_port, "--debug"], env=os.environ)
-      else:
-        # system-installed Python & tensorboard
-        python_path = os.environ['PYTHONPATH'].split(os.pathsep)
-        for path in python_path:
-            os.environ['PATH'] = os.environ['PATH'] + os.pathsep + os.path.dirname(path)
-        tb_proc = subprocess.Popen(["tensorboard", "--logdir=%s" % logdir, "--port=%d" % tb_port, "--debug"], env=os.environ)
+      # search for tensorboard in python/bin, PATH, and PYTHONPATH
+      pypath = sys.executable
+      pydir = os.path.dirname(pypath)
+      search_path = os.pathsep.join([pydir, os.environ['PATH'], os.environ['PYTHONPATH']])
+      tb_path = util.find_in_path(search_path, 'tensorboard')
+      if not tb_path:
+        raise Exception("Unable to find 'tensorboard' in: {}".format(search_path))
+
+      # launch tensorboard
+      tb_proc = subprocess.Popen([pypath, tb_path, "--logdir=%s" % logdir, "--port=%d" % tb_port], env=os.environ)
       tb_pid = tb_proc.pid
 
     # check server to see if this task is being retried (i.e. already reserved)
