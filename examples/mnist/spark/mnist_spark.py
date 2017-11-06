@@ -67,7 +67,7 @@ else:
   print("zipping images and labels")
   dataRDD = images.zip(labels)
 
-cluster = TFCluster.run(sc, mnist_dist.map_fun, args, args.cluster_size, num_ps, args.tensorboard, TFCluster.InputMode.SPARK)
+cluster = TFCluster.run(sc, mnist_dist.map_fun, args, args.cluster_size, num_ps, args.tensorboard, TFCluster.InputMode.SPARK, log_dir=args.model)
 if args.mode == "train":
   cluster.train(dataRDD, args.epochs)
 else:

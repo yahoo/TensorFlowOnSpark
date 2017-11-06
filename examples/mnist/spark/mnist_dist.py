@@ -108,13 +108,16 @@ def map_fun(args, ctx):
     # Create a "supervisor", which oversees the training process and stores model state into HDFS
     logdir = TFNode.hdfs_path(ctx, args.model)
     print("tensorflow model path: {0}".format(logdir))
-    summary_writer = tf.summary.FileWriter("tensorboard_%d" %(worker_num), graph=tf.get_default_graph())
+
+    if job_name == "worker" and task_index == 0:
+      summary_writer = tf.summary.FileWriter(logdir, graph=tf.get_default_graph())
 
     if args.mode == "train":
       sv = tf.train.Supervisor(is_chief=(task_index == 0),
                                logdir=logdir,
                                init_op=init_op,
                                summary_op=None,
+                               summary_writer=None,
                                saver=saver,
                                global_step=global_step,
                                stop_grace_secs=300,

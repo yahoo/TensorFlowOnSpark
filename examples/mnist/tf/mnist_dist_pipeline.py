@@ -186,7 +186,7 @@ def read_csv_examples(image_dir, label_dir, batch_size=100, num_readers=1, num_e
   img_reader = tf.TextLineReader(name="img_reader")
   _, img_csv = img_reader.read(image_queue)
   image_defaults = [ [1.0] for col in range(784) ]
-  img = tf.pack(tf.decode_csv(img_csv, image_defaults))
+  img = tf.stack(tf.decode_csv(img_csv, image_defaults))
   # Normalize values to [0,1]
   norm = tf.constant(255, dtype=tf.float32, shape=(784,))
   image = tf.div(img, norm)
@@ -196,7 +196,7 @@ def read_csv_examples(image_dir, label_dir, batch_size=100, num_readers=1, num_e
   label_reader = tf.TextLineReader(name="label_reader")
   _, label_csv = label_reader.read(label_queue)
   label_defaults = [ [1.0] for col in range(10) ]
-  label = tf.pack(tf.decode_csv(label_csv, label_defaults))
+  label = tf.stack(tf.decode_csv(label_csv, label_defaults))
   logging.info("label: {0}".format(label))
 
   # Return a batch of examples
