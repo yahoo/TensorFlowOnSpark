@@ -59,7 +59,7 @@ def map_fun(args, ctx):
     img_reader = tf.TextLineReader(name="img_reader")
     _, img_csv = img_reader.read(image_queue)
     image_defaults = [ [1.0] for col in range(784) ]
-    img = tf.pack(tf.decode_csv(img_csv, image_defaults))
+    img = tf.stack(tf.decode_csv(img_csv, image_defaults))
     # Normalize values to [0,1]
     norm = tf.constant(255, dtype=tf.float32, shape=(784,))
     image = tf.div(img, norm)
@@ -69,7 +69,7 @@ def map_fun(args, ctx):
     label_reader = tf.TextLineReader(name="label_reader")
     _, label_csv = label_reader.read(label_queue)
     label_defaults = [ [1.0] for col in range(10) ]
-    label = tf.pack(tf.decode_csv(label_csv, label_defaults))
+    label = tf.stack(tf.decode_csv(label_csv, label_defaults))
     print_log(worker_num, "label: {0}".format(label))
 
     # Return a batch of examples
@@ -170,13 +170,16 @@ def map_fun(args, ctx):
     # Create a "supervisor", which oversees the training process and stores model state into HDFS
     logdir = TFNode.hdfs_path(ctx, args.model)
     print("tensorflow model path: {0}".format(logdir))
-    summary_writer = tf.summary.FileWriter("tensorboard_%d" %(worker_num), graph=tf.get_default_graph())
+
+    if job_name == "worker" and task_index == 0:
+      summary_writer = tf.summary.FileWriter(logdir, graph=tf.get_default_graph())
 
     if args.mode == "train":
       sv = tf.train.Supervisor(is_chief=(task_index == 0),
                                logdir=logdir,
                                init_op=init_op,
                                summary_op=None,
+                               summary_writer=None,
                                saver=saver,
                                global_step=global_step,
                                stop_grace_secs=300,

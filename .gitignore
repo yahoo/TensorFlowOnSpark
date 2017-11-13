@@ -1,0 +1,9 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+docs/.doctrees
+*.py[cod]
+*$py.class
+*.doctree
+*.log
+*.jar
+.DS_Store

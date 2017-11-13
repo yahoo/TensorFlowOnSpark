@@ -190,11 +190,11 @@ class TFCluster(object):
         tb_url = "http://{0}:{1}".format(node['host'], node['tb_port'])
     return tb_url
 
-def reserve(sc, num_executors, num_ps, tensorboard=False, input_mode=InputMode.TENSORFLOW, queues=['input','output']):
+def reserve(sc, num_executors, num_ps, tensorboard=False, input_mode=InputMode.TENSORFLOW, log_dir=None, queues=['input','output']):
   """*DEPRECATED*. use run() method instead of reserve/start."""
   raise Exception("DEPRECATED: use run() method instead of reserve/start.")
 
-def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mode=InputMode.TENSORFLOW, queues=['input', 'output']):
+def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mode=InputMode.TENSORFLOW, log_dir=None, queues=['input', 'output']):
   """Starts the TensorFlowOnSpark cluster and Runs the TensorFlow "main" function on the Spark executors
 
   Args:
@@ -205,6 +205,7 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
     :num_ps: number of Spark executors which are reserved for TensorFlow PS nodes.  All other executors will be used as TensorFlow worker nodes.
     :tensorboard: boolean indicating if the chief worker should spawn a Tensorboard server.
     :input_mode: TFCluster.InputMode
+    :log_dir: directory to save tensorboard event logs.  If None, defaults to a fixed path on local filesystem.
     :queues: *INTERNAL_USE*
 
   Returns:
@@ -249,6 +250,7 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
                                               tf_args,
                                               cluster_meta,
                                               tensorboard,
+                                              log_dir,
                                               queues,
                                               background=(input_mode == InputMode.SPARK)))
   t = threading.Thread(target=_start)

@@ -80,7 +80,7 @@ def _get_manager(cluster_info, host, ppid):
   logging.info("Connected to TFSparkNode.mgr on {0}, ppid={1}, state={2}".format(host, ppid, str(TFSparkNode.mgr.get('state'))))
   return TFSparkNode.mgr
 
-def reserve(cluster_spec, tensorboard, cluster_id, queues=['input', 'output']):
+def reserve(cluster_spec, tensorboard, cluster_id, log_dir=None, queues=['input', 'output']):
   """*DEPRECATED*. use run() method instead of reserve/start."""
   raise Exception("DEPRECATED: use run() method instead of reserve/start")
 
@@ -88,7 +88,7 @@ def start(fn, tf_args, cluster_info, defaultFS, working_dir, background):
   """*DEPRECATED*. use run() method instead of reserve/start."""
   raise Exception("DEPRECATED: use run() method instead of reserve/start")
 
-def run(fn, tf_args, cluster_meta, tensorboard, queues, background):
+def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
   """Wraps the user-provided TensorFlow main function in a Spark mapPartitions function.
 
   Args:
@@ -96,6 +96,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, queues, background):
     :tf_args: ``argparse`` args, or command line ``ARGV``.  These will be passed to the ``fn``.
     :cluster_meta: dictionary of cluster metadata (e.g. cluster_id, reservation.Server address, etc).
     :tensorboard: boolean indicating if the chief worker should spawn a Tensorboard server.
+    :log_dir: directory to save tensorboard event logs.  If None, defaults to a fixed path on local filesystem.
     :queues: *INTERNAL_USE*
     :background: boolean indicating if the TensorFlow "main" function should be run in a background process.
 
@@ -166,7 +167,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, queues, background):
       tb_sock.bind(('',0))
       tb_port = tb_sock.getsockname()[1]
       tb_sock.close()
-      logdir = "tensorboard_%d" % worker_num
+      logdir = log_dir if log_dir else "tensorboard_%d" % worker_num
 
       # search for tensorboard in python/bin, PATH, and PYTHONPATH
       pypath = sys.executable

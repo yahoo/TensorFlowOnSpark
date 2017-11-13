@@ -5,13 +5,13 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>tensorflowonspark.TFSparkNode &#8212; TensorFlowOnSpark 1.0.6 documentation</title>
+    <title>tensorflowonspark.TFSparkNode &#8212; TensorFlowOnSpark 1.0.8 documentation</title>
     <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.0.6',
+        VERSION:     '1.0.8',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -34,7 +34,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.0.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.0.8 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
       </ul>
     </div>  
@@ -60,6 +60,7 @@
 <span class="kn">import</span> <span class="nn">platform</span>
 <span class="kn">import</span> <span class="nn">socket</span>
 <span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">multiprocessing</span>
 <span class="kn">import</span> <span class="nn">uuid</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">TFManager</span>
@@ -126,7 +127,7 @@
   <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Connected to TFSparkNode.mgr on </span><span class="si">{0}</span><span class="s2">, ppid=</span><span class="si">{1}</span><span class="s2">, state=</span><span class="si">{2}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">ppid</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">TFSparkNode</span><span class="o">.</span><span class="n">mgr</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;state&#39;</span><span class="p">))))</span>
   <span class="k">return</span> <span class="n">TFSparkNode</span><span class="o">.</span><span class="n">mgr</span>
 
-<div class="viewcode-block" id="reserve"><a class="viewcode-back" href="../../tensorflowonspark.TFSparkNode.html#tensorflowonspark.TFSparkNode.reserve">[docs]</a><span class="k">def</span> <span class="nf">reserve</span><span class="p">(</span><span class="n">cluster_spec</span><span class="p">,</span> <span class="n">tensorboard</span><span class="p">,</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">queues</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;input&#39;</span><span class="p">,</span> <span class="s1">&#39;output&#39;</span><span class="p">]):</span>
+<div class="viewcode-block" id="reserve"><a class="viewcode-back" href="../../tensorflowonspark.TFSparkNode.html#tensorflowonspark.TFSparkNode.reserve">[docs]</a><span class="k">def</span> <span class="nf">reserve</span><span class="p">(</span><span class="n">cluster_spec</span><span class="p">,</span> <span class="n">tensorboard</span><span class="p">,</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">log_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">queues</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;input&#39;</span><span class="p">,</span> <span class="s1">&#39;output&#39;</span><span class="p">]):</span>
   <span class="sd">&quot;&quot;&quot;*DEPRECATED*. use run() method instead of reserve/start.&quot;&quot;&quot;</span>
   <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;DEPRECATED: use run() method instead of reserve/start&quot;</span><span class="p">)</span></div>
 
@@ -134,7 +135,7 @@
   <span class="sd">&quot;&quot;&quot;*DEPRECATED*. use run() method instead of reserve/start.&quot;&quot;&quot;</span>
   <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;DEPRECATED: use run() method instead of reserve/start&quot;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="run"><a class="viewcode-back" href="../../tensorflowonspark.TFSparkNode.html#tensorflowonspark.TFSparkNode.run">[docs]</a><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">tf_args</span><span class="p">,</span> <span class="n">cluster_meta</span><span class="p">,</span> <span class="n">tensorboard</span><span class="p">,</span> <span class="n">queues</span><span class="p">,</span> <span class="n">background</span><span class="p">):</span>
+<div class="viewcode-block" id="run"><a class="viewcode-back" href="../../tensorflowonspark.TFSparkNode.html#tensorflowonspark.TFSparkNode.run">[docs]</a><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">tf_args</span><span class="p">,</span> <span class="n">cluster_meta</span><span class="p">,</span> <span class="n">tensorboard</span><span class="p">,</span> <span class="n">log_dir</span><span class="p">,</span> <span class="n">queues</span><span class="p">,</span> <span class="n">background</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Wraps the user-provided TensorFlow main function in a Spark mapPartitions function.</span>
 
 <span class="sd">  Args:</span>
@@ -212,20 +213,18 @@
       <span class="n">tb_sock</span><span class="o">.</span><span class="n">bind</span><span class="p">((</span><span class="s1">&#39;&#39;</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
       <span class="n">tb_port</span> <span class="o">=</span> <span class="n">tb_sock</span><span class="o">.</span><span class="n">getsockname</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
       <span class="n">tb_sock</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-      <span class="n">logdir</span> <span class="o">=</span> <span class="s2">&quot;tensorboard_</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">worker_num</span>
+      <span class="n">logdir</span> <span class="o">=</span> <span class="n">log_dir</span> <span class="k">if</span> <span class="n">log_dir</span> <span class="k">else</span> <span class="s2">&quot;tensorboard_</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">worker_num</span>
 
-      <span class="k">if</span> <span class="s1">&#39;PYSPARK_PYTHON&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
-        <span class="c1"># user-specified Python (typically Python.zip)</span>
-        <span class="n">pypath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;PYSPARK_PYTHON&#39;</span><span class="p">]</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;PYSPARK_PYTHON: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pypath</span><span class="p">))</span>
-        <span class="n">pydir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">pypath</span><span class="p">)</span>
-        <span class="n">tb_proc</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">([</span><span class="n">pypath</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/tensorboard&quot;</span> <span class="o">%</span> <span class="n">pydir</span><span class="p">,</span> <span class="s2">&quot;--logdir=</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">logdir</span><span class="p">,</span> <span class="s2">&quot;--port=</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">tb_port</span><span class="p">,</span> <span class="s2">&quot;--debug&quot;</span><span class="p">],</span> <span class="n">env</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
-      <span class="k">else</span><span class="p">:</span>
-        <span class="c1"># system-installed Python &amp; tensorboard</span>
-        <span class="n">python_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;PYTHONPATH&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">pathsep</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">python_path</span><span class="p">:</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;PATH&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;PATH&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">pathsep</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
-        <span class="n">tb_proc</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">([</span><span class="s2">&quot;tensorboard&quot;</span><span class="p">,</span> <span class="s2">&quot;--logdir=</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">logdir</span><span class="p">,</span> <span class="s2">&quot;--port=</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">tb_port</span><span class="p">,</span> <span class="s2">&quot;--debug&quot;</span><span class="p">],</span> <span class="n">env</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
+      <span class="c1"># search for tensorboard in python/bin, PATH, and PYTHONPATH</span>
+      <span class="n">pypath</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">executable</span>
+      <span class="n">pydir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">pypath</span><span class="p">)</span>
+      <span class="n">search_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">pathsep</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">pydir</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;PATH&#39;</span><span class="p">],</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;PYTHONPATH&#39;</span><span class="p">]])</span>
+      <span class="n">tb_path</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">find_in_path</span><span class="p">(</span><span class="n">search_path</span><span class="p">,</span> <span class="s1">&#39;tensorboard&#39;</span><span class="p">)</span>
+      <span class="k">if</span> <span class="ow">not</span> <span class="n">tb_path</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Unable to find &#39;tensorboard&#39; in: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">search_path</span><span class="p">))</span>
+
+      <span class="c1"># launch tensorboard</span>
+      <span class="n">tb_proc</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">([</span><span class="n">pypath</span><span class="p">,</span> <span class="n">tb_path</span><span class="p">,</span> <span class="s2">&quot;--logdir=</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">logdir</span><span class="p">,</span> <span class="s2">&quot;--port=</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">tb_port</span><span class="p">],</span> <span class="n">env</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
       <span class="n">tb_pid</span> <span class="o">=</span> <span class="n">tb_proc</span><span class="o">.</span><span class="n">pid</span>
 
     <span class="c1"># check server to see if this task is being retried (i.e. already reserved)</span>
@@ -484,13 +483,13 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.0.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.0.8 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Yahoo Inc.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.4.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.5.
     </div>
   </body>
 </html>

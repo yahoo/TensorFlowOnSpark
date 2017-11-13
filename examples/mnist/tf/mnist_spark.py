@@ -43,7 +43,7 @@ print("args:",args)
 
 
 print("{0} ===== Start".format(datetime.now().isoformat()))
-cluster = TFCluster.run(sc, mnist_dist.map_fun, args, args.cluster_size, num_ps, args.tensorboard, TFCluster.InputMode.TENSORFLOW)
+cluster = TFCluster.run(sc, mnist_dist.map_fun, args, args.cluster_size, num_ps, args.tensorboard, TFCluster.InputMode.TENSORFLOW, log_dir=args.model)
 cluster.shutdown()
 
 print("{0} ===== Stop".format(datetime.now().isoformat()))
