@@ -24,13 +24,12 @@ def map_fun(args, ctx):
   task_index = ctx.task_index
   cluster_spec = ctx.cluster_spec
 
-  IMAGE_PIXELS=28
-
   # Delay PS nodes a bit, since workers seem to reserve GPUs more quickly/reliably (w/o conflict)
   if job_name == "ps":
     time.sleep((worker_num + 1) * 5)
 
   # Parameters
+  IMAGE_PIXELS = 28
   hidden_units = 128
   batch_size   = args.batch_size
 
@@ -46,7 +45,7 @@ def map_fun(args, ctx):
       labels.append(item[1])
     xs = numpy.array(images)
     xs = xs.astype(numpy.float32)
-    xs = xs/255.0
+    xs = xs / 255.0
     ys = numpy.array(labels)
     ys = ys.astype(numpy.uint8)
     return (xs, ys)
@@ -156,7 +155,7 @@ def map_fun(args, ctx):
 
             if sv.is_chief:
               summary_writer.add_summary(summary, step)
-          else: # args.mode == "inference"
+          else:  # args.mode == "inference"
             labels, preds, acc = sess.run([label, prediction, accuracy], feed_dict=feed)
 
             results = ["{0} Label: {1}, Prediction: {2}".format(datetime.now().isoformat(), l, p) for l,p in zip(labels,preds)]

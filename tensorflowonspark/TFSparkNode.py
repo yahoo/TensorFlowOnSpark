@@ -26,7 +26,7 @@ from . import marker
 from . import util
 
 class TFNodeContext:
-  """Struct to encapsulate unique metadata for a TensorFlowOnSpark node/executor.
+  """Encapsulates unique metadata for a TensorFlowOnSpark node/executor and provides methods to interact with Spark and HDFS.
 
   An instance of this object will be passed to the TensorFlow "main" function via the `ctx` argument.
 

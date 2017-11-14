@@ -10,12 +10,8 @@ from pyspark.context import SparkContext
 from pyspark.conf import SparkConf
 
 import argparse
-import os
 import numpy
-import sys
 import tensorflow as tf
-import threading
-import time
 from datetime import datetime
 
 from tensorflowonspark import TFCluster
@@ -61,7 +57,7 @@ else:
   if args.format == "csv":
     images = sc.textFile(args.images).map(lambda ln: [int(x) for x in ln.split(',')])
     labels = sc.textFile(args.labels).map(lambda ln: [float(x) for x in ln.split(',')])
-  else: # args.format == "pickle":
+  else:  # args.format == "pickle":
     images = sc.pickleFile(args.images)
     labels = sc.pickleFile(args.labels)
   print("zipping images and labels")
