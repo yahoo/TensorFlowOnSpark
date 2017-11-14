@@ -13,7 +13,6 @@ def print_log(worker_num, arg):
   print("{0}: {1}".format(worker_num, arg))
 
 def map_fun(args, ctx):
-  from tensorflowonspark import TFNode
   from datetime import datetime
   import math
   import numpy
@@ -36,7 +35,7 @@ def map_fun(args, ctx):
   batch_size   = args.batch_size
 
   # Get TF cluster and server instances
-  cluster, server = TFNode.start_cluster_server(ctx, 1, args.rdma)
+  cluster, server = ctx.start_cluster_server(1, args.rdma)
 
   def feed_dict(batch):
     # Convert from [(images, labels)] to two numpy arrays of the proper type
@@ -106,7 +105,7 @@ def map_fun(args, ctx):
       init_op = tf.global_variables_initializer()
 
     # Create a "supervisor", which oversees the training process and stores model state into HDFS
-    logdir = TFNode.hdfs_path(ctx, args.model)
+    logdir = ctx.absolute_path(args.model)
     print("tensorflow model path: {0}".format(logdir))
 
     if job_name == "worker" and task_index == 0:
@@ -138,7 +137,7 @@ def map_fun(args, ctx):
 
       # Loop until the supervisor shuts down or 1000000 steps have completed.
       step = 0
-      tf_feed = TFNode.DataFeed(ctx.mgr, args.mode == "train")
+      tf_feed = ctx.get_data_feed(args.mode == "train")
       while not sv.should_stop() and not tf_feed.should_stop() and step < args.steps:
         # Run a training step asynchronously.
         # See `tf.train.SyncReplicasOptimizer` for additional details on how to
