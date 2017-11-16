@@ -51,10 +51,6 @@ class TFCluster(object):
   queues = None                 #: *INTERNAL_USE*
   server = None                 #: reservation.Server for this cluster
 
-  def start(self, map_fun, tf_args):
-    """*DEPRECATED*. use run() method instead of reserve/start."""
-    raise Exception("DEPRECATED: use run() method instead of reserve/start.")
-
   def train(self, dataRDD, num_epochs=0, qname='input'):
     """*For InputMode.SPARK only*.  Feeds Spark RDD partitions into the TensorFlow worker nodes
 
@@ -190,11 +186,7 @@ class TFCluster(object):
         tb_url = "http://{0}:{1}".format(node['host'], node['tb_port'])
     return tb_url
 
-def reserve(sc, num_executors, num_ps, tensorboard=False, input_mode=InputMode.TENSORFLOW, log_dir=None, queues=['input','output']):
-  """*DEPRECATED*. use run() method instead of reserve/start."""
-  raise Exception("DEPRECATED: use run() method instead of reserve/start.")
-
-def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mode=InputMode.TENSORFLOW, log_dir=None, queues=['input', 'output']):
+def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mode=InputMode.TENSORFLOW, log_dir=None, queues=['input', 'output'], start_server=False, num_gpus=1, use_rdma=False):
   """Starts the TensorFlowOnSpark cluster and Runs the TensorFlow "main" function on the Spark executors
 
   Args:
@@ -207,6 +199,9 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
     :input_mode: TFCluster.InputMode
     :log_dir: directory to save tensorboard event logs.  If None, defaults to a fixed path on local filesystem.
     :queues: *INTERNAL_USE*
+    :start_server: start ``tf.train.Server`` prior to invoking ``map_fun``.
+    :num_gpus: number of GPUs to allocate, only used if ``start_server == True``.
+    :use_rdma: enable RDMA instead of GRPC, only used if ``start_server == True``.
 
   Returns:
     A TFCluster object representing the started cluster.
@@ -244,6 +239,8 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
   }
   nodeRDD = sc.parallelize(range(num_executors), num_executors)
 
+  logging.info("===== TFCluster.start_server: {}".format(start_server))
+
   # start TF on a background thread (on Spark driver) to allow for feeding job
   def _start():
     nodeRDD.foreachPartition(TFSparkNode.run(map_fun,
@@ -252,7 +249,10 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
                                               tensorboard,
                                               log_dir,
                                               queues,
-                                              background=(input_mode == InputMode.SPARK)))
+                                              (input_mode == InputMode.SPARK),
+                                              start_server,
+                                              num_gpus,
+                                              use_rdma))
   t = threading.Thread(target=_start)
   t.start()
 

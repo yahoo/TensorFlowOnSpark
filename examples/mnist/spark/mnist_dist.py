@@ -22,7 +22,6 @@ def map_fun(args, ctx):
   worker_num = ctx.worker_num
   job_name = ctx.job_name
   task_index = ctx.task_index
-  cluster_spec = ctx.cluster_spec
 
   # Delay PS nodes a bit, since workers seem to reserve GPUs more quickly/reliably (w/o conflict)
   if job_name == "ps":
@@ -34,7 +33,10 @@ def map_fun(args, ctx):
   batch_size   = args.batch_size
 
   # Get TF cluster and server instances
-  cluster, server = ctx.start_cluster_server(1, args.rdma)
+  if args.start_server:
+    cluster, server = ctx.cluster, ctx.server
+  else:
+    cluster, server = ctx.start_cluster_server(1, args.rdma)
 
   def feed_dict(batch):
     # Convert from [(images, labels)] to two numpy arrays of the proper type

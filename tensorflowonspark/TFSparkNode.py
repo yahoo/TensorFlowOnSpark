@@ -330,15 +330,7 @@ def _get_manager(cluster_info, host, ppid):
   logging.info("Connected to TFSparkNode.mgr on {0}, ppid={1}, state={2}".format(host, ppid, str(TFSparkNode.mgr.get('state'))))
   return TFSparkNode.mgr
 
-def reserve(cluster_spec, tensorboard, cluster_id, log_dir=None, queues=['input', 'output']):
-  """*DEPRECATED*. use run() method instead of reserve/start."""
-  raise Exception("DEPRECATED: use run() method instead of reserve/start")
-
-def start(fn, tf_args, cluster_info, defaultFS, working_dir, background):
-  """*DEPRECATED*. use run() method instead of reserve/start."""
-  raise Exception("DEPRECATED: use run() method instead of reserve/start")
-
-def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
+def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background, start_server=False, num_gpus=1, use_rdma=False):
   """Wraps the user-provided TensorFlow main function in a Spark mapPartitions function.
 
   Args:
@@ -349,6 +341,9 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
     :log_dir: directory to save tensorboard event logs.  If None, defaults to a fixed path on local filesystem.
     :queues: *INTERNAL_USE*
     :background: boolean indicating if the TensorFlow "main" function should be run in a background process.
+    :start_server: start ``tf.train.Server`` prior to invoking ``map_fun``.
+    :num_gpus: number of GPUs to allocate, only used if ``start_server == True``.
+    :use_rdma: enable RDMA instead of GRPC, only used if ``start_server == True``.
 
   Returns:
     A nodeRDD.mapPartitions() function.
@@ -496,10 +491,19 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
       if not os.environ.get("SPARK_REUSE_WORKER"):
         raise Exception("Background mode relies reuse of python worker on Spark. This config 'spark.python.worker.reuse' is not enabled on Spark. Please enable it before using background.")
 
+    def wrapper_fn(args, context):
+      """Simple wrapper function that starts the tf.train.server"""
+      cluster, server = context.start_cluster_server(num_gpus, use_rdma)
+      context.cluster = cluster
+      context.server = server
+      fn(args, context)
+
+    tf_fun = wrapper_fn if start_server else fn
+
     if job_name == 'ps' or background:
       # invoke the TensorFlow main function in a background thread
       logging.info("Starting TensorFlow {0}:{1} on cluster node {2} on background process".format(job_name, task_index, worker_num))
-      p = multiprocessing.Process(target=fn, args=(tf_args, ctx))
+      p = multiprocessing.Process(target=tf_fun, args=(tf_args, ctx))
       p.start()
 
       # for ps nodes only, wait indefinitely in foreground thread for a "control" event (None == "stop")
@@ -517,7 +521,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
     else:
       # otherwise, just run TF function in the main executor/worker thread
       logging.info("Starting TensorFlow {0}:{1} on cluster node {2} on foreground thread".format(job_name, task_index, worker_num))
-      fn(tf_args, ctx)
+      tf_fun(tf_args, ctx)
       logging.info("Finished TensorFlow {0}:{1} on cluster node {2}".format(job_name, task_index, worker_num))
 
   return _mapfn
