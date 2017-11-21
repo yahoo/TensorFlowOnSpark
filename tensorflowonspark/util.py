@@ -21,6 +21,6 @@ def find_in_path(path, file):
   """Find a file in a given path string."""
   for p in path.split(os.pathsep):
     candidate = os.path.join(p, file)
-    if (os.path.exists(os.path.join(p, file))):
+    if os.path.exists(candidate) and os.path.isfile(candidate):
       return candidate
   return False

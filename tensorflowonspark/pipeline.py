@@ -27,6 +27,7 @@ from tensorflow.contrib.saved_model.python.saved_model import reader, signature_
 from tensorflow.python.saved_model import loader
 from . import TFCluster, gpu_info, dfutil
 
+import argparse
 import copy
 import logging
 import os
@@ -197,25 +198,40 @@ class Namespace(object):
 
   Based on https://docs.python.org/dev/library/types.html#types.SimpleNamespace
   """
+  argv = None
   def __init__(self, d):
-    self.__dict__.update(d)
+    if isinstance(d, list):
+      self.argv = d
+    elif isinstance(d, argparse.Namespace):
+      self.__dict__.update(vars(d))
+    else:
+      self.__dict__.update(d)
 
   def __iter__(self):
-    for key in self.__dict__.keys():
-      yield key
+    if self.argv:
+      for item in self.argv:
+        yield item
+    else:
+      for key in self.__dict__.keys():
+        yield key
 
   def __repr__(self):
-    keys = sorted(self.__dict__)
-    items = ("{}={!r}".format(k, self.__dict__[k]) for k in keys)
-    return "{}({})".format(type(self).__name__, ", ".join(items))
+    if self.argv:
+      return "{}".format(self.argv)
+    else:
+      keys = sorted(self.__dict__)
+      items = ("{}={!r}".format(k, self.__dict__[k]) for k in keys)
+      return "{}({})".format(type(self).__name__, ", ".join(items))
 
   def __eq__(self, other):
-    return self.__dict__ == other.__dict__
+    if self.argv:
+      return self.argv == other
+    else:
+      return self.__dict__ == other.__dict__
 
 class TFParams(Params):
   """Mix-in class to store namespace-style args and merge w/ SparkML-style params."""
   args = None
-  argv = None
   def merge_args_params(self):
     local_args = copy.copy(self.args)                 # make a local copy of args
     args_dict = vars(local_args)                      # get dictionary view
@@ -241,20 +257,18 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
 
   Args:
     :train_fn: TensorFlow "main" function for training.
-    :tf_args: Dictionary of arguments specific to TensorFlow "main" function.
-    :tf_argv: Command line ARGV arguments.
+    :tf_args: Arguments specific to the TensorFlow "main" function.
     :export_fn: TensorFlow function for exporting a saved_model.
   """
 
   train_fn = None
   export_fn = None
 
-  def __init__(self, train_fn, tf_args, tf_argv=None, export_fn=None):
+  def __init__(self, train_fn, tf_args, export_fn=None):
     super(TFEstimator, self).__init__()
     self.train_fn = train_fn
     self.export_fn = export_fn
-    self.args = Namespace(tf_args) if isinstance(tf_args, dict) else tf_args
-    self.argv = tf_argv
+    self.args = Namespace(tf_args)
     self._setDefault(input_mapping={},
                     cluster_size=1,
                     num_ps=0,
@@ -300,7 +314,7 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
         dfutil.saveAsTFRecords(dataset, local_args.tfrecord_dir)
         logging.info("Done saving")
 
-    tf_args = self.argv if self.argv else local_args
+    tf_args = self.args.argv if self.args.argv else local_args
     cluster = TFCluster.run(sc, self.train_fn, tf_args, local_args.cluster_size, local_args.num_ps, local_args.tensorboard, local_args.input_mode)
     if local_args.input_mode == TFCluster.InputMode.SPARK:
       # feed data, using a deterministic order for input columns (lexicographic by key)
@@ -313,14 +327,14 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
       assert local_args.export_dir, "Export function requires --export_dir to be set"
       logging.info("Exporting saved_model (via export_fn) to: {}".format(local_args.export_dir))
 
-      def _export(iterator, fn, args, argv=None):
-        single_node_env(args, argv)
+      def _export(iterator, fn, args):
+        single_node_env(args)
         fn(args)
 
       # Run on a single exeucutor
-      sc.parallelize([1], 1).foreachPartition(lambda it: _export(it, self.export_fn, local_args, self.argv))
+      sc.parallelize([1], 1).foreachPartition(lambda it: _export(it, self.export_fn, tf_args))
 
-    return self._copyValues(TFModel(self.args, self.argv))
+    return self._copyValues(TFModel(self.args))
 
 class TFModel(Model, TFParams,
               HasInputMapping, HasOutputMapping,
@@ -334,12 +348,11 @@ class TFModel(Model, TFParams,
 
   Args:
     :tf_args: Dictionary of arguments specific to TensorFlow "main" function.
-    :tf_argv: Command line arguments as an array of string.
   """
 
-  def __init__(self, tf_args, tf_argv=None):
+  def __init__(self, tf_args):
     super(TFModel, self).__init__()
-    self.args = Namespace(tf_args) if isinstance(tf_args, dict) else tf_args
+    self.args = Namespace(tf_args)
     self._setDefault(batch_size=100,
                     model_dir=None,
                     export_dir=None,
@@ -367,7 +380,8 @@ class TFModel(Model, TFParams,
     logging.info("input_cols: {}".format(input_cols))
     logging.info("output_cols: {}".format(output_cols))
 
-    rdd_out = dataset.select(input_cols).rdd.mapPartitions(lambda it: _run_model(it, local_args))
+    tf_args = self.args.argv if self.args.argv else local_args
+    rdd_out = dataset.select(input_cols).rdd.mapPartitions(lambda it: _run_model(it, tf_args))
 
     # convert to a DataFrame-friendly format
     rows_out = rdd_out.map(lambda x: Row(*x))
@@ -460,15 +474,15 @@ def _run_model(iterator, args):
 
   return result
 
-def single_node_env(args, argv=None):
+def single_node_env(args):
   """Sets up environment for a single-node TF session.
 
   Args:
     :args: command line arguments as argparse args.
     :argv: command line arguments as ARGV (array of string).
   """
-  if argv:
-      sys.argv = argv
+  if args.argv:
+      sys.argv = args.argv
 
   # ensure expanded CLASSPATH w/o glob characters (required for Spark 2.1 + JNI)
   if 'HADOOP_PREFIX' in os.environ and 'TFOS_CLASSPATH_UPDATED' not in os.environ:

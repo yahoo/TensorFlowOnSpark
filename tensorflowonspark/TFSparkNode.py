@@ -418,7 +418,11 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background, sta
       pypath = sys.executable
       pydir = os.path.dirname(pypath)
       search_path = os.pathsep.join([pydir, os.environ['PATH'], os.environ['PYTHONPATH']])
-      tb_path = util.find_in_path(search_path, 'tensorboard')
+      tb_path = util.find_in_path(search_path, 'tensorboard')                             # executable in PATH
+      if not tb_path:
+        tb_path = util.find_in_path(search_path, 'tensorboard/main.py')                   # TF 1.3+
+      if not tb_path:
+        tb_path = util.find_in_path(search_path, 'tensorflow/tensorboard/__main__.py')    # TF 1.2-
       if not tb_path:
         raise Exception("Unable to find 'tensorboard' in: {}".format(search_path))
 
@@ -492,18 +496,19 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background, sta
         raise Exception("Background mode relies reuse of python worker on Spark. This config 'spark.python.worker.reuse' is not enabled on Spark. Please enable it before using background.")
 
     def wrapper_fn(args, context):
-      """Simple wrapper function that starts the tf.train.server"""
-      cluster, server = context.start_cluster_server(num_gpus, use_rdma)
-      context.cluster = cluster
-      context.server = server
+      """Wrapper function that sets the sys.argv of the executor and starts the tf.train.server."""
+      if isinstance(args, list):
+        sys.argv = args
+      if start_server:
+        cluster, server = context.start_cluster_server(num_gpus, use_rdma)
+        context.cluster = cluster
+        context.server = server
       fn(args, context)
-
-    tf_fun = wrapper_fn if start_server else fn
 
     if job_name == 'ps' or background:
       # invoke the TensorFlow main function in a background thread
       logging.info("Starting TensorFlow {0}:{1} on cluster node {2} on background process".format(job_name, task_index, worker_num))
-      p = multiprocessing.Process(target=tf_fun, args=(tf_args, ctx))
+      p = multiprocessing.Process(target=wrapper_fn, args=(tf_args, ctx))
       p.start()
 
       # for ps nodes only, wait indefinitely in foreground thread for a "control" event (None == "stop")
@@ -521,7 +526,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background, sta
     else:
       # otherwise, just run TF function in the main executor/worker thread
       logging.info("Starting TensorFlow {0}:{1} on cluster node {2} on foreground thread".format(job_name, task_index, worker_num))
-      tf_fun(tf_args, ctx)
+      wrapper_fn(tf_args, ctx)
       logging.info("Finished TensorFlow {0}:{1} on cluster node {2}".format(job_name, task_index, worker_num))
 
   return _mapfn
