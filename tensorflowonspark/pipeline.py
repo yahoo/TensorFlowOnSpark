@@ -100,12 +100,17 @@ class HasModelDir(Params):
 
 class HasNumPS(Params):
   num_ps = Param(Params._dummy(), "num_ps", "Number of PS nodes in cluster", typeConverter=TypeConverters.toInt)
+  driver_ps_nodes = Param(Params._dummy(), "driver_ps_nodes", "Run PS nodes on driver locally", typeConverter=TypeConverters.toBoolean)
   def __init__(self):
     super(HasNumPS, self).__init__()
   def setNumPS(self, value):
     return self._set(num_ps=value)
   def getNumPS(self):
     return self.getOrDefault(self.num_ps)
+  def setDriverPSNodes(self, value):
+    return self._set(driver_ps_nodes=value)
+  def getDriverPSNodes(self):
+    return self.getOrDefault(self.driver_ps_nodes)
 
 class HasOutputMapping(Params):
   output_mapping = Param(Params._dummy(), "output_mapping", "Mapping of output tensor to output DataFrame column", typeConverter=TFTypeConverters.toDict)
@@ -258,6 +263,7 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
     self._setDefault(input_mapping={},
                     cluster_size=1,
                     num_ps=0,
+                    driver_ps_nodes=False,
                     input_mode=TFCluster.InputMode.SPARK,
                     protocol='grpc',
                     tensorboard=False,
@@ -301,7 +307,8 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
         logging.info("Done saving")
 
     tf_args = self.argv if self.argv else local_args
-    cluster = TFCluster.run(sc, self.train_fn, tf_args, local_args.cluster_size, local_args.num_ps, local_args.tensorboard, local_args.input_mode)
+    cluster = TFCluster.run(sc, self.train_fn, tf_args, local_args.cluster_size, local_args.num_ps,
+                            local_args.tensorboard, local_args.input_mode, driver_ps_nodes=local_args.driver_ps_nodes)
     if local_args.input_mode == TFCluster.InputMode.SPARK:
       # feed data, using a deterministic order for input columns (lexicographic by key)
       input_cols = sorted(self.getInputMapping().keys())
