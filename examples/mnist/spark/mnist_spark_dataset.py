@@ -36,6 +36,7 @@ parser.add_argument("-s", "--steps", help="maximum number of steps", type=int, d
 parser.add_argument("-tb", "--tensorboard", help="launch tensorboard process", action="store_true")
 parser.add_argument("-X", "--mode", help="train|inference", default="train")
 parser.add_argument("-c", "--rdma", help="use rdma connection", default=False)
+parser.add_argument("-p", "--driver_ps_nodes", help="run tensorflow PS node on driver locally", default=False)
 args = parser.parse_args()
 print("args:",args)
 
@@ -59,7 +60,8 @@ else:  # args.format == "csv":
   print("zipping images and labels")
   dataRDD = images.zip(labels)
 
-cluster = TFCluster.run(sc, mnist_dist_dataset.map_fun, args, args.cluster_size, num_ps, args.tensorboard, TFCluster.InputMode.SPARK)
+cluster = TFCluster.run(sc, mnist_dist_dataset.map_fun, args, args.cluster_size, num_ps, args.tensorboard,
+                        TFCluster.InputMode.SPARK, driver_ps_nodes=args.driver_ps_nodes)
 if args.mode == "train":
   cluster.train(dataRDD, args.epochs)
 else:
