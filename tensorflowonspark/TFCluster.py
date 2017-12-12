@@ -51,10 +51,6 @@ class TFCluster(object):
   queues = None                 #: *INTERNAL_USE*
   server = None                 #: reservation.Server for this cluster
 
-  def start(self, map_fun, tf_args):
-    """*DEPRECATED*. use run() method instead of reserve/start."""
-    raise Exception("DEPRECATED: use run() method instead of reserve/start.")
-
   def train(self, dataRDD, num_epochs=0, qname='input'):
     """*For InputMode.SPARK only*.  Feeds Spark RDD partitions into the TensorFlow worker nodes
 
@@ -190,10 +186,6 @@ class TFCluster(object):
         tb_url = "http://{0}:{1}".format(node['host'], node['tb_port'])
     return tb_url
 
-def reserve(sc, num_executors, num_ps, tensorboard=False, input_mode=InputMode.TENSORFLOW, log_dir=None, queues=['input','output']):
-  """*DEPRECATED*. use run() method instead of reserve/start."""
-  raise Exception("DEPRECATED: use run() method instead of reserve/start.")
-
 def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mode=InputMode.TENSORFLOW, log_dir=None, queues=['input', 'output']):
   """Starts the TensorFlowOnSpark cluster and Runs the TensorFlow "main" function on the Spark executors
 
@@ -252,7 +244,7 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
                                               tensorboard,
                                               log_dir,
                                               queues,
-                                              background=(input_mode == InputMode.SPARK)))
+                                              (input_mode == InputMode.SPARK)))
   t = threading.Thread(target=_start)
   t.start()
 
