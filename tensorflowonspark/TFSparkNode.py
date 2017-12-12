@@ -263,7 +263,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
         raise Exception("Background mode relies reuse of python worker on Spark. This config 'spark.python.worker.reuse' is not enabled on Spark. Please enable it before using background.")
 
     def wrapper_fn(args, context):
-      """Wrapper function that sets the sys.argv of the executor and starts the tf.train.server."""
+      """Wrapper function that sets the sys.argv of the executor."""
       if isinstance(args, list):
         sys.argv = args
       fn(args, context)
