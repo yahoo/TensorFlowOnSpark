@@ -330,7 +330,7 @@ def _get_manager(cluster_info, host, ppid):
   logging.info("Connected to TFSparkNode.mgr on {0}, ppid={1}, state={2}".format(host, ppid, str(TFSparkNode.mgr.get('state'))))
   return TFSparkNode.mgr
 
-def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background, start_server=False, num_gpus=1, use_rdma=False):
+def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
   """Wraps the user-provided TensorFlow main function in a Spark mapPartitions function.
 
   Args:
@@ -341,9 +341,6 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background, sta
     :log_dir: directory to save tensorboard event logs.  If None, defaults to a fixed path on local filesystem.
     :queues: *INTERNAL_USE*
     :background: boolean indicating if the TensorFlow "main" function should be run in a background process.
-    :start_server: start ``tf.train.Server`` prior to invoking ``map_fun``.
-    :num_gpus: number of GPUs to allocate, only used if ``start_server == True``.
-    :use_rdma: enable RDMA instead of GRPC, only used if ``start_server == True``.
 
   Returns:
     A nodeRDD.mapPartitions() function.
@@ -499,10 +496,6 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background, sta
       """Wrapper function that sets the sys.argv of the executor and starts the tf.train.server."""
       if isinstance(args, list):
         sys.argv = args
-      if start_server:
-        cluster, server = context.start_cluster_server(num_gpus, use_rdma)
-        context.cluster = cluster
-        context.server = server
       fn(args, context)
 
     if job_name == 'ps' or background:

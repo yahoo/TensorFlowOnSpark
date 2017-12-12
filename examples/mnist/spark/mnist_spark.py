@@ -32,7 +32,6 @@ parser.add_argument("--model", help="HDFS path to save/load model during train/i
 parser.add_argument("--cluster_size", help="number of nodes in the cluster", type=int, default=num_executors)
 parser.add_argument("--output", help="HDFS path to save test/inference output", default="predictions")
 parser.add_argument("--readers", help="number of reader/enqueue threads", type=int, default=1)
-parser.add_argument("--start_server", help="start tensorflow server prior to invoking map_fun", action="store_true")
 parser.add_argument("--steps", help="maximum number of steps", type=int, default=1000)
 parser.add_argument("--tensorboard", help="launch tensorboard process", action="store_true")
 parser.add_argument("--mode", help="train|inference", default="train")
@@ -64,9 +63,7 @@ else:
   print("zipping images and labels")
   dataRDD = images.zip(labels)
 
-cluster = TFCluster.run(sc, mnist_dist.map_fun, args, args.cluster_size, num_ps, args.tensorboard, TFCluster.InputMode.SPARK,
-                        log_dir=args.model,
-                        start_server=args.start_server)
+cluster = TFCluster.run(sc, mnist_dist.map_fun, args, args.cluster_size, num_ps, args.tensorboard, TFCluster.InputMode.SPARK, log_dir=args.model)
 if args.mode == "train":
   cluster.train(dataRDD, args.epochs)
 else:
