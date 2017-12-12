@@ -8,17 +8,14 @@ from __future__ import division
 from __future__ import nested_scopes
 from __future__ import print_function
 
-import getpass
 import logging
 import os
 import sys
 import platform
 import socket
-import time
 import subprocess
 import multiprocessing
 import uuid
-from six.moves.queue import Empty
 
 from . import TFManager
 from . import TFNode
