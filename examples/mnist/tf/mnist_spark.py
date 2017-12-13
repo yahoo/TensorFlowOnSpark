@@ -10,11 +10,6 @@ from pyspark.context import SparkContext
 from pyspark.conf import SparkConf
 
 import argparse
-import os
-import numpy
-import sys
-import tensorflow as tf
-import threading
 from datetime import datetime
 
 from tensorflowonspark import TFCluster
