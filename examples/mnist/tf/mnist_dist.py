@@ -9,21 +9,16 @@ from __future__ import division
 from __future__ import print_function
 
 def print_log(worker_num, arg):
-  print("%d: " %worker_num, end=" ")
+  print("%d: " % worker_num, end=" ")
   print(arg)
 
 def map_fun(args, ctx):
-  from tensorflowonspark import TFNode
   from datetime import datetime
-  import getpass
   import math
-  import numpy
   import os
-  import signal
   import tensorflow as tf
   import time
 
-  IMAGE_PIXELS=28
   worker_num = ctx.worker_num
   job_name = ctx.job_name
   task_index = ctx.task_index
@@ -35,11 +30,12 @@ def map_fun(args, ctx):
     time.sleep((worker_num + 1) * 5)
 
   # Parameters
+  IMAGE_PIXELS = 28
   hidden_units = 128
   batch_size   = 100
 
   # Get TF cluster and server instances
-  cluster, server = TFNode.start_cluster_server(ctx, 1, args.rdma)
+  cluster, server = ctx.start_cluster_server(1, args.rdma)
 
   def read_csv_examples(image_dir, label_dir, batch_size=100, num_epochs=None, task_index=None, num_workers=None):
     print_log(worker_num, "num_epochs: {0}".format(num_epochs))
@@ -132,11 +128,11 @@ def map_fun(args, ctx):
       workers = num_workers if args.mode == "inference" else None
 
       if args.format == "csv":
-        images = TFNode.hdfs_path(ctx, args.images)
-        labels = TFNode.hdfs_path(ctx, args.labels)
+        images = ctx.absolute_path(args.images)
+        labels = ctx.absolute_path(args.labels)
         x, y_ = read_csv_examples(images, labels, 100, num_epochs, index, workers)
       elif args.format == "tfr":
-        images = TFNode.hdfs_path(ctx, args.images)
+        images = ctx.absolute_path(args.images)
         x, y_ = read_tfr_examples(images, 100, num_epochs, index, workers)
       else:
         raise("{0} format not supported for tf input mode".format(args.format))
@@ -168,7 +164,7 @@ def map_fun(args, ctx):
       init_op = tf.global_variables_initializer()
 
     # Create a "supervisor", which oversees the training process and stores model state into HDFS
-    logdir = TFNode.hdfs_path(ctx, args.model)
+    logdir = ctx.absolute_path(args.model)
     print("tensorflow model path: {0}".format(logdir))
 
     if job_name == "worker" and task_index == 0:
@@ -192,7 +188,7 @@ def map_fun(args, ctx):
                                global_step=global_step,
                                stop_grace_secs=300,
                                save_model_secs=0)
-      output_dir = TFNode.hdfs_path(ctx, args.output)
+      output_dir = ctx.absolute_path(args.output)
       output_file = tf.gfile.Open("{0}/part-{1:05d}".format(output_dir, worker_num), mode='w')
 
     # The supervisor takes care of session initialization, restoring from
@@ -215,7 +211,7 @@ def map_fun(args, ctx):
           _, summary, step = sess.run([train_op, summary_op, global_step])
           if sv.is_chief:
             summary_writer.add_summary(summary, step)
-        else: # args.mode == "inference"
+        else:  # args.mode == "inference"
           labels, pred, acc = sess.run([label, prediction, accuracy])
           #print("label: {0}, pred: {1}".format(labels, pred))
           print("acc: {0}".format(acc))
