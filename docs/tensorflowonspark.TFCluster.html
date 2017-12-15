@@ -5,13 +5,13 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>tensorflowonspark.TFCluster module &#8212; TensorFlowOnSpark 1.0.8 documentation</title>
+    <title>tensorflowonspark.TFCluster module &#8212; TensorFlowOnSpark 1.1.0 documentation</title>
     <link rel="stylesheet" href="_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.0.8',
+        VERSION:     '1.1.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="tensorflowonspark.html" title="tensorflowonspark package"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">TensorFlowOnSpark 1.0.8 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TensorFlowOnSpark 1.1.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="tensorflowonspark.html" accesskey="U">tensorflowonspark package</a> &#187;</li> 
       </ul>
     </div>  
@@ -191,12 +191,6 @@ Per Spark design, the output RDD will be lazily-executed only when a Spark actio
 </dd></dl>
 
 <dl class="method">
-<dt id="tensorflowonspark.TFCluster.TFCluster.start">
-<code class="descname">start</code><span class="sig-paren">(</span><em>map_fun</em>, <em>tf_args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFCluster.html#TFCluster.start"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.start" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>DEPRECATED</em>. use run() method instead of reserve/start.</p>
-</dd></dl>
-
-<dl class="method">
 <dt id="tensorflowonspark.TFCluster.TFCluster.tensorboard_url">
 <code class="descname">tensorboard_url</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFCluster.html#TFCluster.tensorboard_url"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.tensorboard_url" title="Permalink to this definition">¶</a></dt>
 <dd><p>Utility function to get the Tensorboard URL</p>
@@ -237,12 +231,6 @@ for more details.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="tensorflowonspark.TFCluster.reserve">
-<code class="descname">reserve</code><span class="sig-paren">(</span><em>sc, num_executors, num_ps, tensorboard=False, input_mode=0, log_dir=None, queues=['input', 'output']</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFCluster.html#reserve"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.TFCluster.reserve" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>DEPRECATED</em>. use run() method instead of reserve/start.</p>
-</dd></dl>
-
-<dl class="function">
 <dt id="tensorflowonspark.TFCluster.run">
 <code class="descname">run</code><span class="sig-paren">(</span><em>sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mode=0, log_dir=None, queues=['input', 'output']</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFCluster.html#run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.TFCluster.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Starts the TensorFlowOnSpark cluster and Runs the TensorFlow “main” function on the Spark executors</p>
@@ -266,7 +254,9 @@ for more details.</p>
 </tr>
 <tr class="field-odd field"><th class="field-name">input_mode:</th><td class="field-body">TFCluster.InputMode</td>
 </tr>
-<tr class="field-even field"><th class="field-name">queues:</th><td class="field-body"><em>INTERNAL_USE</em></td>
+<tr class="field-even field"><th class="field-name">log_dir:</th><td class="field-body">directory to save tensorboard event logs.  If None, defaults to a fixed path on local filesystem.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">queues:</th><td class="field-body"><em>INTERNAL_USE</em></td>
 </tr>
 </tbody>
 </table>
@@ -326,7 +316,7 @@ for more details.</p>
         <li class="right" >
           <a href="tensorflowonspark.html" title="tensorflowonspark package"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">TensorFlowOnSpark 1.0.8 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TensorFlowOnSpark 1.1.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="tensorflowonspark.html" >tensorflowonspark package</a> &#187;</li> 
       </ul>
     </div>
