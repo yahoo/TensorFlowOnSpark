@@ -5,13 +5,13 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>tensorflowonspark.TFSparkNode &#8212; TensorFlowOnSpark 1.0.8 documentation</title>
+    <title>tensorflowonspark.TFSparkNode &#8212; TensorFlowOnSpark 1.1.0 documentation</title>
     <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.0.8',
+        VERSION:     '1.1.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -34,7 +34,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.0.8 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.1.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
       </ul>
     </div>  
@@ -57,21 +57,24 @@
 
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">platform</span>
 <span class="kn">import</span> <span class="nn">socket</span>
 <span class="kn">import</span> <span class="nn">subprocess</span>
-<span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">multiprocessing</span>
 <span class="kn">import</span> <span class="nn">uuid</span>
+
 <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">TFManager</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">TFNode</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">reservation</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">marker</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">util</span>
 
 <div class="viewcode-block" id="TFNodeContext"><a class="viewcode-back" href="../../tensorflowonspark.TFSparkNode.html#tensorflowonspark.TFSparkNode.TFNodeContext">[docs]</a><span class="k">class</span> <span class="nc">TFNodeContext</span><span class="p">:</span>
-  <span class="sd">&quot;&quot;&quot;Struct to encapsulate unique metadata for a TensorFlowOnSpark node/executor.</span>
+  <span class="sd">&quot;&quot;&quot;Encapsulates unique metadata for a TensorFlowOnSpark node/executor and provides methods to interact with Spark and HDFS.</span>
 
 <span class="sd">  An instance of this object will be passed to the TensorFlow &quot;main&quot; function via the `ctx` argument.</span>
+<span class="sd">  To simply the end-user API, this class now mirrors the functions of the TFNode module.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    :worker_num: integer identifier for this executor, per ``nodeRDD = sc.parallelize(range(num_executors), num_executors).``</span>
@@ -89,7 +92,24 @@
     <span class="bp">self</span><span class="o">.</span><span class="n">cluster_spec</span> <span class="o">=</span> <span class="n">cluster_spec</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">defaultFS</span> <span class="o">=</span> <span class="n">defaultFS</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">working_dir</span> <span class="o">=</span> <span class="n">working_dir</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">mgr</span> <span class="o">=</span> <span class="n">mgr</span></div>
+    <span class="bp">self</span><span class="o">.</span><span class="n">mgr</span> <span class="o">=</span> <span class="n">mgr</span>
+
+<div class="viewcode-block" id="TFNodeContext.absolute_path"><a class="viewcode-back" href="../../tensorflowonspark.TFSparkNode.html#tensorflowonspark.TFSparkNode.TFNodeContext.absolute_path">[docs]</a>  <span class="k">def</span> <span class="nf">absolute_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convenience function to access ``TFNode.hdfs_path`` directly from this object instance.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">TFNode</span><span class="o">.</span><span class="n">hdfs_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TFNodeContext.start_cluster_server"><a class="viewcode-back" href="../../tensorflowonspark.TFSparkNode.html#tensorflowonspark.TFSparkNode.TFNodeContext.start_cluster_server">[docs]</a>  <span class="k">def</span> <span class="nf">start_cluster_server</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_gpus</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">rdma</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convenience function to access ``TFNode.start_cluster_server`` directly from this object instance.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">TFNode</span><span class="o">.</span><span class="n">start_cluster_server</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_gpus</span><span class="p">,</span> <span class="n">rdma</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TFNodeContext.export_saved_model"><a class="viewcode-back" href="../../tensorflowonspark.TFSparkNode.html#tensorflowonspark.TFSparkNode.TFNodeContext.export_saved_model">[docs]</a>  <span class="k">def</span> <span class="nf">export_saved_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sess</span><span class="p">,</span> <span class="n">export_dir</span><span class="p">,</span> <span class="n">tag_set</span><span class="p">,</span> <span class="n">signatures</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convenience function to access ``TFNode.export_saved_model`` directly from this object instance.&quot;&quot;&quot;</span>
+    <span class="n">TFNode</span><span class="o">.</span><span class="n">export_saved_model</span><span class="p">(</span><span class="n">sess</span><span class="p">,</span> <span class="n">export_dir</span><span class="p">,</span> <span class="n">tag_set</span><span class="p">,</span> <span class="n">signatures</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TFNodeContext.get_data_feed"><a class="viewcode-back" href="../../tensorflowonspark.TFSparkNode.html#tensorflowonspark.TFSparkNode.TFNodeContext.get_data_feed">[docs]</a>  <span class="k">def</span> <span class="nf">get_data_feed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_mode</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">qname_in</span><span class="o">=</span><span class="s1">&#39;input&#39;</span><span class="p">,</span> <span class="n">qname_out</span><span class="o">=</span><span class="s1">&#39;output&#39;</span><span class="p">,</span> <span class="n">input_mapping</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convenience function to access ``TFNode.DataFeed`` directly from this object instance.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">TFNode</span><span class="o">.</span><span class="n">DataFeed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mgr</span><span class="p">,</span> <span class="n">train_mode</span><span class="p">,</span> <span class="n">qname_in</span><span class="p">,</span> <span class="n">qname_out</span><span class="p">,</span> <span class="n">input_mapping</span><span class="p">)</span></div></div>
+
 
 <div class="viewcode-block" id="TFSparkNode"><a class="viewcode-back" href="../../tensorflowonspark.TFSparkNode.html#tensorflowonspark.TFSparkNode.TFSparkNode">[docs]</a><span class="k">class</span> <span class="nc">TFSparkNode</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Low-level functions used by the high-level TFCluster APIs to manage cluster state.</span>
@@ -127,14 +147,6 @@
   <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Connected to TFSparkNode.mgr on </span><span class="si">{0}</span><span class="s2">, ppid=</span><span class="si">{1}</span><span class="s2">, state=</span><span class="si">{2}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">ppid</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">TFSparkNode</span><span class="o">.</span><span class="n">mgr</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;state&#39;</span><span class="p">))))</span>
   <span class="k">return</span> <span class="n">TFSparkNode</span><span class="o">.</span><span class="n">mgr</span>
 
-<div class="viewcode-block" id="reserve"><a class="viewcode-back" href="../../tensorflowonspark.TFSparkNode.html#tensorflowonspark.TFSparkNode.reserve">[docs]</a><span class="k">def</span> <span class="nf">reserve</span><span class="p">(</span><span class="n">cluster_spec</span><span class="p">,</span> <span class="n">tensorboard</span><span class="p">,</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">log_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">queues</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;input&#39;</span><span class="p">,</span> <span class="s1">&#39;output&#39;</span><span class="p">]):</span>
-  <span class="sd">&quot;&quot;&quot;*DEPRECATED*. use run() method instead of reserve/start.&quot;&quot;&quot;</span>
-  <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;DEPRECATED: use run() method instead of reserve/start&quot;</span><span class="p">)</span></div>
-
-<div class="viewcode-block" id="start"><a class="viewcode-back" href="../../tensorflowonspark.TFSparkNode.html#tensorflowonspark.TFSparkNode.start">[docs]</a><span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">tf_args</span><span class="p">,</span> <span class="n">cluster_info</span><span class="p">,</span> <span class="n">defaultFS</span><span class="p">,</span> <span class="n">working_dir</span><span class="p">,</span> <span class="n">background</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;*DEPRECATED*. use run() method instead of reserve/start.&quot;&quot;&quot;</span>
-  <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;DEPRECATED: use run() method instead of reserve/start&quot;</span><span class="p">)</span></div>
-
 <div class="viewcode-block" id="run"><a class="viewcode-back" href="../../tensorflowonspark.TFSparkNode.html#tensorflowonspark.TFSparkNode.run">[docs]</a><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">tf_args</span><span class="p">,</span> <span class="n">cluster_meta</span><span class="p">,</span> <span class="n">tensorboard</span><span class="p">,</span> <span class="n">log_dir</span><span class="p">,</span> <span class="n">queues</span><span class="p">,</span> <span class="n">background</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Wraps the user-provided TensorFlow main function in a Spark mapPartitions function.</span>
 
@@ -143,6 +155,7 @@
 <span class="sd">    :tf_args: ``argparse`` args, or command line ``ARGV``.  These will be passed to the ``fn``.</span>
 <span class="sd">    :cluster_meta: dictionary of cluster metadata (e.g. cluster_id, reservation.Server address, etc).</span>
 <span class="sd">    :tensorboard: boolean indicating if the chief worker should spawn a Tensorboard server.</span>
+<span class="sd">    :log_dir: directory to save tensorboard event logs.  If None, defaults to a fixed path on local filesystem.</span>
 <span class="sd">    :queues: *INTERNAL_USE*</span>
 <span class="sd">    :background: boolean indicating if the TensorFlow &quot;main&quot; function should be run in a background process.</span>
 
@@ -219,7 +232,11 @@
       <span class="n">pypath</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">executable</span>
       <span class="n">pydir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">pypath</span><span class="p">)</span>
       <span class="n">search_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">pathsep</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">pydir</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;PATH&#39;</span><span class="p">],</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;PYTHONPATH&#39;</span><span class="p">]])</span>
-      <span class="n">tb_path</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">find_in_path</span><span class="p">(</span><span class="n">search_path</span><span class="p">,</span> <span class="s1">&#39;tensorboard&#39;</span><span class="p">)</span>
+      <span class="n">tb_path</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">find_in_path</span><span class="p">(</span><span class="n">search_path</span><span class="p">,</span> <span class="s1">&#39;tensorboard&#39;</span><span class="p">)</span>                             <span class="c1"># executable in PATH</span>
+      <span class="k">if</span> <span class="ow">not</span> <span class="n">tb_path</span><span class="p">:</span>
+        <span class="n">tb_path</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">find_in_path</span><span class="p">(</span><span class="n">search_path</span><span class="p">,</span> <span class="s1">&#39;tensorboard/main.py&#39;</span><span class="p">)</span>                   <span class="c1"># TF 1.3+</span>
+      <span class="k">if</span> <span class="ow">not</span> <span class="n">tb_path</span><span class="p">:</span>
+        <span class="n">tb_path</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">find_in_path</span><span class="p">(</span><span class="n">search_path</span><span class="p">,</span> <span class="s1">&#39;tensorflow/tensorboard/__main__.py&#39;</span><span class="p">)</span>    <span class="c1"># TF 1.2-</span>
       <span class="k">if</span> <span class="ow">not</span> <span class="n">tb_path</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Unable to find &#39;tensorboard&#39; in: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">search_path</span><span class="p">))</span>
 
@@ -292,10 +309,16 @@
       <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;SPARK_REUSE_WORKER&quot;</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Background mode relies reuse of python worker on Spark. This config &#39;spark.python.worker.reuse&#39; is not enabled on Spark. Please enable it before using background.&quot;</span><span class="p">)</span>
 
+    <span class="k">def</span> <span class="nf">wrapper_fn</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+      <span class="sd">&quot;&quot;&quot;Wrapper function that sets the sys.argv of the executor.&quot;&quot;&quot;</span>
+      <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="n">args</span>
+      <span class="n">fn</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+
     <span class="k">if</span> <span class="n">job_name</span> <span class="o">==</span> <span class="s1">&#39;ps&#39;</span> <span class="ow">or</span> <span class="n">background</span><span class="p">:</span>
       <span class="c1"># invoke the TensorFlow main function in a background thread</span>
       <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting TensorFlow </span><span class="si">{0}</span><span class="s2">:</span><span class="si">{1}</span><span class="s2"> on cluster node </span><span class="si">{2}</span><span class="s2"> on background process&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">job_name</span><span class="p">,</span> <span class="n">task_index</span><span class="p">,</span> <span class="n">worker_num</span><span class="p">))</span>
-      <span class="n">p</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">Process</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">fn</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">tf_args</span><span class="p">,</span> <span class="n">ctx</span><span class="p">))</span>
+      <span class="n">p</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">Process</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">wrapper_fn</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">tf_args</span><span class="p">,</span> <span class="n">ctx</span><span class="p">))</span>
       <span class="n">p</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 
       <span class="c1"># for ps nodes only, wait indefinitely in foreground thread for a &quot;control&quot; event (None == &quot;stop&quot;)</span>
@@ -313,7 +336,7 @@
     <span class="k">else</span><span class="p">:</span>
       <span class="c1"># otherwise, just run TF function in the main executor/worker thread</span>
       <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting TensorFlow </span><span class="si">{0}</span><span class="s2">:</span><span class="si">{1}</span><span class="s2"> on cluster node </span><span class="si">{2}</span><span class="s2"> on foreground thread&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">job_name</span><span class="p">,</span> <span class="n">task_index</span><span class="p">,</span> <span class="n">worker_num</span><span class="p">))</span>
-      <span class="n">fn</span><span class="p">(</span><span class="n">tf_args</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span>
+      <span class="n">wrapper_fn</span><span class="p">(</span><span class="n">tf_args</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span>
       <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Finished TensorFlow </span><span class="si">{0}</span><span class="s2">:</span><span class="si">{1}</span><span class="s2"> on cluster node </span><span class="si">{2}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">job_name</span><span class="p">,</span> <span class="n">task_index</span><span class="p">,</span> <span class="n">worker_num</span><span class="p">))</span>
 
   <span class="k">return</span> <span class="n">_mapfn</span></div>
@@ -483,7 +506,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.0.8 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.1.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
       </ul>
     </div>
