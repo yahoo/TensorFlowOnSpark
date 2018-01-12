@@ -202,10 +202,14 @@ class Namespace(object):
   def __init__(self, d):
     if isinstance(d, list):
       self.argv = d
+    elif isinstance(d, dict):
+      self.__dict__.update(d)
     elif isinstance(d, argparse.Namespace):
       self.__dict__.update(vars(d))
+    elif isinstance(d, Namespace):
+      self.__dict__.update(d.__dict__)
     else:
-      self.__dict__.update(d)
+      raise Exception("Unsupported Namespace args: {}".format(d))
 
   def __iter__(self):
     if self.argv:
