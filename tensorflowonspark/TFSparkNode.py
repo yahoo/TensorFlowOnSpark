@@ -250,6 +250,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
       # invoke the TensorFlow main function in a background thread
       logging.info("Starting TensorFlow {0}:{1} on cluster node {2} on background process".format(job_name, task_index, worker_num))
       p = multiprocessing.Process(target=fn, args=(tf_args, ctx))
+      p.daemon = True
       p.start()
 
       # for ps nodes only, wait indefinitely in foreground thread for a "control" event (None == "stop")

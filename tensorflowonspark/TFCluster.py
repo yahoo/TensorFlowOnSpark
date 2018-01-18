@@ -262,6 +262,7 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
                       background=(input_mode == InputMode.SPARK))([node_index])
     for i in cluster_template['ps']:
       ps_thread = threading.Thread(target=lambda: _start_ps(i))
+      ps_thread.daemon = True
       ps_thread.start()
 
   # start TF on a background thread (on Spark driver) to allow for feeding job
