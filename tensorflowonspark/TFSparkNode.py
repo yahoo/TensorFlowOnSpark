@@ -10,21 +10,24 @@ from __future__ import print_function
 
 import logging
 import os
+import sys
 import platform
 import socket
 import subprocess
-import sys
 import multiprocessing
 import uuid
+
 from . import TFManager
+from . import TFNode
 from . import reservation
 from . import marker
 from . import util
 
 class TFNodeContext:
-  """Struct to encapsulate unique metadata for a TensorFlowOnSpark node/executor.
+  """Encapsulates unique metadata for a TensorFlowOnSpark node/executor and provides methods to interact with Spark and HDFS.
 
   An instance of this object will be passed to the TensorFlow "main" function via the `ctx` argument.
+  To simply the end-user API, this class now mirrors the functions of the TFNode module.
 
   Args:
     :worker_num: integer identifier for this executor, per ``nodeRDD = sc.parallelize(range(num_executors), num_executors).``
@@ -43,6 +46,23 @@ class TFNodeContext:
     self.defaultFS = defaultFS
     self.working_dir = working_dir
     self.mgr = mgr
+
+  def absolute_path(self, path):
+    """Convenience function to access ``TFNode.hdfs_path`` directly from this object instance."""
+    return TFNode.hdfs_path(self, path)
+
+  def start_cluster_server(self, num_gpus=1, rdma=False):
+    """Convenience function to access ``TFNode.start_cluster_server`` directly from this object instance."""
+    return TFNode.start_cluster_server(self, num_gpus, rdma)
+
+  def export_saved_model(self, sess, export_dir, tag_set, signatures):
+    """Convenience function to access ``TFNode.export_saved_model`` directly from this object instance."""
+    TFNode.export_saved_model(sess, export_dir, tag_set, signatures)
+
+  def get_data_feed(self, train_mode=True, qname_in='input', qname_out='output', input_mapping=None):
+    """Convenience function to access ``TFNode.DataFeed`` directly from this object instance."""
+    return TFNode.DataFeed(self.mgr, train_mode, qname_in, qname_out, input_mapping)
+
 
 class TFSparkNode(object):
   """Low-level functions used by the high-level TFCluster APIs to manage cluster state.
@@ -79,14 +99,6 @@ def _get_manager(cluster_info, host, ppid):
       break
   logging.info("Connected to TFSparkNode.mgr on {0}, ppid={1}, state={2}".format(host, ppid, str(TFSparkNode.mgr.get('state'))))
   return TFSparkNode.mgr
-
-def reserve(cluster_spec, tensorboard, cluster_id, log_dir=None, queues=['input', 'output']):
-  """*DEPRECATED*. use run() method instead of reserve/start."""
-  raise Exception("DEPRECATED: use run() method instead of reserve/start")
-
-def start(fn, tf_args, cluster_info, defaultFS, working_dir, background):
-  """*DEPRECATED*. use run() method instead of reserve/start."""
-  raise Exception("DEPRECATED: use run() method instead of reserve/start")
 
 def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
   """Wraps the user-provided TensorFlow main function in a Spark mapPartitions function.
@@ -173,7 +185,11 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
       pypath = sys.executable
       pydir = os.path.dirname(pypath)
       search_path = os.pathsep.join([pydir, os.environ['PATH'], os.environ['PYTHONPATH']])
-      tb_path = util.find_in_path(search_path, 'tensorboard')
+      tb_path = util.find_in_path(search_path, 'tensorboard')                             # executable in PATH
+      if not tb_path:
+        tb_path = util.find_in_path(search_path, 'tensorboard/main.py')                   # TF 1.3+
+      if not tb_path:
+        tb_path = util.find_in_path(search_path, 'tensorflow/tensorboard/__main__.py')    # TF 1.2-
       if not tb_path:
         raise Exception("Unable to find 'tensorboard' in: {}".format(search_path))
 
@@ -246,11 +262,16 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
       if not os.environ.get("SPARK_REUSE_WORKER"):
         raise Exception("Background mode relies reuse of python worker on Spark. This config 'spark.python.worker.reuse' is not enabled on Spark. Please enable it before using background.")
 
+    def wrapper_fn(args, context):
+      """Wrapper function that sets the sys.argv of the executor."""
+      if isinstance(args, list):
+        sys.argv = args
+      fn(args, context)
+
     if job_name == 'ps' or background:
       # invoke the TensorFlow main function in a background thread
       logging.info("Starting TensorFlow {0}:{1} on cluster node {2} on background process".format(job_name, task_index, worker_num))
-      p = multiprocessing.Process(target=fn, args=(tf_args, ctx))
-      p.daemon = True
+      p = multiprocessing.Process(target=wrapper_fn, args=(tf_args, ctx))
       p.start()
 
       # for ps nodes only, wait indefinitely in foreground thread for a "control" event (None == "stop")
@@ -268,7 +289,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
     else:
       # otherwise, just run TF function in the main executor/worker thread
       logging.info("Starting TensorFlow {0}:{1} on cluster node {2} on foreground thread".format(job_name, task_index, worker_num))
-      fn(tf_args, ctx)
+      wrapper_fn(tf_args, ctx)
       logging.info("Finished TensorFlow {0}:{1} on cluster node {2}".format(job_name, task_index, worker_num))
 
   return _mapfn

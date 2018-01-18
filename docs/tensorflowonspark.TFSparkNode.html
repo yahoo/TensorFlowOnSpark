@@ -5,13 +5,13 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>tensorflowonspark.TFSparkNode module &#8212; TensorFlowOnSpark 1.0.8 documentation</title>
+    <title>tensorflowonspark.TFSparkNode module &#8212; TensorFlowOnSpark 1.1.0 documentation</title>
     <link rel="stylesheet" href="_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.0.8',
+        VERSION:     '1.1.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="tensorflowonspark.TFNode.html" title="tensorflowonspark.TFNode module"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">TensorFlowOnSpark 1.0.8 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TensorFlowOnSpark 1.1.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="tensorflowonspark.html" accesskey="U">tensorflowonspark package</a> &#187;</li> 
       </ul>
     </div>  
@@ -58,8 +58,9 @@
 <dl class="class">
 <dt id="tensorflowonspark.TFSparkNode.TFNodeContext">
 <em class="property">class </em><code class="descname">TFNodeContext</code><span class="sig-paren">(</span><em>worker_num</em>, <em>job_name</em>, <em>task_index</em>, <em>cluster_spec</em>, <em>defaultFS</em>, <em>working_dir</em>, <em>mgr</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFSparkNode.html#TFNodeContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.TFSparkNode.TFNodeContext" title="Permalink to this definition">¶</a></dt>
-<dd><p>Struct to encapsulate unique metadata for a TensorFlowOnSpark node/executor.</p>
-<p>An instance of this object will be passed to the TensorFlow “main” function via the <cite>ctx</cite> argument.</p>
+<dd><p>Encapsulates unique metadata for a TensorFlowOnSpark node/executor and provides methods to interact with Spark and HDFS.</p>
+<p>An instance of this object will be passed to the TensorFlow “main” function via the <cite>ctx</cite> argument.
+To simply the end-user API, this class now mirrors the functions of the TFNode module.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><table class="first last docutils field-list" frame="void" rules="none">
@@ -84,6 +85,30 @@
 </table>
 </dd>
 </dl>
+<dl class="method">
+<dt id="tensorflowonspark.TFSparkNode.TFNodeContext.absolute_path">
+<code class="descname">absolute_path</code><span class="sig-paren">(</span><em>path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFSparkNode.html#TFNodeContext.absolute_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.TFSparkNode.TFNodeContext.absolute_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience function to access <code class="docutils literal"><span class="pre">TFNode.hdfs_path</span></code> directly from this object instance.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorflowonspark.TFSparkNode.TFNodeContext.export_saved_model">
+<code class="descname">export_saved_model</code><span class="sig-paren">(</span><em>sess</em>, <em>export_dir</em>, <em>tag_set</em>, <em>signatures</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFSparkNode.html#TFNodeContext.export_saved_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.TFSparkNode.TFNodeContext.export_saved_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience function to access <code class="docutils literal"><span class="pre">TFNode.export_saved_model</span></code> directly from this object instance.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorflowonspark.TFSparkNode.TFNodeContext.get_data_feed">
+<code class="descname">get_data_feed</code><span class="sig-paren">(</span><em>train_mode=True</em>, <em>qname_in='input'</em>, <em>qname_out='output'</em>, <em>input_mapping=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFSparkNode.html#TFNodeContext.get_data_feed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.TFSparkNode.TFNodeContext.get_data_feed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience function to access <code class="docutils literal"><span class="pre">TFNode.DataFeed</span></code> directly from this object instance.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorflowonspark.TFSparkNode.TFNodeContext.start_cluster_server">
+<code class="descname">start_cluster_server</code><span class="sig-paren">(</span><em>num_gpus=1</em>, <em>rdma=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFSparkNode.html#TFNodeContext.start_cluster_server"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.TFSparkNode.TFNodeContext.start_cluster_server" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience function to access <code class="docutils literal"><span class="pre">TFNode.start_cluster_server</span></code> directly from this object instance.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -134,12 +159,6 @@ per executor, this will reconnect to the “singleton” instance as needed.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="tensorflowonspark.TFSparkNode.reserve">
-<code class="descname">reserve</code><span class="sig-paren">(</span><em>cluster_spec, tensorboard, cluster_id, log_dir=None, queues=['input', 'output']</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFSparkNode.html#reserve"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.TFSparkNode.reserve" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>DEPRECATED</em>. use run() method instead of reserve/start.</p>
-</dd></dl>
-
-<dl class="function">
 <dt id="tensorflowonspark.TFSparkNode.run">
 <code class="descname">run</code><span class="sig-paren">(</span><em>fn</em>, <em>tf_args</em>, <em>cluster_meta</em>, <em>tensorboard</em>, <em>log_dir</em>, <em>queues</em>, <em>background</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFSparkNode.html#run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.TFSparkNode.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Wraps the user-provided TensorFlow main function in a Spark mapPartitions function.</p>
@@ -157,9 +176,11 @@ per executor, this will reconnect to the “singleton” instance as needed.</p>
 </tr>
 <tr class="field-even field"><th class="field-name">tensorboard:</th><td class="field-body">boolean indicating if the chief worker should spawn a Tensorboard server.</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">queues:</th><td class="field-body"><em>INTERNAL_USE</em></td>
+<tr class="field-odd field"><th class="field-name">log_dir:</th><td class="field-body">directory to save tensorboard event logs.  If None, defaults to a fixed path on local filesystem.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">background:</th><td class="field-body">boolean indicating if the TensorFlow “main” function should be run in a background process.</td>
+<tr class="field-even field"><th class="field-name">queues:</th><td class="field-body"><em>INTERNAL_USE</em></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">background:</th><td class="field-body">boolean indicating if the TensorFlow “main” function should be run in a background process.</td>
 </tr>
 </tbody>
 </table>
@@ -189,12 +210,6 @@ per executor, this will reconnect to the “singleton” instance as needed.</p>
 <dt>Returns:</dt>
 <dd>A nodeRDD.mapPartitions() function</dd>
 </dl>
-</dd></dl>
-
-<dl class="function">
-<dt id="tensorflowonspark.TFSparkNode.start">
-<code class="descname">start</code><span class="sig-paren">(</span><em>fn</em>, <em>tf_args</em>, <em>cluster_info</em>, <em>defaultFS</em>, <em>working_dir</em>, <em>background</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFSparkNode.html#start"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.TFSparkNode.start" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>DEPRECATED</em>. use run() method instead of reserve/start.</p>
 </dd></dl>
 
 <dl class="function">
@@ -271,7 +286,7 @@ per executor, this will reconnect to the “singleton” instance as needed.</p>
         <li class="right" >
           <a href="tensorflowonspark.TFNode.html" title="tensorflowonspark.TFNode module"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">TensorFlowOnSpark 1.0.8 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TensorFlowOnSpark 1.1.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="tensorflowonspark.html" >tensorflowonspark package</a> &#187;</li> 
       </ul>
     </div>

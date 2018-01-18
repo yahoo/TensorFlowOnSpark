@@ -5,13 +5,13 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>tensorflowonspark.pipeline &#8212; TensorFlowOnSpark 1.0.8 documentation</title>
+    <title>tensorflowonspark.pipeline &#8212; TensorFlowOnSpark 1.1.0 documentation</title>
     <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.0.8',
+        VERSION:     '1.1.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -34,7 +34,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.0.8 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.1.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
       </ul>
     </div>  
@@ -74,6 +74,7 @@
 <span class="kn">from</span> <span class="nn">tensorflow.python.saved_model</span> <span class="k">import</span> <span class="n">loader</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">TFCluster</span><span class="p">,</span> <span class="n">gpu_info</span><span class="p">,</span> <span class="n">dfutil</span>
 
+<span class="kn">import</span> <span class="nn">argparse</span>
 <span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">os</span>
@@ -244,25 +245,40 @@
 
 <span class="sd">  Based on https://docs.python.org/dev/library/types.html#types.SimpleNamespace</span>
 <span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">argv</span> <span class="o">=</span> <span class="kc">None</span>
   <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
-    <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="n">d</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">argparse</span><span class="o">.</span><span class="n">Namespace</span><span class="p">):</span>
+      <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">vars</span><span class="p">(</span><span class="n">d</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+      <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
 
   <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-      <span class="k">yield</span> <span class="n">key</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">argv</span><span class="p">:</span>
+      <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">argv</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">item</span>
+    <span class="k">else</span><span class="p">:</span>
+      <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">yield</span> <span class="n">key</span>
 
   <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="n">keys</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
-    <span class="n">items</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">=</span><span class="si">{!r}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">)</span>
-    <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">(</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">items</span><span class="p">))</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">argv</span><span class="p">:</span>
+      <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+      <span class="n">keys</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
+      <span class="n">items</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">=</span><span class="si">{!r}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">)</span>
+      <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">(</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">items</span><span class="p">))</span>
 
   <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="vm">__dict__</span></div>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">argv</span><span class="p">:</span>
+      <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">argv</span> <span class="o">==</span> <span class="n">other</span>
+    <span class="k">else</span><span class="p">:</span>
+      <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="vm">__dict__</span></div>
 
 <div class="viewcode-block" id="TFParams"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.TFParams">[docs]</a><span class="k">class</span> <span class="nc">TFParams</span><span class="p">(</span><span class="n">Params</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Mix-in class to store namespace-style args and merge w/ SparkML-style params.&quot;&quot;&quot;</span>
   <span class="n">args</span> <span class="o">=</span> <span class="kc">None</span>
-  <span class="n">argv</span> <span class="o">=</span> <span class="kc">None</span>
 <div class="viewcode-block" id="TFParams.merge_args_params"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.TFParams.merge_args_params">[docs]</a>  <span class="k">def</span> <span class="nf">merge_args_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="n">local_args</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>                 <span class="c1"># make a local copy of args</span>
     <span class="n">args_dict</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">local_args</span><span class="p">)</span>                      <span class="c1"># get dictionary view</span>
@@ -288,20 +304,18 @@
 
 <span class="sd">  Args:</span>
 <span class="sd">    :train_fn: TensorFlow &quot;main&quot; function for training.</span>
-<span class="sd">    :tf_args: Dictionary of arguments specific to TensorFlow &quot;main&quot; function.</span>
-<span class="sd">    :tf_argv: Command line ARGV arguments.</span>
+<span class="sd">    :tf_args: Arguments specific to the TensorFlow &quot;main&quot; function.</span>
 <span class="sd">    :export_fn: TensorFlow function for exporting a saved_model.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
 
   <span class="n">train_fn</span> <span class="o">=</span> <span class="kc">None</span>
   <span class="n">export_fn</span> <span class="o">=</span> <span class="kc">None</span>
 
-  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_fn</span><span class="p">,</span> <span class="n">tf_args</span><span class="p">,</span> <span class="n">tf_argv</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">export_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_fn</span><span class="p">,</span> <span class="n">tf_args</span><span class="p">,</span> <span class="n">export_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="nb">super</span><span class="p">(</span><span class="n">TFEstimator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">train_fn</span> <span class="o">=</span> <span class="n">train_fn</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">export_fn</span> <span class="o">=</span> <span class="n">export_fn</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">Namespace</span><span class="p">(</span><span class="n">tf_args</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tf_args</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="n">tf_args</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="n">tf_argv</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">Namespace</span><span class="p">(</span><span class="n">tf_args</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_setDefault</span><span class="p">(</span><span class="n">input_mapping</span><span class="o">=</span><span class="p">{},</span>
                     <span class="n">cluster_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
                     <span class="n">num_ps</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
@@ -347,7 +361,7 @@
         <span class="n">dfutil</span><span class="o">.</span><span class="n">saveAsTFRecords</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">local_args</span><span class="o">.</span><span class="n">tfrecord_dir</span><span class="p">)</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Done saving&quot;</span><span class="p">)</span>
 
-    <span class="n">tf_args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">argv</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">argv</span> <span class="k">else</span> <span class="n">local_args</span>
+    <span class="n">tf_args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">argv</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">argv</span> <span class="k">else</span> <span class="n">local_args</span>
     <span class="n">cluster</span> <span class="o">=</span> <span class="n">TFCluster</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">sc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_fn</span><span class="p">,</span> <span class="n">tf_args</span><span class="p">,</span> <span class="n">local_args</span><span class="o">.</span><span class="n">cluster_size</span><span class="p">,</span> <span class="n">local_args</span><span class="o">.</span><span class="n">num_ps</span><span class="p">,</span> <span class="n">local_args</span><span class="o">.</span><span class="n">tensorboard</span><span class="p">,</span> <span class="n">local_args</span><span class="o">.</span><span class="n">input_mode</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">local_args</span><span class="o">.</span><span class="n">input_mode</span> <span class="o">==</span> <span class="n">TFCluster</span><span class="o">.</span><span class="n">InputMode</span><span class="o">.</span><span class="n">SPARK</span><span class="p">:</span>
       <span class="c1"># feed data, using a deterministic order for input columns (lexicographic by key)</span>
@@ -360,14 +374,14 @@
       <span class="k">assert</span> <span class="n">local_args</span><span class="o">.</span><span class="n">export_dir</span><span class="p">,</span> <span class="s2">&quot;Export function requires --export_dir to be set&quot;</span>
       <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Exporting saved_model (via export_fn) to: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">local_args</span><span class="o">.</span><span class="n">export_dir</span><span class="p">))</span>
 
-      <span class="k">def</span> <span class="nf">_export</span><span class="p">(</span><span class="n">iterator</span><span class="p">,</span> <span class="n">fn</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">argv</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="n">single_node_env</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">argv</span><span class="p">)</span>
+      <span class="k">def</span> <span class="nf">_export</span><span class="p">(</span><span class="n">iterator</span><span class="p">,</span> <span class="n">fn</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="n">single_node_env</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
         <span class="n">fn</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
 
       <span class="c1"># Run on a single exeucutor</span>
-      <span class="n">sc</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">foreachPartition</span><span class="p">(</span><span class="k">lambda</span> <span class="n">it</span><span class="p">:</span> <span class="n">_export</span><span class="p">(</span><span class="n">it</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">export_fn</span><span class="p">,</span> <span class="n">local_args</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">argv</span><span class="p">))</span>
+      <span class="n">sc</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">foreachPartition</span><span class="p">(</span><span class="k">lambda</span> <span class="n">it</span><span class="p">:</span> <span class="n">_export</span><span class="p">(</span><span class="n">it</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">export_fn</span><span class="p">,</span> <span class="n">tf_args</span><span class="p">))</span>
 
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copyValues</span><span class="p">(</span><span class="n">TFModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">argv</span><span class="p">))</span></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copyValues</span><span class="p">(</span><span class="n">TFModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="TFModel"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.TFModel">[docs]</a><span class="k">class</span> <span class="nc">TFModel</span><span class="p">(</span><span class="n">Model</span><span class="p">,</span> <span class="n">TFParams</span><span class="p">,</span>
               <span class="n">HasInputMapping</span><span class="p">,</span> <span class="n">HasOutputMapping</span><span class="p">,</span>
@@ -381,12 +395,11 @@
 
 <span class="sd">  Args:</span>
 <span class="sd">    :tf_args: Dictionary of arguments specific to TensorFlow &quot;main&quot; function.</span>
-<span class="sd">    :tf_argv: Command line arguments as an array of string.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
 
-  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tf_args</span><span class="p">,</span> <span class="n">tf_argv</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tf_args</span><span class="p">):</span>
     <span class="nb">super</span><span class="p">(</span><span class="n">TFModel</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">Namespace</span><span class="p">(</span><span class="n">tf_args</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tf_args</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="n">tf_args</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">Namespace</span><span class="p">(</span><span class="n">tf_args</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_setDefault</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
                     <span class="n">model_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                     <span class="n">export_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -414,7 +427,8 @@
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;input_cols: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">input_cols</span><span class="p">))</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;output_cols: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output_cols</span><span class="p">))</span>
 
-    <span class="n">rdd_out</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">input_cols</span><span class="p">)</span><span class="o">.</span><span class="n">rdd</span><span class="o">.</span><span class="n">mapPartitions</span><span class="p">(</span><span class="k">lambda</span> <span class="n">it</span><span class="p">:</span> <span class="n">_run_model</span><span class="p">(</span><span class="n">it</span><span class="p">,</span> <span class="n">local_args</span><span class="p">))</span>
+    <span class="n">tf_args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">argv</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">argv</span> <span class="k">else</span> <span class="n">local_args</span>
+    <span class="n">rdd_out</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">input_cols</span><span class="p">)</span><span class="o">.</span><span class="n">rdd</span><span class="o">.</span><span class="n">mapPartitions</span><span class="p">(</span><span class="k">lambda</span> <span class="n">it</span><span class="p">:</span> <span class="n">_run_model</span><span class="p">(</span><span class="n">it</span><span class="p">,</span> <span class="n">tf_args</span><span class="p">))</span>
 
     <span class="c1"># convert to a DataFrame-friendly format</span>
     <span class="n">rows_out</span> <span class="o">=</span> <span class="n">rdd_out</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">Row</span><span class="p">(</span><span class="o">*</span><span class="n">x</span><span class="p">))</span>
@@ -507,15 +521,15 @@
 
   <span class="k">return</span> <span class="n">result</span>
 
-<div class="viewcode-block" id="single_node_env"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.single_node_env">[docs]</a><span class="k">def</span> <span class="nf">single_node_env</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">argv</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="single_node_env"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.single_node_env">[docs]</a><span class="k">def</span> <span class="nf">single_node_env</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Sets up environment for a single-node TF session.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    :args: command line arguments as argparse args.</span>
 <span class="sd">    :argv: command line arguments as ARGV (array of string).</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="k">if</span> <span class="n">argv</span><span class="p">:</span>
-      <span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="n">argv</span>
+  <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">argv</span><span class="p">:</span>
+      <span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">argv</span>
 
   <span class="c1"># ensure expanded CLASSPATH w/o glob characters (required for Spark 2.1 + JNI)</span>
   <span class="k">if</span> <span class="s1">&#39;HADOOP_PREFIX&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span> <span class="ow">and</span> <span class="s1">&#39;TFOS_CLASSPATH_UPDATED&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
@@ -611,7 +625,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.0.8 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.1.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
       </ul>
     </div>

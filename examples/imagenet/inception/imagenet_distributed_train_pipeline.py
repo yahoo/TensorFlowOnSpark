@@ -83,7 +83,7 @@ if __name__ == '__main__':
   print("{0} ===== Start".format(datetime.now().isoformat()))
 
   df = dfutil.loadTFRecords(sc, args.train_data, binary_features=['image/encoded'])
-  estimator = TFEstimator(main_fun, args, tf_argv=sys.argv, export_fn=inception_export.export) \
+  estimator = TFEstimator(main_fun, sys.argv, export_fn=inception_export.export) \
           .setModelDir(args.train_dir) \
           .setExportDir(args.export_dir) \
           .setTFRecordDir(args.tfrecord_dir) \
