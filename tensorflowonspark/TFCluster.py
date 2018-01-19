@@ -208,6 +208,9 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
   logging.info("Reserving TFSparkNodes {0}".format("w/ TensorBoard" if tensorboard else ""))
   assert num_ps < num_executors
 
+  if driver_ps_nodes and input_mode != InputMode.TENSORFLOW:
+    raise Exception('running PS nodes on driver locally is only supported in InputMode.TENSORFLOW')
+
   # build a cluster_spec template using worker_nums
   cluster_template = {}
   cluster_template['ps'] = range(num_ps)
