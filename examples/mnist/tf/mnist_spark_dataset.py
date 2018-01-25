@@ -34,12 +34,15 @@ parser.add_argument("-s", "--steps", help="maximum number of steps", type=int, d
 parser.add_argument("-tb", "--tensorboard", help="launch tensorboard process", action="store_true")
 parser.add_argument("-X", "--mode", help="train|inference", default="train")
 parser.add_argument("-c", "--rdma", help="use rdma connection", default=False)
+parser.add_argument("-p", "--driver_ps_nodes", help="""run tensorflow PS node on driver locally.
+    You will need to set cluster_size = num_executors + num_ps""", default=False)
 args = parser.parse_args()
 print("args:",args)
 
 
 print("{0} ===== Start".format(datetime.now().isoformat()))
-cluster = TFCluster.run(sc, mnist_dist_dataset.map_fun, args, args.cluster_size, num_ps, args.tensorboard, TFCluster.InputMode.TENSORFLOW)
+cluster = TFCluster.run(sc, mnist_dist_dataset.map_fun, args, args.cluster_size, num_ps, args.tensorboard,
+                        TFCluster.InputMode.TENSORFLOW, driver_ps_nodes=args.driver_ps_nodes)
 cluster.shutdown()
 
 print("{0} ===== Stop".format(datetime.now().isoformat()))

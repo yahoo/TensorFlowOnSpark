@@ -270,8 +270,11 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
 
     if job_name == 'ps' or background:
       # invoke the TensorFlow main function in a background thread
-      logging.info("Starting TensorFlow {0}:{1} on cluster node {2} on background process".format(job_name, task_index, worker_num))
+      logging.info("Starting TensorFlow {0}:{1} as {2} on cluster node {3} on background process".format(
+        job_name, task_index, job_name, worker_num))
       p = multiprocessing.Process(target=wrapper_fn, args=(tf_args, ctx))
+      if job_name == 'ps':
+        p.daemon = True
       p.start()
 
       # for ps nodes only, wait indefinitely in foreground thread for a "control" event (None == "stop")
