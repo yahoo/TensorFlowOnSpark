@@ -199,7 +199,7 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
     :tensorboard: boolean indicating if the chief worker should spawn a Tensorboard server.
     :input_mode: TFCluster.InputMode
     :log_dir: directory to save tensorboard event logs.  If None, defaults to a fixed path on local filesystem.
-    :driver_ps_nodes: run the PS nodes on the driver locally instead of on the spark executors; this help maximizing computing resources (esp. GPU).
+    :driver_ps_nodes: run the PS nodes on the driver locally instead of on the spark executors; this help maximizing computing resources (esp. GPU). You will need to set cluster_size = num_executors + num_ps
     :queues: *INTERNAL_USE*
 
   Returns:
