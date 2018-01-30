@@ -155,7 +155,8 @@ class ResnetUtilsTest(tf.test.TestCase):
     """A plain ResNet without extra layers before or after the ResNet blocks."""
     with tf.variable_scope(scope, values=[inputs]):
       with slim.arg_scope([slim.conv2d], outputs_collections='end_points'):
-        net = resnet_utils.stack_blocks_dense(inputs, blocks, output_stride)
+        net = resnet_utils.stack_blocks_dense(
+            inputs, blocks, output_stride)
         end_points = dict(tf.get_collection('end_points'))
         return net, end_points
 
@@ -239,10 +240,12 @@ class ResnetUtilsTest(tf.test.TestCase):
               # Make the two networks use the same weights.
               tf.get_variable_scope().reuse_variables()
               # Feature extraction at the nominal network rate.
-              expected = self._stack_blocks_nondense(inputs, blocks)
+              expected = self._stack_blocks_nondense(
+                  inputs, blocks)
               sess.run(tf.global_variables_initializer())
               output, expected = sess.run([output, expected])
-              self.assertAllClose(output, expected, atol=1e-4, rtol=1e-4)
+              self.assertAllClose(
+                  output, expected, atol=1e-4, rtol=1e-4)
 
   def testAtrousValuesBottleneck(self):
     self._atrousValues(resnet_v1.bottleneck)
@@ -288,7 +291,8 @@ class ResnetCompleteNetworkTest(tf.test.TestCase):
                                               global_pool=global_pool,
                                               scope='resnet')
     self.assertTrue(logits.op.name.startswith('resnet/logits'))
-    self.assertListEqual(logits.get_shape().as_list(), [2, 1, 1, num_classes])
+    self.assertListEqual(logits.get_shape().as_list(),
+                         [2, 1, 1, num_classes])
     self.assertTrue('predictions' in end_points)
     self.assertListEqual(end_points['predictions'].get_shape().as_list(),
                          [2, 1, 1, num_classes])
@@ -308,7 +312,8 @@ class ResnetCompleteNetworkTest(tf.test.TestCase):
           'resnet/block4': [2, 7, 7, 32]}
       for endpoint in endpoint_to_shape:
         shape = endpoint_to_shape[endpoint]
-        self.assertListEqual(end_points[endpoint].get_shape().as_list(), shape)
+        self.assertListEqual(
+            end_points[endpoint].get_shape().as_list(), shape)
 
   def testFullyConvolutionalEndpointShapes(self):
     global_pool = False
@@ -325,7 +330,8 @@ class ResnetCompleteNetworkTest(tf.test.TestCase):
           'resnet/block4': [2, 11, 11, 32]}
       for endpoint in endpoint_to_shape:
         shape = endpoint_to_shape[endpoint]
-        self.assertListEqual(end_points[endpoint].get_shape().as_list(), shape)
+        self.assertListEqual(
+            end_points[endpoint].get_shape().as_list(), shape)
 
   def testRootlessFullyConvolutionalEndpointShapes(self):
     global_pool = False
@@ -343,7 +349,8 @@ class ResnetCompleteNetworkTest(tf.test.TestCase):
           'resnet/block4': [2, 16, 16, 32]}
       for endpoint in endpoint_to_shape:
         shape = endpoint_to_shape[endpoint]
-        self.assertListEqual(end_points[endpoint].get_shape().as_list(), shape)
+        self.assertListEqual(
+            end_points[endpoint].get_shape().as_list(), shape)
 
   def testAtrousFullyConvolutionalEndpointShapes(self):
     global_pool = False
@@ -363,7 +370,8 @@ class ResnetCompleteNetworkTest(tf.test.TestCase):
           'resnet/block4': [2, 41, 41, 32]}
       for endpoint in endpoint_to_shape:
         shape = endpoint_to_shape[endpoint]
-        self.assertListEqual(end_points[endpoint].get_shape().as_list(), shape)
+        self.assertListEqual(
+            end_points[endpoint].get_shape().as_list(), shape)
 
   def testAtrousFullyConvolutionalValues(self):
     """Verify dense feature extraction with atrous convolution."""
@@ -417,7 +425,8 @@ class ResnetCompleteNetworkTest(tf.test.TestCase):
     global_pool = False
     inputs = create_test_input(batch, None, None, 3)
     with slim.arg_scope(resnet_utils.resnet_arg_scope()):
-      output, _ = self._resnet_small(inputs, None, global_pool=global_pool)
+      output, _ = self._resnet_small(
+          inputs, None, global_pool=global_pool)
     self.assertListEqual(output.get_shape().as_list(),
                          [batch, None, None, 32])
     images = create_test_input(batch, height, width, 3)

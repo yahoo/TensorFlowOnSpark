@@ -34,7 +34,8 @@ import os
 import subprocess
 import sys
 
-##### TensorFlowOnSpark Params
+# TensorFlowOnSpark Params
+
 
 class TFTypeConverters(object):
   """Custom DataFrame TypeConverter for dictionary types (since this is not provided by Spark core)."""
@@ -45,157 +46,241 @@ class TFTypeConverters(object):
     else:
       raise TypeError("Could not convert %s to OrderedDict" % value)
 
+
 class HasBatchSize(Params):
-  batch_size = Param(Params._dummy(), "batch_size", "Number of records per batch", typeConverter=TypeConverters.toInt)
+  batch_size = Param(Params._dummy(), "batch_size",
+                     "Number of records per batch", typeConverter=TypeConverters.toInt)
+
   def __init__(self):
     super(HasBatchSize, self).__init__()
+
   def setBatchSize(self, value):
     return self._set(batch_size=value)
+
   def getBatchSize(self):
     return self.getOrDefault(self.batch_size)
 
+
 class HasClusterSize(Params):
-  cluster_size = Param(Params._dummy(), "cluster_size", "Number of nodes in the cluster", typeConverter=TypeConverters.toInt)
+  cluster_size = Param(Params._dummy(), "cluster_size",
+                       "Number of nodes in the cluster", typeConverter=TypeConverters.toInt)
+
   def __init__(self):
     super(HasClusterSize, self).__init__()
+
   def setClusterSize(self, value):
     return self._set(cluster_size=value)
+
   def getClusterSize(self):
     return self.getOrDefault(self.cluster_size)
 
+
 class HasEpochs(Params):
-  epochs = Param(Params._dummy(), "epochs", "Number of epochs to train", typeConverter=TypeConverters.toInt)
+  epochs = Param(Params._dummy(), "epochs",
+                 "Number of epochs to train", typeConverter=TypeConverters.toInt)
+
   def __init__(self):
     super(HasEpochs, self).__init__()
+
   def setEpochs(self, value):
     return self._set(epochs=value)
+
   def getEpochs(self):
     return self.getOrDefault(self.epochs)
 
+
 class HasInputMapping(Params):
-  input_mapping = Param(Params._dummy(), "input_mapping", "Mapping of input DataFrame column to input tensor", typeConverter=TFTypeConverters.toDict)
+  input_mapping = Param(Params._dummy(), "input_mapping",
+                        "Mapping of input DataFrame column to input tensor", typeConverter=TFTypeConverters.toDict)
+
   def __init__(self):
     super(HasInputMapping, self).__init__()
+
   def setInputMapping(self, value):
     return self._set(input_mapping=value)
+
   def getInputMapping(self):
     return self.getOrDefault(self.input_mapping)
 
+
 class HasInputMode(Params):
-  input_mode = Param(Params._dummy(), "input_mode", "Input data feeding mode (0=TENSORFLOW, 1=SPARK)", typeConverter=TypeConverters.toInt)
+  input_mode = Param(Params._dummy(), "input_mode",
+                     "Input data feeding mode (0=TENSORFLOW, 1=SPARK)", typeConverter=TypeConverters.toInt)
+
   def __init__(self):
     super(HasInputMode, self).__init__()
+
   def setInputMode(self, value):
     return self._set(input_mode=value)
+
   def getInputMode(self):
     return self.getOrDefault(self.input_mode)
 
+
 class HasModelDir(Params):
-  model_dir = Param(Params._dummy(), "model_dir", "Path to save/load model checkpoints", typeConverter=TypeConverters.toString)
+  model_dir = Param(Params._dummy(), "model_dir",
+                    "Path to save/load model checkpoints", typeConverter=TypeConverters.toString)
+
   def __init__(self):
     super(HasModelDir, self).__init__()
+
   def setModelDir(self, value):
     return self._set(model_dir=value)
+
   def getModelDir(self):
     return self.getOrDefault(self.model_dir)
 
+
 class HasNumPS(Params):
-  num_ps = Param(Params._dummy(), "num_ps", "Number of PS nodes in cluster", typeConverter=TypeConverters.toInt)
-  driver_ps_nodes = Param(Params._dummy(), "driver_ps_nodes", "Run PS nodes on driver locally", typeConverter=TypeConverters.toBoolean)
+  num_ps = Param(Params._dummy(), "num_ps",
+                 "Number of PS nodes in cluster", typeConverter=TypeConverters.toInt)
+  driver_ps_nodes = Param(Params._dummy(), "driver_ps_nodes",
+                          "Run PS nodes on driver locally", typeConverter=TypeConverters.toBoolean)
+
   def __init__(self):
     super(HasNumPS, self).__init__()
+
   def setNumPS(self, value):
     return self._set(num_ps=value)
+
   def getNumPS(self):
     return self.getOrDefault(self.num_ps)
+
   def setDriverPSNodes(self, value):
     return self._set(driver_ps_nodes=value)
+
   def getDriverPSNodes(self):
     return self.getOrDefault(self.driver_ps_nodes)
 
+
 class HasOutputMapping(Params):
-  output_mapping = Param(Params._dummy(), "output_mapping", "Mapping of output tensor to output DataFrame column", typeConverter=TFTypeConverters.toDict)
+  output_mapping = Param(Params._dummy(), "output_mapping",
+                         "Mapping of output tensor to output DataFrame column", typeConverter=TFTypeConverters.toDict)
+
   def __init__(self):
     super(HasOutputMapping, self).__init__()
+
   def setOutputMapping(self, value):
     return self._set(output_mapping=value)
+
   def getOutputMapping(self):
     return self.getOrDefault(self.output_mapping)
 
+
 class HasProtocol(Params):
-  protocol = Param(Params._dummy(), "protocol", "Network protocol for Tensorflow (grpc|rdma)", typeConverter=TypeConverters.toString)
+  protocol = Param(Params._dummy(), "protocol",
+                   "Network protocol for Tensorflow (grpc|rdma)", typeConverter=TypeConverters.toString)
+
   def __init__(self):
     super(HasProtocol, self).__init__()
+
   def setProtocol(self, value):
     return self._set(protocol=value)
+
   def getProtocol(self):
     return self.getOrDefault(self.protocol)
 
+
 class HasReaders(Params):
-  readers = Param(Params._dummy(), "readers", "number of reader/enqueue threads", typeConverter=TypeConverters.toInt)
+  readers = Param(Params._dummy(), "readers",
+                  "number of reader/enqueue threads", typeConverter=TypeConverters.toInt)
+
   def __init__(self):
     super(HasReaders, self).__init__()
+
   def setReaders(self, value):
     return self._set(readers=value)
+
   def getReaders(self):
     return self.getOrDefault(self.readers)
 
+
 class HasSteps(Params):
-  steps = Param(Params._dummy(), "steps", "Maximum number of steps to train", typeConverter=TypeConverters.toInt)
+  steps = Param(Params._dummy(), "steps", "Maximum number of steps to train",
+                typeConverter=TypeConverters.toInt)
+
   def __init__(self):
     super(HasSteps, self).__init__()
+
   def setSteps(self, value):
     return self._set(steps=value)
+
   def getSteps(self):
     return self.getOrDefault(self.steps)
 
+
 class HasTensorboard(Params):
-  tensorboard = Param(Params._dummy(), "tensorboard", "Launch tensorboard process", typeConverter=TypeConverters.toBoolean)
+  tensorboard = Param(Params._dummy(), "tensorboard",
+                      "Launch tensorboard process", typeConverter=TypeConverters.toBoolean)
+
   def __init__(self):
     super(HasTensorboard, self).__init__()
+
   def setTensorboard(self, value):
     return self._set(tensorboard=value)
+
   def getTensorboard(self):
     return self.getOrDefault(self.tensorboard)
 
+
 class HasTFRecordDir(Params):
-  tfrecord_dir = Param(Params._dummy(), "tfrecord_dir", "Path to temporarily export a DataFrame as TFRecords (for InputMode.TENSORFLOW apps)", typeConverter=TypeConverters.toString)
+  tfrecord_dir = Param(Params._dummy(), "tfrecord_dir",
+                       "Path to temporarily export a DataFrame as TFRecords (for InputMode.TENSORFLOW apps)", typeConverter=TypeConverters.toString)
+
   def __init__(self):
     super(HasTFRecordDir, self).__init__()
+
   def setTFRecordDir(self, value):
     return self._set(tfrecord_dir=value)
+
   def getTFRecordDir(self):
     return self.getOrDefault(self.tfrecord_dir)
 
-##### SavedModelBuilder Params
+# SavedModelBuilder Params
+
 
 class HasExportDir(Params):
-  export_dir = Param(Params._dummy(), "export_dir", "Directory to export saved_model", typeConverter=TypeConverters.toString)
+  export_dir = Param(Params._dummy(), "export_dir",
+                     "Directory to export saved_model", typeConverter=TypeConverters.toString)
+
   def __init__(self):
     super(HasExportDir, self).__init__()
+
   def setExportDir(self, value):
     return self._set(export_dir=value)
+
   def getExportDir(self):
     return self.getOrDefault(self.export_dir)
 
+
 class HasSignatureDefKey(Params):
-  signature_def_key = Param(Params._dummy(), "signature_def_key", "Identifier for a specific saved_model signature", typeConverter=TypeConverters.toString)
+  signature_def_key = Param(Params._dummy(), "signature_def_key",
+                            "Identifier for a specific saved_model signature", typeConverter=TypeConverters.toString)
+
   def __init__(self):
     super(HasSignatureDefKey, self).__init__()
     self._setDefault(signature_def_key=None)
+
   def setSignatureDefKey(self, value):
     return self._set(signature_def_key=value)
+
   def getSignatureDefKey(self):
     return self.getOrDefault(self.signature_def_key)
 
+
 class HasTagSet(Params):
-  tag_set = Param(Params._dummy(), "tag_set", "Comma-delimited list of tags identifying a saved_model metagraph", typeConverter=TypeConverters.toString)
+  tag_set = Param(Params._dummy(), "tag_set", "Comma-delimited list of tags identifying a saved_model metagraph",
+                  typeConverter=TypeConverters.toString)
+
   def __init__(self):
     super(HasTagSet, self).__init__()
+
   def setTagSet(self, value):
     return self._set(tag_set=value)
+
   def getTagSet(self):
     return self.getOrDefault(self.tag_set)
+
 
 class Namespace(object):
   """
@@ -204,6 +289,7 @@ class Namespace(object):
   Based on https://docs.python.org/dev/library/types.html#types.SimpleNamespace
   """
   argv = None
+
   def __init__(self, d):
     if isinstance(d, list):
       self.argv = d
@@ -238,15 +324,20 @@ class Namespace(object):
     else:
       return self.__dict__ == other.__dict__
 
+
 class TFParams(Params):
   """Mix-in class to store namespace-style args and merge w/ SparkML-style params."""
   args = None
+
   def merge_args_params(self):
-    local_args = copy.copy(self.args)                 # make a local copy of args
+    # make a local copy of args
+    local_args = copy.copy(self.args)
     args_dict = vars(local_args)                      # get dictionary view
     for p in self.params:
-      args_dict[p.name] = self.getOrDefault(p.name)   # update with params
+      args_dict[p.name] = self.getOrDefault(
+          p.name)   # update with params
     return local_args
+
 
 class TFEstimator(Estimator, TFParams, HasInputMapping,
                   HasClusterSize, HasNumPS, HasInputMode, HasProtocol, HasTensorboard, HasModelDir, HasExportDir, HasTFRecordDir,
@@ -279,19 +370,19 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
     self.export_fn = export_fn
     self.args = Namespace(tf_args)
     self._setDefault(input_mapping={},
-                    cluster_size=1,
-                    num_ps=0,
-                    driver_ps_nodes=False,
-                    input_mode=TFCluster.InputMode.SPARK,
-                    protocol='grpc',
-                    tensorboard=False,
-                    model_dir=None,
-                    export_dir=None,
-                    tfrecord_dir=None,
-                    batch_size=100,
-                    epochs=1,
-                    readers=1,
-                    steps=1000)
+                     cluster_size=1,
+                     num_ps=0,
+                     driver_ps_nodes=False,
+                     input_mode=TFCluster.InputMode.SPARK,
+                     protocol='grpc',
+                     tensorboard=False,
+                     model_dir=None,
+                     export_dir=None,
+                     tfrecord_dir=None,
+                     batch_size=100,
+                     epochs=1,
+                     readers=1,
+                     steps=1000)
 
   def _fit(self, dataset):
     """Trains a TensorFlow model and returns a TFModel instance with the same args/params pointing to a checkpoint or saved_model on disk.
@@ -320,7 +411,8 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
         if self.getInputMapping():
           # if input mapping provided, filter only required columns before exporting
           dataset = dataset.select(self.getInputMapping().keys())
-        logging.info("Exporting DataFrame {} as TFRecord to: {}".format(dataset.dtypes, local_args.tfrecord_dir))
+        logging.info("Exporting DataFrame {} as TFRecord to: {}".format(
+            dataset.dtypes, local_args.tfrecord_dir))
         dfutil.saveAsTFRecords(dataset, local_args.tfrecord_dir)
         logging.info("Done saving")
 
@@ -336,16 +428,19 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
     # Run export function, if provided
     if self.export_fn:
       assert local_args.export_dir, "Export function requires --export_dir to be set"
-      logging.info("Exporting saved_model (via export_fn) to: {}".format(local_args.export_dir))
+      logging.info("Exporting saved_model (via export_fn) to: {}".format(
+          local_args.export_dir))
 
       def _export(iterator, fn, args):
         single_node_env(args)
         fn(args)
 
       # Run on a single exeucutor
-      sc.parallelize([1], 1).foreachPartition(lambda it: _export(it, self.export_fn, tf_args))
+      sc.parallelize([1], 1).foreachPartition(
+          lambda it: _export(it, self.export_fn, tf_args))
 
     return self._copyValues(TFModel(self.args))
+
 
 class TFModel(Model, TFParams,
               HasInputMapping, HasOutputMapping,
@@ -365,10 +460,10 @@ class TFModel(Model, TFParams,
     super(TFModel, self).__init__()
     self.args = Namespace(tf_args)
     self._setDefault(batch_size=100,
-                    model_dir=None,
-                    export_dir=None,
-                    signature_def_key=None,
-                    tag_set=None)
+                     model_dir=None,
+                     export_dir=None,
+                     signature_def_key=None,
+                     tag_set=None)
 
   def _transform(self, dataset):
     """Transforms the input DataFrame by applying the _run_model() mapPartitions function.
@@ -381,18 +476,22 @@ class TFModel(Model, TFParams,
     logging.info("===== 1. inference args: {0}".format(self.args))
     logging.info("===== 2. inference params: {0}".format(self._paramMap))
     local_args = self.merge_args_params()
-    logging.info("===== 3. inference args + params: {0}".format(local_args))
+    logging.info(
+        "===== 3. inference args + params: {0}".format(local_args))
 
     # set a deterministic order for input/output columns (lexicographic by key)
-    input_cols = [ col for col, tensor in sorted(self.getInputMapping().items()) ]      # input col => input tensor
-    output_cols = [ col for tensor, col in sorted(self.getOutputMapping().items()) ]    # output tensor => output col
+    input_cols = [col for col, tensor in sorted(
+        self.getInputMapping().items())]      # input col => input tensor
+    output_cols = [col for tensor, col in sorted(
+        self.getOutputMapping().items())]    # output tensor => output col
 
     # run single-node inferencing on each executor
     logging.info("input_cols: {}".format(input_cols))
     logging.info("output_cols: {}".format(output_cols))
 
     tf_args = self.args.argv if self.args.argv else local_args
-    rdd_out = dataset.select(input_cols).rdd.mapPartitions(lambda it: _run_model(it, tf_args))
+    rdd_out = dataset.select(input_cols).rdd.mapPartitions(
+        lambda it: _run_model(it, tf_args))
 
     # convert to a DataFrame-friendly format
     rows_out = rdd_out.map(lambda x: Row(*x))
@@ -401,7 +500,9 @@ class TFModel(Model, TFParams,
 
 # global to each python worker process on the executors
 global_sess = None            # tf.Session cache
-global_args = None            # args provided to the _run_model() method.  Any change will invalidate the global_sess cache.
+# args provided to the _run_model() method.  Any change will invalidate the global_sess cache.
+global_args = None
+
 
 def _run_model(iterator, args):
   """mapPartitions function to run single-node inferencing from a checkpoint/saved_model, using the model's input/output mappings.
@@ -417,15 +518,19 @@ def _run_model(iterator, args):
 
   logging.info("===== input_mapping: {}".format(args.input_mapping))
   logging.info("===== output_mapping: {}".format(args.output_mapping))
-  input_tensor_names = [ tensor for col,tensor in sorted(args.input_mapping.items()) ]
-  output_tensor_names = [ tensor for tensor,col in sorted(args.output_mapping.items()) ]
+  input_tensor_names = [tensor for col,
+                        tensor in sorted(args.input_mapping.items())]
+  output_tensor_names = [tensor for tensor,
+                         col in sorted(args.output_mapping.items())]
 
   # if using a signature_def_key, get input/output tensor info from the requested signature
   if args.signature_def_key:
     assert args.export_dir, "Inferencing with signature_def_key requires --export_dir argument"
-    logging.info("===== loading meta_graph_def for tag_set ({0}) from saved_model: {1}".format(args.tag_set, args.export_dir))
+    logging.info("===== loading meta_graph_def for tag_set ({0}) from saved_model: {1}".format(
+        args.tag_set, args.export_dir))
     meta_graph_def = get_meta_graph_def(args.export_dir, args.tag_set)
-    signature = signature_def_utils.get_signature_def_by_key(meta_graph_def, args.signature_def_key)
+    signature = signature_def_utils.get_signature_def_by_key(
+        meta_graph_def, args.signature_def_key)
     logging.info("signature: {}".format(signature))
     inputs_tensor_info = signature.inputs
     logging.info("inputs_tensor_info: {0}".format(inputs_tensor_info))
@@ -445,23 +550,29 @@ def _run_model(iterator, args):
     if args.export_dir:
       assert args.tag_set, "Inferencing from a saved_model requires --tag_set"
       # load graph from a saved_model
-      logging.info("===== restoring from saved_model: {}".format(args.export_dir))
+      logging.info(
+          "===== restoring from saved_model: {}".format(args.export_dir))
       loader.load(sess, args.tag_set.split(','), args.export_dir)
     elif args.model_dir:
       # load graph from a checkpoint
       ckpt = tf.train.latest_checkpoint(args.model_dir)
-      assert ckpt, "Invalid model checkpoint path: {}".format(args.model_dir)
-      logging.info("===== restoring from checkpoint: {}".format(ckpt + ".meta"))
-      saver = tf.train.import_meta_graph(ckpt + ".meta", clear_devices=True)
+      assert ckpt, "Invalid model checkpoint path: {}".format(
+          args.model_dir)
+      logging.info(
+          "===== restoring from checkpoint: {}".format(ckpt + ".meta"))
+      saver = tf.train.import_meta_graph(
+          ckpt + ".meta", clear_devices=True)
       saver.restore(sess, ckpt)
     else:
-      raise Exception("Inferencing requires either --model_dir or --export_dir argument")
+      raise Exception(
+          "Inferencing requires either --model_dir or --export_dir argument")
     global_sess = sess
     global_args = args
 
   # get list of input/output tensors (by name)
   if args.signature_def_key:
-    input_tensors = [inputs_tensor_info[t].name for t in input_tensor_names]
+    input_tensors = [
+        inputs_tensor_info[t].name for t in input_tensor_names]
     output_tensors = [outputs_tensor_info[output_tensor_names[0]].name]
   else:
     input_tensors = [t + ':0' for t in input_tensor_names]
@@ -477,13 +588,17 @@ def _run_model(iterator, args):
       inputs_feed_dict[input_tensors[i]] = tensors[i]
 
     outputs = sess.run(output_tensors, feed_dict=inputs_feed_dict)
-    lengths = [ len(output) for output in outputs ]
+    lengths = [len(output) for output in outputs]
     input_size = len(tensors[0])
-    assert all([ l == input_size for l in lengths ]), "Output array sizes {} must match input size: {}".format(lengths, input_size)
-    python_outputs = [ output.tolist() for output in outputs ]      # convert from numpy to standard python types
-    result.extend(zip(*python_outputs))                             # convert to an array of tuples of "output columns"
+    assert all([l == input_size for l in lengths]
+               ), "Output array sizes {} must match input size: {}".format(lengths, input_size)
+    # convert from numpy to standard python types
+    python_outputs = [output.tolist() for output in outputs]
+    # convert to an array of tuples of "output columns"
+    result.extend(zip(*python_outputs))
 
   return result
+
 
 def single_node_env(args):
   """Sets up environment for a single-node TF session.
@@ -493,16 +608,18 @@ def single_node_env(args):
     :argv: command line arguments as ARGV (array of string).
   """
   if args.argv:
-      sys.argv = args.argv
+    sys.argv = args.argv
 
   # ensure expanded CLASSPATH w/o glob characters (required for Spark 2.1 + JNI)
   if 'HADOOP_PREFIX' in os.environ and 'TFOS_CLASSPATH_UPDATED' not in os.environ:
-      classpath = os.environ['CLASSPATH']
-      hadoop_path = os.path.join(os.environ['HADOOP_PREFIX'], 'bin', 'hadoop')
-      hadoop_classpath = subprocess.check_output([hadoop_path, 'classpath', '--glob']).decode()
-      logging.debug("CLASSPATH: {0}".format(hadoop_classpath))
-      os.environ['CLASSPATH'] = classpath + os.pathsep + hadoop_classpath
-      os.environ['TFOS_CLASSPATH_UPDATED'] = '1'
+    classpath = os.environ['CLASSPATH']
+    hadoop_path = os.path.join(
+        os.environ['HADOOP_PREFIX'], 'bin', 'hadoop')
+    hadoop_classpath = subprocess.check_output(
+        [hadoop_path, 'classpath', '--glob']).decode()
+    logging.debug("CLASSPATH: {0}".format(hadoop_classpath))
+    os.environ['CLASSPATH'] = classpath + os.pathsep + hadoop_classpath
+    os.environ['TFOS_CLASSPATH_UPDATED'] = '1'
 
   # reserve GPU, if requested
   if tf.test.is_built_with_cuda():
@@ -516,6 +633,7 @@ def single_node_env(args):
     # CPU
     logging.info("Using CPU")
     os.environ['CUDA_VISIBLE_DEVICES'] = ''
+
 
 def get_meta_graph_def(saved_model_dir, tag_set):
   """Utility function to read a meta_graph_def from disk.
@@ -534,7 +652,9 @@ def get_meta_graph_def(saved_model_dir, tag_set):
   for meta_graph_def in saved_model.meta_graphs:
     if set(meta_graph_def.meta_info_def.tags) == set_of_tags:
       return meta_graph_def
-  raise RuntimeError("MetaGraphDef associated with tag-set {0} could not be found in SavedModel".format(tag_set))
+  raise RuntimeError(
+      "MetaGraphDef associated with tag-set {0} could not be found in SavedModel".format(tag_set))
+
 
 def yield_batch(iterable, batch_size, num_tensors=1):
   """Generator that yields batches of a DataFrame iterator.
@@ -547,7 +667,7 @@ def yield_batch(iterable, batch_size, num_tensors=1):
   Returns:
     An array of ``num_tensors`` arrays, each of length `batch_size`
   """
-  tensors = [ [] for i in range(num_tensors) ]
+  tensors = [[] for i in range(num_tensors)]
   for item in iterable:
     if item is None:
       break
@@ -556,6 +676,6 @@ def yield_batch(iterable, batch_size, num_tensors=1):
       tensors[i].append(tmp)
     if len(tensors[0]) >= batch_size:
       yield tensors
-      tensors = [ [] for i in range(num_tensors) ]
+      tensors = [[] for i in range(num_tensors)]
   if len(tensors[0]) > 0:
-      yield tensors
+    yield tensors

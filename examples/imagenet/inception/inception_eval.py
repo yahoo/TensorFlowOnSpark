@@ -65,13 +65,15 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op):
   with tf.Session() as sess:
     ckpt = tf.train.get_checkpoint_state(FLAGS.checkpoint_dir)
     if ckpt and ckpt.model_checkpoint_path:
-      print("ckpt.model_checkpoint_path: {0}".format(ckpt.model_checkpoint_path))
+      print("ckpt.model_checkpoint_path: {0}".format(
+          ckpt.model_checkpoint_path))
       saver.restore(sess, ckpt.model_checkpoint_path)
 
       # Assuming model_checkpoint_path looks something like:
       #   /my-favorite-path/imagenet_train/model.ckpt-0,
       # extract global_step from it.
-      global_step = ckpt.model_checkpoint_path.split('/')[-1].split('-')[-1]
+      global_step = ckpt.model_checkpoint_path.split(
+          '/')[-1].split('-')[-1]
       print('Successfully loaded model from %s at step=%s.' %
             (ckpt.model_checkpoint_path, global_step))
     else:
@@ -93,7 +95,8 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op):
       total_sample_count = num_iter * FLAGS.batch_size
       step = 0
 
-      print('%s: starting evaluation on (%s).' % (datetime.now(), FLAGS.subset))
+      print('%s: starting evaluation on (%s).' %
+            (datetime.now(), FLAGS.subset))
       start_time = time.time()
       while step < num_iter and not coord.should_stop():
         top_1, top_5 = sess.run([top_1_op, top_5_op])
@@ -157,7 +160,7 @@ def evaluate(dataset):
 
     graph_def = tf.get_default_graph().as_graph_def()
     summary_writer = tf.summary.FileWriter(FLAGS.eval_dir,
-                                            graph_def=graph_def)
+                                           graph_def=graph_def)
 
     while True:
       _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op)

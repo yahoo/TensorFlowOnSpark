@@ -21,6 +21,7 @@ from . import util
 BUFSIZE = 1024
 MAX_RETRIES = 3
 
+
 class Reservations:
   """Thread-safe store for node reservations.
 
@@ -56,6 +57,7 @@ class Reservations:
     """Get a count of remaining/unfulfilled reservations."""
     with self.lock:
       return self.required - len(self.reservations)
+
 
 class MessageSocket(object):
   """Abstract class w/ length-prefixed socket send/receive functions."""
@@ -96,7 +98,8 @@ class Server(MessageSocket):
     :count: expected number of nodes in the cluster.
   """
   reservations = None             #: List of reservations managed by this server.
-  done = False                    #: boolean indicating if server should be shutdown.
+  #: boolean indicating if server should be shutdown.
+  done = False
 
   def __init__(self, count):
     assert count > 0
@@ -105,7 +108,8 @@ class Server(MessageSocket):
   def await_reservations(self):
     """Block until all reservations are received."""
     while not self.reservations.done():
-      logging.info("waiting for {0} reservations".format(self.reservations.remaining()))
+      logging.info("waiting for {0} reservations".format(
+          self.reservations.remaining()))
       time.sleep(1)
     logging.info("all reservations completed")
     return self.reservations.get()
@@ -136,13 +140,13 @@ class Server(MessageSocket):
     """
     server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server_sock.bind(('',0))
+    server_sock.bind(('', 0))
     server_sock.listen(10)
 
     # hostname may not be resolvable but IP address probably will be
     host = util.get_ip_address()
     port = server_sock.getsockname()[1]
-    addr = (host,port)
+    addr = (host, port)
     logging.info("listening for reservations at {0}".format(addr))
 
     def _listen(self, sock):
@@ -150,12 +154,14 @@ class Server(MessageSocket):
       CONNECTIONS.append(sock)
 
       while not self.done:
-        read_socks, write_socks, err_socks = select.select(CONNECTIONS, [], [], 60)
+        read_socks, write_socks, err_socks = select.select(
+            CONNECTIONS, [], [], 60)
         for sock in read_socks:
           if sock == server_sock:
             client_sock, client_addr = sock.accept()
             CONNECTIONS.append(client_sock)
-            logging.debug("client connected from {0}".format(client_addr))
+            logging.debug(
+                "client connected from {0}".format(client_addr))
           else:
             try:
               msg = self.receive(sock)
@@ -176,6 +182,7 @@ class Server(MessageSocket):
   def stop(self):
     """Stop the Server's socket listener."""
     self.done = True
+
 
 class Client(MessageSocket):
   """Client to register and await node reservations.

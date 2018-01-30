@@ -92,7 +92,7 @@ def _activation_summary(x):
   tensor_name = re.sub('%s_[0-9]*/' % TOWER_NAME, '', x.op.name)
   tf.summary.histogram(tensor_name + '/activations', x)
   tf.summary.scalar(tensor_name + '/sparsity',
-                                       tf.nn.zero_fraction(x))
+                    tf.nn.zero_fraction(x))
 
 
 def _variable_on_cpu(name, shape, initializer):
@@ -108,7 +108,8 @@ def _variable_on_cpu(name, shape, initializer):
   """
   with tf.device('/cpu:0'):
     dtype = tf.float16 if FLAGS.use_fp16 else tf.float32
-    var = tf.get_variable(name, shape, initializer=initializer, dtype=dtype)
+    var = tf.get_variable(
+        name, shape, initializer=initializer, dtype=dtype)
   return var
 
 
@@ -244,16 +245,20 @@ def inference(images):
     dim = reshape.get_shape()[1].value
     weights = _variable_with_weight_decay('weights', shape=[dim, 384],
                                           stddev=0.04, wd=0.004)
-    biases = _variable_on_cpu('biases', [384], tf.constant_initializer(0.1))
-    local3 = tf.nn.relu(tf.matmul(reshape, weights) + biases, name=scope.name)
+    biases = _variable_on_cpu(
+        'biases', [384], tf.constant_initializer(0.1))
+    local3 = tf.nn.relu(tf.matmul(reshape, weights) +
+                        biases, name=scope.name)
     _activation_summary(local3)
 
   # local4
   with tf.variable_scope('local4') as scope:
     weights = _variable_with_weight_decay('weights', shape=[384, 192],
                                           stddev=0.04, wd=0.004)
-    biases = _variable_on_cpu('biases', [192], tf.constant_initializer(0.1))
-    local4 = tf.nn.relu(tf.matmul(local3, weights) + biases, name=scope.name)
+    biases = _variable_on_cpu(
+        'biases', [192], tf.constant_initializer(0.1))
+    local4 = tf.nn.relu(tf.matmul(local3, weights) +
+                        biases, name=scope.name)
     _activation_summary(local4)
 
   # linear layer(WX + b),
@@ -265,7 +270,8 @@ def inference(images):
                                           stddev=1/192.0, wd=0.0)
     biases = _variable_on_cpu('biases', [NUM_CLASSES],
                               tf.constant_initializer(0.0))
-    softmax_linear = tf.add(tf.matmul(local4, weights), biases, name=scope.name)
+    softmax_linear = tf.add(
+        tf.matmul(local4, weights), biases, name=scope.name)
     _activation_summary(softmax_linear)
 
   return softmax_linear
@@ -388,7 +394,7 @@ def maybe_download_and_extract():
   if not os.path.exists(filepath):
     def _progress(count, block_size, total_size):
       sys.stdout.write('\r>> Downloading %s %.1f%%' % (filename,
-          float(count * block_size) / float(total_size) * 100.0))
+                                                       float(count * block_size) / float(total_size) * 100.0))
       sys.stdout.flush()
     filepath, _ = urllib.request.urlretrieve(DATA_URL, filepath, _progress)
     print()

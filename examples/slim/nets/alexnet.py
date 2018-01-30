@@ -39,7 +39,9 @@ from __future__ import print_function
 import tensorflow as tf
 
 slim = tf.contrib.slim
-trunc_normal = lambda stddev: tf.truncated_normal_initializer(0.0, stddev)
+
+
+def trunc_normal(stddev): return tf.truncated_normal_initializer(0.0, stddev)
 
 
 def alexnet_v2_arg_scope(weight_decay=0.0005):
@@ -117,9 +119,12 @@ def alexnet_v2(inputs,
                           scope='fc8')
 
       # Convert end_points_collection into a end_point dict.
-      end_points = slim.utils.convert_collection_to_dict(end_points_collection)
+      end_points = slim.utils.convert_collection_to_dict(
+          end_points_collection)
       if spatial_squeeze:
         net = tf.squeeze(net, [1, 2], name='fc8/squeezed')
         end_points[sc.name + '/fc8'] = net
       return net, end_points
+
+
 alexnet_v2.default_image_size = 224

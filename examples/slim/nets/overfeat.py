@@ -34,7 +34,9 @@ from __future__ import print_function
 import tensorflow as tf
 
 slim = tf.contrib.slim
-trunc_normal = lambda stddev: tf.truncated_normal_initializer(0.0, stddev)
+
+
+def trunc_normal(stddev): return tf.truncated_normal_initializer(0.0, stddev)
 
 
 def overfeat_arg_scope(weight_decay=0.0005):
@@ -98,7 +100,8 @@ def overfeat(inputs,
                           weights_initializer=trunc_normal(0.005),
                           biases_initializer=tf.constant_initializer(0.1)):
         # Use conv2d instead of fully_connected layers.
-        net = slim.conv2d(net, 3072, [6, 6], padding='VALID', scope='fc6')
+        net = slim.conv2d(
+            net, 3072, [6, 6], padding='VALID', scope='fc6')
         net = slim.dropout(net, dropout_keep_prob, is_training=is_training,
                            scope='dropout6')
         net = slim.conv2d(net, 4096, [1, 1], scope='fc7')
@@ -110,9 +113,12 @@ def overfeat(inputs,
                           biases_initializer=tf.zeros_initializer(),
                           scope='fc8')
       # Convert end_points_collection into a end_point dict.
-      end_points = slim.utils.convert_collection_to_dict(end_points_collection)
+      end_points = slim.utils.convert_collection_to_dict(
+          end_points_collection)
       if spatial_squeeze:
         net = tf.squeeze(net, [1, 2], name='fc8/squeezed')
         end_points[sc.name + '/fc8'] = net
       return net, end_points
+
+
 overfeat.default_image_size = 231

@@ -122,7 +122,8 @@ def arg_scope(list_ops_or_scope, **kwargs):
       for op in list_ops_or_scope:
         key_op = (op.__module__, op.__name__)
         if not has_arg_scope(op):
-          raise ValueError("%s is not decorated with @add_arg_scope", key_op)
+          raise ValueError(
+              "%s is not decorated with @add_arg_scope", key_op)
         if key_op in current_scope:
           current_kwargs = current_scope[key_op].copy()
           current_kwargs.update(kwargs)

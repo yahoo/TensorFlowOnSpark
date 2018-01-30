@@ -35,7 +35,8 @@ from tensorflowonspark import TFNode
 
 FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_string('input_mode', 'tf', 'data ingestion mode (spark|tf)')
+tf.app.flags.DEFINE_string(
+    'input_mode', 'tf', 'data ingestion mode (spark|tf)')
 tf.app.flags.DEFINE_integer('num_gpus', 1, 'Number of GPUs per node.')
 
 tf.app.flags.DEFINE_string('job_name', '', 'One of "ps", "worker"')
@@ -52,11 +53,12 @@ tf.app.flags.DEFINE_string('train_dir', '/tmp/imagenet_train',
                            """Directory where to write event logs """
                            """and checkpoint.""")
 tf.app.flags.DEFINE_integer('max_steps', 1000000, 'Number of batches to run.')
-tf.app.flags.DEFINE_string('subset', 'train', 'Either "train" or "validation".')
+tf.app.flags.DEFINE_string(
+    'subset', 'train', 'Either "train" or "validation".')
 tf.app.flags.DEFINE_boolean('log_device_placement', False,
                             'Whether to log device placement.')
 tf.app.flags.DEFINE_boolean('rdma', False,
-                           """Whether to use rdma.""")
+                            """Whether to use rdma.""")
 # Task ID is used to select the chief and also to access the local_step for
 # each replica to check staleness of the gradients in sync_replicas_optimizer.
 tf.app.flags.DEFINE_integer(
@@ -119,8 +121,8 @@ def train(target, dataset, cluster_spec, ctx):
   with tf.device('/job:worker/task:%d' % FLAGS.task_id):
     # Variables and its related init/assign ops are assigned to ps.
     with slim.scopes.arg_scope(
-          [slim.variables.variable, slim.variables.global_step],
-          device=slim.variables.VariableDeviceChooser(num_parameter_servers)):
+        [slim.variables.variable, slim.variables.global_step],
+            device=slim.variables.VariableDeviceChooser(num_parameter_servers)):
       # Create a variable to count the number of train() calls. This equals the
       # number of updates applied to the variables.
       global_step = slim.variables.global_step()
@@ -155,7 +157,8 @@ def train(target, dataset, cluster_spec, ctx):
             tfrecords.append(str(elem[0]))
           return tfrecords
 
-        batch = tf.placeholder(tf.string, [FLAGS.batch_size / FLAGS.num_preprocess_threads])
+        batch = tf.placeholder(
+            tf.string, [FLAGS.batch_size / FLAGS.num_preprocess_threads])
 
         # The following is adapted from image_processing.py to remove Readers/QueueRunners.
         # Note: this removes the RandomShuffledQueue, so the incoming data is not shuffled.
@@ -165,15 +168,18 @@ def train(target, dataset, cluster_spec, ctx):
         for example_serialized in examples:
           for thread_id in range(FLAGS.num_preprocess_threads):
             # Parse a serialized Example proto to extract the image and metadata.
-            image_buffer, label_index, bbox, _ = image_processing.parse_example_proto(example_serialized)
-            image = image_processing.image_preprocessing(image_buffer, bbox, train, thread_id)
+            image_buffer, label_index, bbox, _ = image_processing.parse_example_proto(
+                example_serialized)
+            image = image_processing.image_preprocessing(
+                image_buffer, bbox, train, thread_id)
             images.append(image)
             labels.append(label_index)
         height = FLAGS.image_size
         width = FLAGS.image_size
         depth = 3
         images = tf.cast(images, tf.float32)
-        images = tf.reshape(images, shape=[FLAGS.batch_size, height, width, depth])
+        images = tf.reshape(
+            images, shape=[FLAGS.batch_size, height, width, depth])
         tf.summary.image('images', images)
         labels = tf.reshape(labels, [FLAGS.batch_size])
       else:
@@ -185,7 +191,8 @@ def train(target, dataset, cluster_spec, ctx):
       # Number of classes in the Dataset label set plus 1.
       # Label 0 is reserved for an (unused) background class.
       num_classes = dataset.num_classes() + 1
-      logits = inception.inference(images, num_classes, for_training=True)
+      logits = inception.inference(
+          images, num_classes, for_training=True)
       # Add classification loss.
       inception.loss(logits, labels)
 
@@ -198,7 +205,8 @@ def train(target, dataset, cluster_spec, ctx):
       if is_chief:
         # Compute the moving average of all individual losses and the
         # total loss.
-        loss_averages = tf.train.ExponentialMovingAverage(0.9, name='avg')
+        loss_averages = tf.train.ExponentialMovingAverage(
+            0.9, name='avg')
         loss_averages_op = loss_averages.apply(losses + [total_loss])
 
         # Attach a scalar summmary to all individual losses and the total loss;
@@ -237,7 +245,8 @@ def train(target, dataset, cluster_spec, ctx):
           variable_averages=exp_moving_averager,
           variables_to_average=variables_to_average)
 
-      batchnorm_updates = tf.get_collection(slim.ops.UPDATE_OPS_COLLECTION)
+      batchnorm_updates = tf.get_collection(
+          slim.ops.UPDATE_OPS_COLLECTION)
       assert batchnorm_updates, 'Batchnorm updates are missing'
       batchnorm_updates_op = tf.group(*batchnorm_updates)
       # Add dependency to compute batchnorm_updates.
@@ -252,7 +261,8 @@ def train(target, dataset, cluster_spec, ctx):
         if grad is not None:
           tf.summary.histogram(var.op.name + '/gradients', grad)
 
-      apply_gradients_op = opt.apply_gradients(grads, global_step=global_step)
+      apply_gradients_op = opt.apply_gradients(
+          grads, global_step=global_step)
 
       with tf.control_dependencies([apply_gradients_op]):
         train_op = tf.identity(total_loss, name='train_op')
@@ -276,7 +286,8 @@ def train(target, dataset, cluster_spec, ctx):
       # passing in None for summary_op to avoid a summary_thread being started.
       # Running summaries and training operations in parallel could run out of
       # GPU memory.
-      summary_writer = tf.summary.FileWriter("tensorboard_%d" % ctx.worker_num, graph=tf.get_default_graph())
+      summary_writer = tf.summary.FileWriter(
+          "tensorboard_%d" % ctx.worker_num, graph=tf.get_default_graph())
       sv = tf.train.Supervisor(is_chief=is_chief,
                                logdir=FLAGS.train_dir,
                                init_op=init_op,
@@ -314,12 +325,15 @@ def train(target, dataset, cluster_spec, ctx):
         try:
           start_time = time.time()
           if FLAGS.input_mode == 'spark':
-            tmp = feed_dict(tf_feed.next_batch(FLAGS.batch_size / FLAGS.num_preprocess_threads))
+            tmp = feed_dict(tf_feed.next_batch(
+                FLAGS.batch_size / FLAGS.num_preprocess_threads))
             feed = {batch: tmp}
-            loss_value, step = sess.run([train_op, global_step], feed_dict=feed)
+            loss_value, step = sess.run(
+                [train_op, global_step], feed_dict=feed)
           else:
             loss_value, step = sess.run([train_op, global_step])
-          assert not np.isnan(loss_value), 'Model diverged with loss = NaN'
+          assert not np.isnan(
+              loss_value), 'Model diverged with loss = NaN'
           if step > FLAGS.max_steps:
             break
           duration = time.time() - start_time
@@ -334,7 +348,8 @@ def train(target, dataset, cluster_spec, ctx):
 
           # Determine if the summary_op should be run on the chief worker.
           if FLAGS.input_mode == 'tf' and is_chief and next_summary_time < time.time():
-            tf.logging.info('Running Summary operation on the chief.')
+            tf.logging.info(
+                'Running Summary operation on the chief.')
             summary_str = sess.run(summary_op)
             sv.summary_computed(sess, summary_str)
             tf.logging.info('Finished running Summary operation.')

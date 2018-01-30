@@ -194,7 +194,8 @@ def preprocess_for_train(image, height, width, bbox,
                                                   bbox)
     tf.summary.image('image_with_bounding_boxes', image_with_box)
 
-    distorted_image, distorted_bbox = distorted_bounding_box_crop(image, bbox)
+    distorted_image, distorted_bbox = distorted_bounding_box_crop(
+        image, bbox)
     # Restore the shape since the dynamic slice based upon the bbox_size loses
     # the third dimension.
     distorted_image.set_shape([None, None, 3])
@@ -212,7 +213,8 @@ def preprocess_for_train(image, height, width, bbox,
     num_resize_cases = 1 if fast_mode else 4
     distorted_image = apply_with_random_selector(
         distorted_image,
-        lambda x, method: tf.image.resize_images(x, [height, width], method=method),
+        lambda x, method: tf.image.resize_images(
+            x, [height, width], method=method),
         num_cases=num_resize_cases)
 
     tf.summary.image('cropped_resized_image',
@@ -262,7 +264,8 @@ def preprocess_for_eval(image, height, width,
     # Crop the central region of the image with an area containing 87.5% of
     # the original image.
     if central_fraction:
-      image = tf.image.central_crop(image, central_fraction=central_fraction)
+      image = tf.image.central_crop(
+          image, central_fraction=central_fraction)
 
     if height and width:
       # Resize the image to the specified height and width.

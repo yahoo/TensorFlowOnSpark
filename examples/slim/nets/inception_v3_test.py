@@ -160,7 +160,8 @@ class InceptionV3Test(tf.test.TestCase):
 
     for key in endpoint_keys:
       original_depth = end_points[key].get_shape().as_list()[3]
-      new_depth = end_points_with_multiplier[key].get_shape().as_list()[3]
+      new_depth = end_points_with_multiplier[key].get_shape().as_list()[
+          3]
       self.assertEqual(0.5 * original_depth, new_depth)
 
   def testBuildEndPointsWithDepthMultiplierGreaterThanOne(self):
@@ -180,7 +181,8 @@ class InceptionV3Test(tf.test.TestCase):
 
     for key in endpoint_keys:
       original_depth = end_points[key].get_shape().as_list()[3]
-      new_depth = end_points_with_multiplier[key].get_shape().as_list()[3]
+      new_depth = end_points_with_multiplier[key].get_shape().as_list()[
+          3]
       self.assertEqual(2.0 * original_depth, new_depth)
 
   def testRaiseValueErrorWithInvalidDepthMultiplier(self):
@@ -190,9 +192,11 @@ class InceptionV3Test(tf.test.TestCase):
 
     inputs = tf.random_uniform((batch_size, height, width, 3))
     with self.assertRaises(ValueError):
-      _ = inception.inception_v3(inputs, num_classes, depth_multiplier=-0.1)
+      _ = inception.inception_v3(
+          inputs, num_classes, depth_multiplier=-0.1)
     with self.assertRaises(ValueError):
-      _ = inception.inception_v3(inputs, num_classes, depth_multiplier=0.0)
+      _ = inception.inception_v3(
+          inputs, num_classes, depth_multiplier=0.0)
 
   def testHalfSizeImages(self):
     batch_size = 5
@@ -215,7 +219,8 @@ class InceptionV3Test(tf.test.TestCase):
     num_classes = 1000
     input_np = np.random.uniform(0, 1, (batch_size, height, width, 3))
     with self.test_session() as sess:
-      inputs = tf.placeholder(tf.float32, shape=(batch_size, None, None, 3))
+      inputs = tf.placeholder(
+          tf.float32, shape=(batch_size, None, None, 3))
       logits, end_points = inception.inception_v3(inputs, num_classes)
       self.assertListEqual(logits.get_shape().as_list(),
                            [batch_size, num_classes])
@@ -223,7 +228,8 @@ class InceptionV3Test(tf.test.TestCase):
       feed_dict = {inputs: input_np}
       tf.global_variables_initializer().run()
       pre_pool_out = sess.run(pre_pool, feed_dict=feed_dict)
-      self.assertListEqual(list(pre_pool_out.shape), [batch_size, 8, 8, 2048])
+      self.assertListEqual(list(pre_pool_out.shape),
+                           [batch_size, 8, 8, 2048])
 
   def testUnknowBatchSize(self):
     batch_size = 1
@@ -285,7 +291,8 @@ class InceptionV3Test(tf.test.TestCase):
     with self.test_session() as sess:
       tf.global_variables_initializer().run()
       logits_out = sess.run(logits)
-      self.assertListEqual(list(logits_out.shape), [1, 1, 1, num_classes])
+      self.assertListEqual(list(logits_out.shape),
+                           [1, 1, 1, num_classes])
 
 
 if __name__ == '__main__':

@@ -45,6 +45,7 @@ import time
 
 import numpy as np
 
+
 def main_fun(argv, ctx):
 
   import tensorflow as tf
@@ -63,7 +64,7 @@ def main_fun(argv, ctx):
   tf.app.flags.DEFINE_integer('num_examples', 10000,
                               """Number of examples to run.""")
   tf.app.flags.DEFINE_boolean('run_once', False,
-                           """Whether to run eval only once.""")
+                              """Whether to run eval only once.""")
   tf.app.flags.DEFINE_boolean('rdma', False, """Whether to use rdma.""")
 
   cluster_spec, server = TFNode.start_cluster_server(ctx, 1, FLAGS.rdma)
@@ -85,7 +86,8 @@ def main_fun(argv, ctx):
         # Assuming model_checkpoint_path looks something like:
         #   /my-favorite-path/cifar10_train/model.ckpt-0,
         # extract global_step from it.
-        global_step = ckpt.model_checkpoint_path.split('/')[-1].split('-')[-1]
+        global_step = ckpt.model_checkpoint_path.split(
+            '/')[-1].split('-')[-1]
       else:
         print('No checkpoint file found')
         return
@@ -98,7 +100,8 @@ def main_fun(argv, ctx):
           threads.extend(qr.create_threads(sess, coord=coord, daemon=True,
                                            start=True))
 
-        num_iter = int(math.ceil(FLAGS.num_examples / FLAGS.batch_size))
+        num_iter = int(
+            math.ceil(FLAGS.num_examples / FLAGS.batch_size))
         true_count = 0  # Counts the number of correct predictions.
         total_sample_count = num_iter * FLAGS.batch_size
         step = 0
@@ -120,7 +123,6 @@ def main_fun(argv, ctx):
 
       coord.request_stop()
       coord.join(threads, stop_grace_period_secs=10)
-
 
   def evaluate():
     """Eval CIFAR-10 for a number of steps."""
@@ -153,7 +155,7 @@ def main_fun(argv, ctx):
           break
         time.sleep(FLAGS.eval_interval_secs)
 
-  #cifar10.maybe_download_and_extract()
+  # cifar10.maybe_download_and_extract()
   if tf.gfile.Exists(FLAGS.eval_dir):
     tf.gfile.DeleteRecursively(FLAGS.eval_dir)
   tf.gfile.MakeDirs(FLAGS.eval_dir)
@@ -165,5 +167,6 @@ if __name__ == '__main__':
   num_executors = int(sc._conf.get("spark.executor.instances"))
   num_ps = 0
 
-  cluster = TFCluster.run(sc, main_fun, sys.argv, num_executors, num_ps, False, TFCluster.InputMode.TENSORFLOW)
+  cluster = TFCluster.run(sc, main_fun, sys.argv, num_executors,
+                          num_ps, False, TFCluster.InputMode.TENSORFLOW)
   cluster.shutdown()

@@ -157,11 +157,13 @@ class ImageCoder(object):
     # Initializes function that converts PNG to JPEG data.
     self._png_data = tf.placeholder(dtype=tf.string)
     image = tf.image.decode_png(self._png_data, channels=3)
-    self._png_to_jpeg = tf.image.encode_jpeg(image, format='rgb', quality=100)
+    self._png_to_jpeg = tf.image.encode_jpeg(
+        image, format='rgb', quality=100)
 
     # Initializes function that decodes RGB JPEG data.
     self._decode_jpeg_data = tf.placeholder(dtype=tf.string)
-    self._decode_jpeg = tf.image.decode_jpeg(self._decode_jpeg_data, channels=3)
+    self._decode_jpeg = tf.image.decode_jpeg(
+        self._decode_jpeg_data, channels=3)
 
   def png_to_jpeg(self, image_data):
     return self._sess.run(self._png_to_jpeg,
@@ -255,7 +257,8 @@ def _process_image_files_batch(coder, thread_index, ranges, name, filenames,
     writer = tf.python_io.TFRecordWriter(output_file)
 
     shard_counter = 0
-    files_in_shard = np.arange(shard_ranges[s], shard_ranges[s + 1], dtype=int)
+    files_in_shard = np.arange(
+        shard_ranges[s], shard_ranges[s + 1], dtype=int)
     for i in files_in_shard:
       filename = filenames[i]
       label = labels[i]
@@ -298,13 +301,15 @@ def _process_image_files(name, filenames, texts, labels, num_shards):
   assert len(filenames) == len(labels)
 
   # Break all images into batches with a [ranges[i][0], ranges[i][1]].
-  spacing = np.linspace(0, len(filenames), FLAGS.num_threads + 1).astype(np.int)
+  spacing = np.linspace(
+      0, len(filenames), FLAGS.num_threads + 1).astype(np.int)
   ranges = []
   for i in range(len(spacing) - 1):
     ranges.append([spacing[i], spacing[i+1]])
 
   # Launch a thread for each batch.
-  print('Launching %d threads for spacings: %s' % (FLAGS.num_threads, ranges))
+  print('Launching %d threads for spacings: %s' %
+        (FLAGS.num_threads, ranges))
   sys.stdout.flush()
 
   # Create a mechanism for monitoring when all threads are finished.

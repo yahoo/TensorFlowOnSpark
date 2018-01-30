@@ -52,6 +52,7 @@ import time
 import numpy as np
 from six.moves import xrange  # pylint: disable=redefined-builtin
 
+
 def main_fun(argv, ctx):
   import tensorflow as tf
   import cifar10
@@ -68,7 +69,8 @@ def main_fun(argv, ctx):
   tf.app.flags.DEFINE_boolean('log_device_placement', False,
                               """Whether to log device placement.""")
   tf.app.flags.DEFINE_boolean('rdma', False, """Whether to use rdma.""")
-  cluster_spec, server = TFNode.start_cluster_server(ctx, FLAGS.num_gpus, FLAGS.rdma)
+  cluster_spec, server = TFNode.start_cluster_server(
+      ctx, FLAGS.num_gpus, FLAGS.rdma)
 
   def tower_loss(scope):
     """Calculate the total loss on a single tower running the CIFAR model.
@@ -100,11 +102,11 @@ def main_fun(argv, ctx):
     for l in losses + [total_loss]:
       # Remove 'tower_[0-9]/' from the name in case this is a multi-GPU training
       # session. This helps the clarity of presentation on tensorboard.
-      loss_name = re.sub('%s_[0-9]*/' % cifar10.TOWER_NAME, '', l.op.name)
+      loss_name = re.sub('%s_[0-9]*/' %
+                         cifar10.TOWER_NAME, '', l.op.name)
       tf.summary.scalar(loss_name, l)
 
     return total_loss
-
 
   def average_gradients(tower_grads):
     """Calculate the average gradient for each shared variable across all towers.
@@ -143,7 +145,6 @@ def main_fun(argv, ctx):
       average_grads.append(grad_and_var)
     return average_grads
 
-
   def train():
     """Train CIFAR-10 for a number of steps."""
     with tf.Graph().as_default(), tf.device('/cpu:0'):
@@ -156,7 +157,8 @@ def main_fun(argv, ctx):
       # Calculate the learning rate schedule.
       num_batches_per_epoch = (cifar10.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN /
                                FLAGS.batch_size)
-      decay_steps = int(num_batches_per_epoch * cifar10.NUM_EPOCHS_PER_DECAY)
+      decay_steps = int(num_batches_per_epoch *
+                        cifar10.NUM_EPOCHS_PER_DECAY)
 
       # Decay the learning rate exponentially based on the number of steps.
       lr = tf.train.exponential_decay(cifar10.INITIAL_LEARNING_RATE,
@@ -183,7 +185,8 @@ def main_fun(argv, ctx):
               tf.get_variable_scope().reuse_variables()
 
               # Retain the summaries from the final tower.
-              summaries = tf.get_collection(tf.GraphKeys.SUMMARIES, scope)
+              summaries = tf.get_collection(
+                  tf.GraphKeys.SUMMARIES, scope)
 
               # Calculate the gradients for the batch of data on this CIFAR tower.
               grads = opt.compute_gradients(loss)
@@ -201,10 +204,12 @@ def main_fun(argv, ctx):
       # Add histograms for gradients.
       for grad, var in grads:
         if grad is not None:
-          summaries.append(tf.summary.histogram(var.op.name + '/gradients', grad))
+          summaries.append(tf.summary.histogram(
+              var.op.name + '/gradients', grad))
 
       # Apply the gradients to adjust the shared variables.
-      apply_gradient_op = opt.apply_gradients(grads, global_step=global_step)
+      apply_gradient_op = opt.apply_gradients(
+          grads, global_step=global_step)
 
       # Add histograms for trainable variables.
       for var in tf.trainable_variables():
@@ -213,7 +218,8 @@ def main_fun(argv, ctx):
       # Track the moving averages of all trainable variables.
       variable_averages = tf.train.ExponentialMovingAverage(
           cifar10.MOVING_AVERAGE_DECAY, global_step)
-      variables_averages_op = variable_averages.apply(tf.trainable_variables())
+      variables_averages_op = variable_averages.apply(
+          tf.trainable_variables())
 
       # Group all updates to into a single train op.
       train_op = tf.group(apply_gradient_op, variables_averages_op)
@@ -245,7 +251,8 @@ def main_fun(argv, ctx):
         _, loss_value = sess.run([train_op, loss])
         duration = time.time() - start_time
 
-        assert not np.isnan(loss_value), 'Model diverged with loss = NaN'
+        assert not np.isnan(
+            loss_value), 'Model diverged with loss = NaN'
 
         if step % 10 == 0:
           num_examples_per_step = FLAGS.batch_size * FLAGS.num_gpus
@@ -254,8 +261,8 @@ def main_fun(argv, ctx):
 
           format_str = ('%s: step %d, loss = %.2f (%.1f examples/sec; %.3f '
                         'sec/batch)')
-          print (format_str % (datetime.now(), step, loss_value,
-                               examples_per_sec, sec_per_batch))
+          print(format_str % (datetime.now(), step, loss_value,
+                              examples_per_sec, sec_per_batch))
 
         if step % 100 == 0:
           summary_str = sess.run(summary_op)
@@ -263,7 +270,8 @@ def main_fun(argv, ctx):
 
         # Save the model checkpoint periodically.
         if step % 1000 == 0 or (step + 1) == FLAGS.max_steps:
-          checkpoint_path = os.path.join(FLAGS.train_dir, 'model.ckpt')
+          checkpoint_path = os.path.join(
+              FLAGS.train_dir, 'model.ckpt')
           saver.save(sess, checkpoint_path, global_step=step)
 
   # cifar10.maybe_download_and_extract()
@@ -278,5 +286,6 @@ if __name__ == '__main__':
   num_executors = int(sc._conf.get("spark.executor.instances"))
   num_ps = 0
 
-  cluster = TFCluster.run(sc, main_fun, sys.argv, num_executors, num_ps, False, TFCluster.InputMode.TENSORFLOW)
+  cluster = TFCluster.run(sc, main_fun, sys.argv, num_executors,
+                          num_ps, False, TFCluster.InputMode.TENSORFLOW)
   cluster.shutdown()

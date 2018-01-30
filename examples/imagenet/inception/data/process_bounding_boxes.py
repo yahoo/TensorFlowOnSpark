@@ -167,6 +167,7 @@ def ProcessXMLAnnotation(xml_file):
 
   return boxes
 
+
 if __name__ == '__main__':
   if len(sys.argv) < 2 or len(sys.argv) > 3:
     print('Invalid usage\n'
@@ -217,7 +218,7 @@ if __name__ == '__main__':
 
       # Guard against improperly specified boxes.
       if (bbox.xmin_scaled >= bbox.xmax_scaled or
-          bbox.ymin_scaled >= bbox.ymax_scaled):
+              bbox.ymin_scaled >= bbox.ymax_scaled):
         skipped_boxes += 1
         continue
 
@@ -243,7 +244,8 @@ if __name__ == '__main__':
       print('--> skipped %d boxes and %d XML files.' %
             (skipped_boxes, skipped_files), file=sys.stderr)
 
-  print('Finished processing %d XML files.' % len(xml_files), file=sys.stderr)
+  print('Finished processing %d XML files.' %
+        len(xml_files), file=sys.stderr)
   print('Skipped %d XML files not in ImageNet Challenge.' % skipped_files,
         file=sys.stderr)
   print('Skipped %d bounding boxes not in ImageNet Challenge.' % skipped_boxes,

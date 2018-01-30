@@ -24,6 +24,7 @@ from tensorflowonspark import TFCluster, TFNode
 from datetime import datetime
 import sys
 
+
 def main_fun(argv, ctx):
   import tensorflow as tf
   from tensorflow.python.ops import control_flow_ops
@@ -54,7 +55,8 @@ def main_fun(argv, ctx):
   tf.app.flags.DEFINE_boolean('clone_on_cpu', False,
                               'Use CPUs to deploy clones.')
 
-  tf.app.flags.DEFINE_integer('worker_replicas', 1, 'Number of worker replicas.')
+  tf.app.flags.DEFINE_integer(
+      'worker_replicas', 1, 'Number of worker replicas.')
 
   tf.app.flags.DEFINE_integer(
       'num_ps_tasks', 0,
@@ -112,7 +114,8 @@ def main_fun(argv, ctx):
       'adam_beta2', 0.999,
       'The exponential decay rate for the 2nd moment estimates.')
 
-  tf.app.flags.DEFINE_float('opt_epsilon', 1.0, 'Epsilon term for the optimizer.')
+  tf.app.flags.DEFINE_float(
+      'opt_epsilon', 1.0, 'Epsilon term for the optimizer.')
 
   tf.app.flags.DEFINE_float('ftrl_learning_rate_power', -0.5,
                             'The learning rate power.')
@@ -234,7 +237,8 @@ def main_fun(argv, ctx):
   FLAGS.task = ctx.task_index
   FLAGS.num_clones = FLAGS.num_gpus
   FLAGS.worker_replicas = len(ctx.cluster_spec['worker'])
-  assert(FLAGS.num_ps_tasks == (len(ctx.cluster_spec['ps']) if 'ps' in ctx.cluster_spec else 0))
+  assert(FLAGS.num_ps_tasks == (
+      len(ctx.cluster_spec['ps']) if 'ps' in ctx.cluster_spec else 0))
 
   def _configure_learning_rate(num_samples_per_epoch, global_step):
     """Configures the learning rate.
@@ -274,7 +278,6 @@ def main_fun(argv, ctx):
     else:
       raise ValueError('learning_rate_decay_type [%s] was not recognized',
                        FLAGS.learning_rate_decay_type)
-
 
   def _configure_optimizer(learning_rate):
     """Configures the optimizer used for training.
@@ -324,17 +327,17 @@ def main_fun(argv, ctx):
     elif FLAGS.optimizer == 'sgd':
       optimizer = tf.train.GradientDescentOptimizer(learning_rate)
     else:
-      raise ValueError('Optimizer [%s] was not recognized', FLAGS.optimizer)
+      raise ValueError(
+          'Optimizer [%s] was not recognized', FLAGS.optimizer)
     return optimizer
-
 
   def _add_variables_summaries(learning_rate):
     summaries = []
     for variable in slim.get_model_variables():
       summaries.append(tf.summary.histogram(variable.op.name, variable))
-    summaries.append(tf.summary.scalar('training/Learning Rate', learning_rate))
+    summaries.append(tf.summary.scalar(
+        'training/Learning Rate', learning_rate))
     return summaries
-
 
   def _get_init_fn():
     """Returns a function run by the chief worker to warm-start the training.
@@ -384,7 +387,6 @@ def main_fun(argv, ctx):
         variables_to_restore,
         ignore_missing_vars=FLAGS.ignore_missing_vars)
 
-
   def _get_variables_to_train():
     """Returns a list of variables to train.
 
@@ -394,23 +396,27 @@ def main_fun(argv, ctx):
     if FLAGS.trainable_scopes is None:
       return tf.trainable_variables()
     else:
-      scopes = [scope.strip() for scope in FLAGS.trainable_scopes.split(',')]
+      scopes = [scope.strip()
+                for scope in FLAGS.trainable_scopes.split(',')]
 
     variables_to_train = []
     for scope in scopes:
-      variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope)
+      variables = tf.get_collection(
+          tf.GraphKeys.TRAINABLE_VARIABLES, scope)
       variables_to_train.extend(variables)
     return variables_to_train
 
   # main
-  cluster_spec, server = TFNode.start_cluster_server(ctx=ctx, num_gpus=FLAGS.num_gpus, rdma=FLAGS.rdma)
+  cluster_spec, server = TFNode.start_cluster_server(
+      ctx=ctx, num_gpus=FLAGS.num_gpus, rdma=FLAGS.rdma)
   if ctx.job_name == 'ps':
     # `ps` jobs wait for incoming connections from the workers.
     server.join()
   else:
     # `worker` jobs will actually do the work.
     if not FLAGS.dataset_dir:
-      raise ValueError('You must supply the dataset directory with --dataset_dir')
+      raise ValueError(
+          'You must supply the dataset directory with --dataset_dir')
 
     tf.logging.set_verbosity(tf.logging.INFO)
     with tf.Graph().as_default():
@@ -425,7 +431,7 @@ def main_fun(argv, ctx):
           num_ps_tasks=FLAGS.num_ps_tasks)
 
       # Create global_step
-      #with tf.device(deploy_config.variables_device()):
+      # with tf.device(deploy_config.variables_device()):
       #  global_step = slim.create_global_step()
       with tf.device("/job:ps/task:0"):
         global_step = tf.Variable(0, name="global_step")
@@ -467,7 +473,8 @@ def main_fun(argv, ctx):
 
         train_image_size = FLAGS.train_image_size or network_fn.default_image_size
 
-        image = image_preprocessing_fn(image, train_image_size, train_image_size)
+        image = image_preprocessing_fn(
+            image, train_image_size, train_image_size)
 
         images, labels = tf.train.batch(
             [image, label],
@@ -502,23 +509,27 @@ def main_fun(argv, ctx):
       # Gather initial summaries.
       summaries = set(tf.get_collection(tf.GraphKeys.SUMMARIES))
 
-      clones = model_deploy.create_clones(deploy_config, clone_fn, [batch_queue])
+      clones = model_deploy.create_clones(
+          deploy_config, clone_fn, [batch_queue])
       first_clone_scope = deploy_config.clone_scope(0)
       # Gather update_ops from the first clone. These contain, for example,
       # the updates for the batch_norm variables created by network_fn.
-      update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS, first_clone_scope)
+      update_ops = tf.get_collection(
+          tf.GraphKeys.UPDATE_OPS, first_clone_scope)
 
       # Add summaries for end_points.
       end_points = clones[0].outputs
       for end_point in end_points:
         x = end_points[end_point]
-        summaries.add(tf.summary.histogram('activations/' + end_point, x))
+        summaries.add(tf.summary.histogram(
+            'activations/' + end_point, x))
         summaries.add(tf.summary.scalar('sparsity/' + end_point,
                                         tf.nn.zero_fraction(x)))
 
       # Add summaries for losses.
       for loss in tf.get_collection(tf.GraphKeys.LOSSES, first_clone_scope):
-        summaries.add(tf.summary.scalar('losses/%s' % loss.op.name, loss))
+        summaries.add(tf.summary.scalar(
+            'losses/%s' % loss.op.name, loss))
 
       # Add summaries for variables.
       for variable in slim.get_model_variables():
@@ -538,9 +549,11 @@ def main_fun(argv, ctx):
       # Configure the optimization procedure. #
       #########################################
       with tf.device(deploy_config.optimizer_device()):
-        learning_rate = _configure_learning_rate(dataset.num_samples, global_step)
+        learning_rate = _configure_learning_rate(
+            dataset.num_samples, global_step)
         optimizer = _configure_optimizer(learning_rate)
-        summaries.add(tf.summary.scalar('learning_rate', learning_rate))
+        summaries.add(tf.summary.scalar(
+            'learning_rate', learning_rate))
 
       if FLAGS.sync_replicas:
         # If sync_replicas is enabled, the averaging will be done in the chief
@@ -554,7 +567,8 @@ def main_fun(argv, ctx):
             total_num_replicas=FLAGS.worker_replicas)
       elif FLAGS.moving_average_decay:
         # Update ops executed locally by trainer.
-        update_ops.append(variable_averages.apply(moving_average_variables))
+        update_ops.append(variable_averages.apply(
+            moving_average_variables))
 
       # Variables to train.
       variables_to_train = _get_variables_to_train()
@@ -584,11 +598,11 @@ def main_fun(argv, ctx):
       # Merge all summaries together.
       summary_op = tf.summary.merge(list(summaries), name='summary_op')
 
-
       ###########################
       # Kicks off the training. #
       ###########################
-      summary_writer = tf.summary.FileWriter("tensorboard_%d" %(ctx.worker_num), graph=tf.get_default_graph())
+      summary_writer = tf.summary.FileWriter("tensorboard_%d" % (
+          ctx.worker_num), graph=tf.get_default_graph())
       slim.learning.train(
           train_tensor,
           logdir=FLAGS.train_dir,
@@ -612,11 +626,15 @@ if __name__ == '__main__':
   num_executors = int(executors) if executors is not None else 1
 
   parser = argparse.ArgumentParser()
-  parser.add_argument("--num_ps_tasks", help="number of PS nodes", type=int, default=0)
-  parser.add_argument("--tensorboard", help="launch tensorboard process", action="store_true")
-  parser.add_argument("--cluster_size", help="number of nodes in the cluster", type=int, default=num_executors)
-  (args,rem) = parser.parse_known_args()
+  parser.add_argument(
+      "--num_ps_tasks", help="number of PS nodes", type=int, default=0)
+  parser.add_argument(
+      "--tensorboard", help="launch tensorboard process", action="store_true")
+  parser.add_argument(
+      "--cluster_size", help="number of nodes in the cluster", type=int, default=num_executors)
+  (args, rem) = parser.parse_known_args()
 
   assert(num_executors > args.num_ps_tasks)
-  cluster = TFCluster.run(sc, main_fun, sys.argv, args.cluster_size, args.num_ps_tasks, args.tensorboard, TFCluster.InputMode.TENSORFLOW)
+  cluster = TFCluster.run(sc, main_fun, sys.argv, args.cluster_size,
+                          args.num_ps_tasks, args.tensorboard, TFCluster.InputMode.TENSORFLOW)
   cluster.shutdown()

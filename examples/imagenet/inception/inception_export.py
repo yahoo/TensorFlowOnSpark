@@ -27,11 +27,12 @@ tf.app.flags.DEFINE_string('train_dir', '/tmp/imagenet_train',
 tf.app.flags.DEFINE_string('subset', 'validation',
                            """Either 'validation' or 'train'.""")
 
+
 def export(args):
   FLAGS = tf.app.flags.FLAGS
 
   """Evaluate model on Dataset for a number of steps."""
-  #with tf.Graph().as_default():
+  # with tf.Graph().as_default():
   tf.reset_default_graph()
 
   def preprocess_image(image_buffer):
@@ -87,8 +88,10 @@ def export(args):
   with tf.Session() as sess:
     ckpt = tf.train.get_checkpoint_state(FLAGS.train_dir)
     if not ckpt or not ckpt.model_checkpoint_path:
-      raise Exception("No checkpoint file found at: {}".format(FLAGS.train_dir))
-    print("ckpt.model_checkpoint_path: {0}".format(ckpt.model_checkpoint_path))
+      raise Exception(
+          "No checkpoint file found at: {}".format(FLAGS.train_dir))
+    print("ckpt.model_checkpoint_path: {0}".format(
+        ckpt.model_checkpoint_path))
 
     saver.restore(sess, ckpt.model_checkpoint_path)
 
@@ -102,11 +105,11 @@ def export(args):
     print("Exporting saved_model to: {}".format(args.export_dir))
     # exported signatures defined in code
     signatures = {
-      tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: {
-        'inputs': { 'jpegs': jpegs, 'labels': labels },
-        'outputs': { 'top_5_acc': top_5_op },
-        'method_name': tf.saved_model.signature_constants.PREDICT_METHOD_NAME
-      }
+        tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: {
+            'inputs': {'jpegs': jpegs, 'labels': labels},
+            'outputs': {'top_5_acc': top_5_op},
+            'method_name': tf.saved_model.signature_constants.PREDICT_METHOD_NAME
+        }
     }
     TFNode.export_saved_model(sess,
                               args.export_dir,

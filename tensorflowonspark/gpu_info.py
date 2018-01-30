@@ -16,6 +16,7 @@ import time
 
 MAX_RETRIES = 3           #: Maximum retries to allocate GPUs
 
+
 def _get_gpu():
   """*DEPRECATED*. Allocates first available GPU using cudaSetDevice(), or returns 0 otherwise."""
   # Note: this code executes, but Tensorflow subsequently complains that the "current context was not created by the StreamExecutor cuda_driver API"
@@ -38,6 +39,7 @@ def _get_gpu():
       break
   return gpu
 
+
 def get_gpus(num_gpu=1):
   """Get list of free GPUs according to nvidia-smi.
 
@@ -52,11 +54,12 @@ def get_gpus(num_gpu=1):
 
   try:
     # get list of gpus (index, uuid)
-    list_gpus = subprocess.check_output(["nvidia-smi", "--list-gpus"]).decode()
+    list_gpus = subprocess.check_output(
+        ["nvidia-smi", "--list-gpus"]).decode()
     logging.debug("all GPUs:\n{0}".format(list_gpus))
 
     # parse index and guid
-    gpus = [ x for x in list_gpus.split('\n') if len(x) > 0 ]
+    gpus = [x for x in list_gpus.split('\n') if len(x) > 0]
 
     def parse_gpu(gpu_str):
       cols = gpu_str.split(' ')
@@ -69,31 +72,36 @@ def get_gpus(num_gpu=1):
     free_gpus = []
     retries = 0
     while len(free_gpus) < num_gpu and retries < MAX_RETRIES:
-      smi_output = subprocess.check_output(["nvidia-smi", "--format=csv,noheader,nounits", "--query-compute-apps=gpu_uuid"]).decode()
+      smi_output = subprocess.check_output(
+          ["nvidia-smi", "--format=csv,noheader,nounits", "--query-compute-apps=gpu_uuid"]).decode()
       logging.debug("busy GPUs:\n{0}".format(smi_output))
-      busy_uuids = [x for x in smi_output.split('\n') if len(x) > 0 ]
+      busy_uuids = [x for x in smi_output.split('\n') if len(x) > 0]
       for uuid, index in gpu_list:
         if uuid not in busy_uuids:
           free_gpus.append(index)
 
       if len(free_gpus) < num_gpu:
         # keep trying indefinitely
-        logging.warn("Unable to find available GPUs: requested={0}, available={1}".format(num_gpu, len(free_gpus)))
+        logging.warn("Unable to find available GPUs: requested={0}, available={1}".format(
+            num_gpu, len(free_gpus)))
         retries += 1
         time.sleep(30 * retries)
         free_gpus = []
 
     # if still can't find GPUs, raise exception
     if len(free_gpus) < num_gpu:
-      smi_output = subprocess.check_output(["nvidia-smi", "--format=csv", "--query-compute-apps=gpu_uuid,pid,process_name,used_gpu_memory"]).decode()
+      smi_output = subprocess.check_output(
+          ["nvidia-smi", "--format=csv", "--query-compute-apps=gpu_uuid,pid,process_name,used_gpu_memory"]).decode()
       logging.info(": {0}".format(smi_output))
       raise Exception("Unable to find free GPU:\n{0}".format(smi_output))
 
     return ','.join(free_gpus[:num_gpu])
   except subprocess.CalledProcessError as e:
-    print ("nvidia-smi error", e.output)
+    print("nvidia-smi error", e.output)
 
 # Function to get the gpu information
+
+
 def _get_free_gpu(max_gpu_utilization=40, min_free_memory=0.5, num_gpu=1):
   """Get available GPUs according to utilization thresholds.
 
@@ -109,7 +117,8 @@ def _get_free_gpu(max_gpu_utilization=40, min_free_memory=0.5, num_gpu=1):
   """
   def get_gpu_info():
     # Get the gpu information
-    gpu_info = subprocess.check_output(["nvidia-smi", "--format=csv,noheader,nounits", "--query-gpu=index,memory.total,memory.free,memory.used,utilization.gpu"]).decode()
+    gpu_info = subprocess.check_output(["nvidia-smi", "--format=csv,noheader,nounits",
+                                        "--query-gpu=index,memory.total,memory.free,memory.used,utilization.gpu"]).decode()
     gpu_info = gpu_info.split('\n')
 
     gpu_info_array = []
@@ -117,9 +126,11 @@ def _get_free_gpu(max_gpu_utilization=40, min_free_memory=0.5, num_gpu=1):
     # Check each gpu
     for line in gpu_info:
       if len(line) > 0:
-        gpu_id, total_memory, free_memory, used_memory, gpu_util = line.split(',')
+        gpu_id, total_memory, free_memory, used_memory, gpu_util = line.split(
+            ',')
         gpu_memory_util = float(used_memory) / float(total_memory)
-        gpu_info_array.append((float(gpu_util), gpu_memory_util, gpu_id))
+        gpu_info_array.append(
+            (float(gpu_util), gpu_memory_util, gpu_id))
 
     return(gpu_info_array)
 
@@ -134,13 +145,15 @@ def _get_free_gpu(max_gpu_utilization=40, min_free_memory=0.5, num_gpu=1):
   num_gpus = len(current_array[0])
 
   # Average the gpu information
-  avg_array = [(0,0,str(x)) for x in xrange(num_gpus)]
+  avg_array = [(0, 0, str(x)) for x in xrange(num_gpus)]
   for ind in xrange(num_times_to_average):
     for gpu_ind in xrange(num_gpus):
-      avg_array[gpu_ind] = (avg_array[gpu_ind][0] + current_array[ind][gpu_ind][0], avg_array[gpu_ind][1] + current_array[ind][gpu_ind][1], avg_array[gpu_ind][2])
+      avg_array[gpu_ind] = (avg_array[gpu_ind][0] + current_array[ind][gpu_ind][0],
+                            avg_array[gpu_ind][1] + current_array[ind][gpu_ind][1], avg_array[gpu_ind][2])
 
   for gpu_ind in xrange(num_gpus):
-    avg_array[gpu_ind] = (float(avg_array[gpu_ind][0]) / num_times_to_average, float(avg_array[gpu_ind][1]) / num_times_to_average, avg_array[gpu_ind][2])
+    avg_array[gpu_ind] = (float(avg_array[gpu_ind][0]) / num_times_to_average, float(
+        avg_array[gpu_ind][1]) / num_times_to_average, avg_array[gpu_ind][2])
 
   avg_array.sort()
 
@@ -164,4 +177,3 @@ def _get_free_gpu(max_gpu_utilization=40, min_free_memory=0.5, num_gpu=1):
       break
 
   return gpus_to_use, free_memory
-

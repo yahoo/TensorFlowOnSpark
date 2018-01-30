@@ -96,7 +96,8 @@ def batch_norm(inputs,
                                  restore=restore)
     # Create moving_mean and moving_variance add them to
     # GraphKeys.MOVING_AVERAGE_VARIABLES collections.
-    moving_collections = [moving_vars, tf.GraphKeys.MOVING_AVERAGE_VARIABLES]
+    moving_collections = [moving_vars,
+                          tf.GraphKeys.MOVING_AVERAGE_VARIABLES]
     moving_mean = variables.variable('moving_mean',
                                      params_shape,
                                      initializer=tf.zeros_initializer(),
@@ -152,7 +153,8 @@ def _two_element_tuple(int_or_tuple):
   """
   if isinstance(int_or_tuple, (list, tuple)):
     if len(int_or_tuple) != 2:
-      raise ValueError('Must be a list with 2 elements: %s' % int_or_tuple)
+      raise ValueError(
+          'Must be a list with 2 elements: %s' % int_or_tuple)
     return int(int_or_tuple[0]), int(int_or_tuple[1])
   if isinstance(int_or_tuple, int):
     return int(int_or_tuple), int(int_or_tuple)
@@ -233,7 +235,7 @@ def conv2d(inputs,
                             trainable=trainable, restore=restore):
         outputs = batch_norm(conv, **batch_norm_params)
     else:
-      bias_shape = [num_filters_out,]
+      bias_shape = [num_filters_out, ]
       bias_initializer = tf.constant_initializer(bias)
       biases = variables.variable('biases',
                                   shape=bias_shape,
@@ -304,7 +306,7 @@ def fc(inputs,
                             trainable=trainable, restore=restore):
         outputs = batch_norm(outputs, **batch_norm_params)
     else:
-      bias_shape = [num_units_out,]
+      bias_shape = [num_units_out, ]
       bias_initializer = tf.constant_initializer(bias)
       biases = variables.variable('biases',
                                   shape=bias_shape,

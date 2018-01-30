@@ -117,7 +117,8 @@ def _tower_loss(images, labels, num_classes, scope, reuse_variables=None):
   losses = tf.get_collection(slim.losses.LOSSES_COLLECTION, scope)
 
   # Calculate the total loss for the current tower.
-  regularization_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+  regularization_losses = tf.get_collection(
+      tf.GraphKeys.REGULARIZATION_LOSSES)
   total_loss = tf.add_n(losses + regularization_losses, name='total_loss')
 
   # Compute the moving average of all individual losses and the total loss.
@@ -132,7 +133,7 @@ def _tower_loss(images, labels, num_classes, scope, reuse_variables=None):
     loss_name = re.sub('%s_[0-9]*/' % inception.TOWER_NAME, '', l.op.name)
     # Name each loss as '(raw)' and name the moving average version of the loss
     # as the original loss name.
-    tf.summary.scalar(loss_name +' (raw)', l)
+    tf.summary.scalar(loss_name + ' (raw)', l)
     tf.summary.scalar(loss_name, loss_averages.average(l))
 
   with tf.control_dependencies([loss_averages_op]):
@@ -222,9 +223,11 @@ def train(dataset):
     # Label 0 is reserved for an (unused) background class.
     num_classes = dataset.num_classes() + 1
 
-     # Split the batch of images and labels for towers.
-    images_splits = tf.split(axis=0, num_or_size_splits=FLAGS.num_gpus, value=images)
-    labels_splits = tf.split(axis=0, num_or_size_splits=FLAGS.num_gpus, value=labels)
+    # Split the batch of images and labels for towers.
+    images_splits = tf.split(
+        axis=0, num_or_size_splits=FLAGS.num_gpus, value=images)
+    labels_splits = tf.split(
+        axis=0, num_or_size_splits=FLAGS.num_gpus, value=labels)
 
     # Calculate the gradients for each model tower.
     tower_grads = []
@@ -244,7 +247,8 @@ def train(dataset):
           reuse_variables = True
 
           # Retain the summaries from the final tower.
-          summaries = tf.get_collection(tf.GraphKeys.SUMMARIES, scope)
+          summaries = tf.get_collection(
+              tf.GraphKeys.SUMMARIES, scope)
 
           # Retain the Batch Normalization updates operations only from the
           # final tower. Ideally, we should grab the updates from all towers

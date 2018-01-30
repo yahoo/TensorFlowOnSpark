@@ -3,6 +3,7 @@ import os
 import unittest
 from tensorflowonspark import TFManager, TFNode
 
+
 class TFNodeTest(unittest.TestCase):
   def test_hdfs_path(self):
     """Normalization of absolution & relative string paths depending on filesystem"""
@@ -10,18 +11,20 @@ class TFNodeTest(unittest.TestCase):
     user = getpass.getuser()
     fs = ["file://", "hdfs://", "viewfs://"]
     paths = {
-      "hdfs://foo/bar": ["hdfs://foo/bar", "hdfs://foo/bar", "hdfs://foo/bar"],
-      "viewfs://foo/bar": ["viewfs://foo/bar", "viewfs://foo/bar", "viewfs://foo/bar"],
-      "file://foo/bar": ["file://foo/bar", "file://foo/bar", "file://foo/bar"],
-      "/foo/bar": ["file:///foo/bar", "hdfs:///foo/bar", "viewfs:///foo/bar"],
-      "foo/bar": ["file://{}/foo/bar".format(cwd), "hdfs:///user/{}/foo/bar".format(user), "viewfs:///user/{}/foo/bar".format(user)],
+        "hdfs://foo/bar": ["hdfs://foo/bar", "hdfs://foo/bar", "hdfs://foo/bar"],
+        "viewfs://foo/bar": ["viewfs://foo/bar", "viewfs://foo/bar", "viewfs://foo/bar"],
+        "file://foo/bar": ["file://foo/bar", "file://foo/bar", "file://foo/bar"],
+        "/foo/bar": ["file:///foo/bar", "hdfs:///foo/bar", "viewfs:///foo/bar"],
+        "foo/bar": ["file://{}/foo/bar".format(cwd), "hdfs:///user/{}/foo/bar".format(user), "viewfs:///user/{}/foo/bar".format(user)],
     }
 
     for i in range(len(fs)):
-      ctx = type('MockContext', (), {'defaultFS': fs[i], 'working_dir': cwd})
+      ctx = type('MockContext', (), {
+                 'defaultFS': fs[i], 'working_dir': cwd})
       for path, expected in paths.items():
         final_path = TFNode.hdfs_path(ctx, path)
-        self.assertEqual(final_path, expected[i], "fs({}) + path({}) => {}, expected {}".format(fs[i], path, final_path, expected[i]))
+        self.assertEqual(final_path, expected[i], "fs({}) + path({}) => {}, expected {}".format(
+            fs[i], path, final_path, expected[i]))
 
   def test_datafeed(self):
     """TFNode.DataFeed basic operations"""

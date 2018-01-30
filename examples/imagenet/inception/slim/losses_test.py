@@ -173,5 +173,6 @@ class CrossEntropyLossTest(tf.test.TestCase):
       self.assertEquals(loss.op.name, 'CrossEntropyLoss/value')
       self.assertAlmostEqual(loss.eval(), 5.0, 3)
 
+
 if __name__ == '__main__':
   tf.test.main()

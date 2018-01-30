@@ -107,7 +107,8 @@ class InceptionTest(tf.test.TestCase):
     net, end_points = inception.inception_v4_base(inputs)
     self.assertTrue(net.op.name.startswith(
         'InceptionV4/Mixed_7d'))
-    self.assertListEqual(net.get_shape().as_list(), [batch_size, 8, 8, 1536])
+    self.assertListEqual(net.get_shape().as_list(),
+                         [batch_size, 8, 8, 1536])
     expected_endpoints = [
         'Conv2d_1a_3x3', 'Conv2d_2a_3x3', 'Conv2d_2b_3x3', 'Mixed_3a',
         'Mixed_4a', 'Mixed_5a', 'Mixed_5b', 'Mixed_5c', 'Mixed_5d',
@@ -199,9 +200,11 @@ class InceptionTest(tf.test.TestCase):
     height, width = 150, 150
     num_classes = 1000
     with self.test_session() as sess:
-      train_inputs = tf.random_uniform((train_batch_size, height, width, 3))
+      train_inputs = tf.random_uniform(
+          (train_batch_size, height, width, 3))
       inception.inception_v4(train_inputs, num_classes)
-      eval_inputs = tf.random_uniform((eval_batch_size, height, width, 3))
+      eval_inputs = tf.random_uniform(
+          (eval_batch_size, height, width, 3))
       logits, _ = inception.inception_v4(eval_inputs,
                                          num_classes,
                                          is_training=False,

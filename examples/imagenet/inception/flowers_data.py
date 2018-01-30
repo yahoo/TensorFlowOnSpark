@@ -19,7 +19,6 @@ from __future__ import division
 from __future__ import print_function
 
 
-
 from inception.dataset import Dataset
 
 
@@ -43,7 +42,7 @@ class FlowersData(Dataset):
   def download_message(self):
     """Instruction to download and extract the tarball from Flowers website."""
 
-    print('Failed to find any Flowers %s files'% self.subset)
+    print('Failed to find any Flowers %s files' % self.subset)
     print('')
     print('If you have already downloaded and processed the data, then make '
           'sure to set --data_dir to point to the directory containing the '

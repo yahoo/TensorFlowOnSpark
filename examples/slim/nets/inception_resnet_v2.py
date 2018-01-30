@@ -37,12 +37,16 @@ def block35(net, scale=1.0, activation_fn=tf.nn.relu, scope=None, reuse=None):
       tower_conv = slim.conv2d(net, 32, 1, scope='Conv2d_1x1')
     with tf.variable_scope('Branch_1'):
       tower_conv1_0 = slim.conv2d(net, 32, 1, scope='Conv2d_0a_1x1')
-      tower_conv1_1 = slim.conv2d(tower_conv1_0, 32, 3, scope='Conv2d_0b_3x3')
+      tower_conv1_1 = slim.conv2d(
+          tower_conv1_0, 32, 3, scope='Conv2d_0b_3x3')
     with tf.variable_scope('Branch_2'):
       tower_conv2_0 = slim.conv2d(net, 32, 1, scope='Conv2d_0a_1x1')
-      tower_conv2_1 = slim.conv2d(tower_conv2_0, 48, 3, scope='Conv2d_0b_3x3')
-      tower_conv2_2 = slim.conv2d(tower_conv2_1, 64, 3, scope='Conv2d_0c_3x3')
-    mixed = tf.concat(axis=3, values=[tower_conv, tower_conv1_1, tower_conv2_2])
+      tower_conv2_1 = slim.conv2d(
+          tower_conv2_0, 48, 3, scope='Conv2d_0b_3x3')
+      tower_conv2_2 = slim.conv2d(
+          tower_conv2_1, 64, 3, scope='Conv2d_0c_3x3')
+    mixed = tf.concat(
+        axis=3, values=[tower_conv, tower_conv1_1, tower_conv2_2])
     up = slim.conv2d(mixed, net.get_shape()[3], 1, normalizer_fn=None,
                      activation_fn=None, scope='Conv2d_1x1')
     net += scale * up
@@ -149,13 +153,16 @@ def inception_resnet_v2(inputs, num_classes=1001, is_training=True,
         # 35 x 35 x 320
         with tf.variable_scope('Mixed_5b'):
           with tf.variable_scope('Branch_0'):
-            tower_conv = slim.conv2d(net, 96, 1, scope='Conv2d_1x1')
+            tower_conv = slim.conv2d(
+                net, 96, 1, scope='Conv2d_1x1')
           with tf.variable_scope('Branch_1'):
-            tower_conv1_0 = slim.conv2d(net, 48, 1, scope='Conv2d_0a_1x1')
+            tower_conv1_0 = slim.conv2d(
+                net, 48, 1, scope='Conv2d_0a_1x1')
             tower_conv1_1 = slim.conv2d(tower_conv1_0, 64, 5,
                                         scope='Conv2d_0b_5x5')
           with tf.variable_scope('Branch_2'):
-            tower_conv2_0 = slim.conv2d(net, 64, 1, scope='Conv2d_0a_1x1')
+            tower_conv2_0 = slim.conv2d(
+                net, 64, 1, scope='Conv2d_0a_1x1')
             tower_conv2_1 = slim.conv2d(tower_conv2_0, 96, 3,
                                         scope='Conv2d_0b_3x3')
             tower_conv2_2 = slim.conv2d(tower_conv2_1, 96, 3,
@@ -166,7 +173,7 @@ def inception_resnet_v2(inputs, num_classes=1001, is_training=True,
             tower_pool_1 = slim.conv2d(tower_pool, 64, 1,
                                        scope='Conv2d_0b_1x1')
           net = tf.concat(axis=3, values=[tower_conv, tower_conv1_1,
-                              tower_conv2_2, tower_pool_1])
+                                          tower_conv2_2, tower_pool_1])
 
         end_points['Mixed_5b'] = net
         net = slim.repeat(net, 10, block35, scale=0.17)
@@ -177,7 +184,8 @@ def inception_resnet_v2(inputs, num_classes=1001, is_training=True,
             tower_conv = slim.conv2d(net, 384, 3, stride=2, padding='VALID',
                                      scope='Conv2d_1a_3x3')
           with tf.variable_scope('Branch_1'):
-            tower_conv1_0 = slim.conv2d(net, 256, 1, scope='Conv2d_0a_1x1')
+            tower_conv1_0 = slim.conv2d(
+                net, 256, 1, scope='Conv2d_0a_1x1')
             tower_conv1_1 = slim.conv2d(tower_conv1_0, 256, 3,
                                         scope='Conv2d_0b_3x3')
             tower_conv1_2 = slim.conv2d(tower_conv1_1, 384, 3,
@@ -186,7 +194,8 @@ def inception_resnet_v2(inputs, num_classes=1001, is_training=True,
           with tf.variable_scope('Branch_2'):
             tower_pool = slim.max_pool2d(net, 3, stride=2, padding='VALID',
                                          scope='MaxPool_1a_3x3')
-          net = tf.concat(axis=3, values=[tower_conv, tower_conv1_2, tower_pool])
+          net = tf.concat(
+              axis=3, values=[tower_conv, tower_conv1_2, tower_pool])
 
         end_points['Mixed_6a'] = net
         net = slim.repeat(net, 20, block17, scale=0.10)
@@ -205,15 +214,18 @@ def inception_resnet_v2(inputs, num_classes=1001, is_training=True,
 
         with tf.variable_scope('Mixed_7a'):
           with tf.variable_scope('Branch_0'):
-            tower_conv = slim.conv2d(net, 256, 1, scope='Conv2d_0a_1x1')
+            tower_conv = slim.conv2d(
+                net, 256, 1, scope='Conv2d_0a_1x1')
             tower_conv_1 = slim.conv2d(tower_conv, 384, 3, stride=2,
                                        padding='VALID', scope='Conv2d_1a_3x3')
           with tf.variable_scope('Branch_1'):
-            tower_conv1 = slim.conv2d(net, 256, 1, scope='Conv2d_0a_1x1')
+            tower_conv1 = slim.conv2d(
+                net, 256, 1, scope='Conv2d_0a_1x1')
             tower_conv1_1 = slim.conv2d(tower_conv1, 288, 3, stride=2,
                                         padding='VALID', scope='Conv2d_1a_3x3')
           with tf.variable_scope('Branch_2'):
-            tower_conv2 = slim.conv2d(net, 256, 1, scope='Conv2d_0a_1x1')
+            tower_conv2 = slim.conv2d(
+                net, 256, 1, scope='Conv2d_0a_1x1')
             tower_conv2_1 = slim.conv2d(tower_conv2, 288, 3,
                                         scope='Conv2d_0b_3x3')
             tower_conv2_2 = slim.conv2d(tower_conv2_1, 320, 3, stride=2,
@@ -222,7 +234,7 @@ def inception_resnet_v2(inputs, num_classes=1001, is_training=True,
             tower_pool = slim.max_pool2d(net, 3, stride=2, padding='VALID',
                                          scope='MaxPool_1a_3x3')
           net = tf.concat(axis=3, values=[tower_conv_1, tower_conv1_1,
-                              tower_conv2_2, tower_pool])
+                                          tower_conv2_2, tower_pool])
 
         end_points['Mixed_7a'] = net
 
@@ -245,9 +257,12 @@ def inception_resnet_v2(inputs, num_classes=1001, is_training=True,
           logits = slim.fully_connected(net, num_classes, activation_fn=None,
                                         scope='Logits')
           end_points['Logits'] = logits
-          end_points['Predictions'] = tf.nn.softmax(logits, name='Predictions')
+          end_points['Predictions'] = tf.nn.softmax(
+              logits, name='Predictions')
 
     return logits, end_points
+
+
 inception_resnet_v2.default_image_size = 299
 
 

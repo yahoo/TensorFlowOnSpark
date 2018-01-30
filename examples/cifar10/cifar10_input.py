@@ -191,8 +191,8 @@ def distorted_inputs(data_dir, batch_size):
   min_fraction_of_examples_in_queue = 0.4
   min_queue_examples = int(NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN *
                            min_fraction_of_examples_in_queue)
-  print ('Filling queue with %d CIFAR images before starting to train. '
-         'This will take a few minutes.' % min_queue_examples)
+  print('Filling queue with %d CIFAR images before starting to train. '
+        'This will take a few minutes.' % min_queue_examples)
 
   # Generate a batch of images and labels by building up a queue of examples.
   return _generate_image_and_label_batch(float_image, read_input.label,
