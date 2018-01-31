@@ -114,7 +114,7 @@ __all__ = ['create_clones',
            'DeployedModel',
            'DeploymentConfig',
            'Clone',
-          ]
+           ]
 
 
 # Namedtuple used to represent a clone during deployment.
@@ -122,7 +122,7 @@ Clone = collections.namedtuple('Clone',
                                ['outputs',  # Whatever model_fn() returned.
                                 'scope',  # The scope used to create it.
                                 'device',  # The device used to create.
-                               ])
+                                ])
 
 # Namedtuple used to represent a DeployedModel, returned by deploy().
 DeployedModel = collections.namedtuple('DeployedModel',
@@ -130,7 +130,7 @@ DeployedModel = collections.namedtuple('DeployedModel',
                                         'summary_op',  # The `summary_op`
                                         'total_loss',  # The loss `Tensor`
                                         'clones',  # A list of `Clones` tuples.
-                                       ])
+                                        ])
 
 # Default parameters for DeploymentConfig
 _deployment_params = {'num_clones': 1,
@@ -370,7 +370,8 @@ def deploy(config,
       if clones_gradients:
         if summarize_gradients:
           # Add summaries to the gradients.
-          summaries |= set(_add_gradients_summaries(clones_gradients))
+          summaries |= set(
+              _add_gradients_summaries(clones_gradients))
 
         # Create gradient updates.
         grad_updates = optimizer.apply_gradients(clones_gradients,
@@ -517,12 +518,15 @@ class DeploymentConfig(object):
     """
     if num_replicas > 1:
       if num_ps_tasks < 1:
-        raise ValueError('When using replicas num_ps_tasks must be positive')
+        raise ValueError(
+            'When using replicas num_ps_tasks must be positive')
     if num_replicas > 1 or num_ps_tasks > 0:
       if not worker_job_name:
-        raise ValueError('Must specify worker_job_name when using replicas')
+        raise ValueError(
+            'Must specify worker_job_name when using replicas')
       if not ps_job_name:
-        raise ValueError('Must specify ps_job_name when using parameter server')
+        raise ValueError(
+            'Must specify ps_job_name when using parameter server')
     if replica_id >= num_replicas:
       raise ValueError('replica_id must be less than num_replicas')
     self._num_clones = num_clones

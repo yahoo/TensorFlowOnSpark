@@ -123,7 +123,8 @@ def get_variables(scope=None, suffix=None):
   """
   candidates = tf.get_collection(MODEL_VARIABLES, scope)[:]
   if suffix is not None:
-    candidates = [var for var in candidates if var.op.name.endswith(suffix)]
+    candidates = [
+        var for var in candidates if var.op.name.endswith(suffix)]
   return candidates
 
 

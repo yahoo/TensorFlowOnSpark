@@ -37,8 +37,8 @@ def saveAsTFRecords(df, output_dir):
   """
   tf_rdd = df.rdd.mapPartitions(toTFExample(df.dtypes))
   tf_rdd.saveAsNewAPIHadoopFile(output_dir, "org.tensorflow.hadoop.io.TFRecordFileOutputFormat",
-                            keyClass="org.apache.hadoop.io.BytesWritable",
-                            valueClass="org.apache.hadoop.io.NullWritable")
+                                keyClass="org.apache.hadoop.io.BytesWritable",
+                                valueClass="org.apache.hadoop.io.NullWritable")
 
 
 def loadTFRecords(sc, input_dir, binary_features=[]):
@@ -61,8 +61,8 @@ def loadTFRecords(sc, input_dir, binary_features=[]):
   import tensorflow as tf
 
   tfr_rdd = sc.newAPIHadoopFile(input_dir, "org.tensorflow.hadoop.io.TFRecordFileInputFormat",
-                              keyClass="org.apache.hadoop.io.BytesWritable",
-                              valueClass="org.apache.hadoop.io.NullWritable")
+                                keyClass="org.apache.hadoop.io.BytesWritable",
+                                valueClass="org.apache.hadoop.io.NullWritable")
 
   # infer Spark SQL types from tf.Example
   record = tfr_rdd.take(1)[0]
@@ -71,7 +71,8 @@ def loadTFRecords(sc, input_dir, binary_features=[]):
   schema = infer_schema(example, binary_features)
 
   # convert serialized protobuf to tf.Example to Row
-  example_rdd = tfr_rdd.mapPartitions(lambda x: fromTFExample(x, binary_features))
+  example_rdd = tfr_rdd.mapPartitions(
+      lambda x: fromTFExample(x, binary_features))
 
   # create a Spark DataFrame from RDD[Row]
   df = example_rdd.toDF(schema)
@@ -97,31 +98,40 @@ def toTFExample(dtypes):
 
     # supported type mappings between DataFrame.dtypes and tf.train.Feature types
     float_dtypes = ['float', 'double']
-    int64_dtypes = ['boolean', 'tinyint', 'smallint', 'int', 'bigint', 'long']
+    int64_dtypes = ['boolean', 'tinyint',
+                    'smallint', 'int', 'bigint', 'long']
     bytes_dtypes = ['binary', 'string']
     float_list_dtypes = ['array<float>', 'array<double>']
-    int64_list_dtypes = ['array<boolean>', 'array<tinyint>', 'array<smallint>', 'array<int>', 'array<bigint>', 'array<long>']
+    int64_list_dtypes = ['array<boolean>', 'array<tinyint>',
+                         'array<smallint>', 'array<int>', 'array<bigint>', 'array<long>']
 
     def _toTFFeature(name, dtype, row):
       feature = None
       if dtype in float_dtypes:
-        feature = (name, tf.train.Feature(float_list=tf.train.FloatList(value=[row[name]])))
+        feature = (name, tf.train.Feature(
+            float_list=tf.train.FloatList(value=[row[name]])))
       elif dtype in int64_dtypes:
-        feature = (name, tf.train.Feature(int64_list=tf.train.Int64List(value=[row[name]])))
+        feature = (name, tf.train.Feature(
+            int64_list=tf.train.Int64List(value=[row[name]])))
       elif dtype in bytes_dtypes:
-        feature = (name, tf.train.Feature(bytes_list=tf.train.BytesList(value=[str(row[name])])))
+        feature = (name, tf.train.Feature(
+            bytes_list=tf.train.BytesList(value=[str(row[name])])))
       elif dtype in float_list_dtypes:
-        feature = (name, tf.train.Feature(float_list=tf.train.FloatList(value=row[name])))
+        feature = (name, tf.train.Feature(
+            float_list=tf.train.FloatList(value=row[name])))
       elif dtype in int64_list_dtypes:
-        feature = (name, tf.train.Feature(int64_list=tf.train.Int64List(value=row[name])))
+        feature = (name, tf.train.Feature(
+            int64_list=tf.train.Int64List(value=row[name])))
       else:
         raise Exception("Unsupported dtype: {0}".format(dtype))
       return feature
 
     results = []
     for row in iter:
-      features = dict([_toTFFeature(name, dtype, row) for name, dtype in dtypes])
-      example = tf.train.Example(features=tf.train.Features(feature=features))
+      features = dict([_toTFFeature(name, dtype, row)
+                       for name, dtype in dtypes])
+      example = tf.train.Example(
+          features=tf.train.Features(feature=features))
       results.append((bytearray(example.SerializeToString()), None))
     return results
 
@@ -159,10 +169,11 @@ def infer_schema(example, binary_features=[]):
 
     if len(result) > 1:             # represent multi-item tensors as Spark SQL ArrayType() of base types
       return ArrayType(sql_type)
-    else:                           # represent everything else as base types (and empty tensors as StringType())
+    # represent everything else as base types (and empty tensors as StringType())
+    else:
       return sql_type
 
-  return StructType([ StructField(k, _infer_sql_type(k, v), True) for k,v in sorted(example.features.feature.items()) ])
+  return StructType([StructField(k, _infer_sql_type(k, v), True) for k, v in sorted(example.features.feature.items())])
 
 
 def fromTFExample(iter, binary_features=[]):
@@ -202,10 +213,11 @@ def fromTFExample(iter, binary_features=[]):
   results = []
   for record in iter:
     example = tf.train.Example()
-    example.ParseFromString(bytes(record[0]))       # record is (bytestr, None)
-    d = { k: _get_value(k, v) for k,v in sorted(example.features.feature.items()) }
+    # record is (bytestr, None)
+    example.ParseFromString(bytes(record[0]))
+    d = {k: _get_value(k, v)
+         for k, v in sorted(example.features.feature.items())}
     row = Row(**d)
     results.append(row)
 
   return results
-

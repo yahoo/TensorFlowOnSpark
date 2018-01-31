@@ -67,5 +67,5 @@ def inception_arg_scope(weight_decay=0.00004,
         weights_initializer=slim.variance_scaling_initializer(),
         activation_fn=tf.nn.relu,
         normalizer_fn=normalizer_fn,
-        normalizer_params=normalizer_params) as sc:
+            normalizer_params=normalizer_params) as sc:
       return sc

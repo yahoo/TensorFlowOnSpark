@@ -21,6 +21,7 @@ import time
 from six.moves.queue import Empty
 from . import marker
 
+
 def hdfs_path(ctx, path):
   """Convenience function to create a Tensorflow-compatible absolute HDFS path from relative paths
 
@@ -44,8 +45,10 @@ def hdfs_path(ctx, path):
     elif ctx.defaultFS.startswith("file://"):
       return "{0}/{1}/{2}".format(ctx.defaultFS, ctx.working_dir[1:], path)
     else:
-      logging.warn("Unknown scheme {0} with relative path: {1}".format(ctx.defaultFS, path))
+      logging.warn("Unknown scheme {0} with relative path: {1}".format(
+          ctx.defaultFS, path))
       return "{0}/{1}".format(ctx.defaultFS, path)
+
 
 def start_cluster_server(ctx, num_gpus=1, rdma=False):
   """Function that wraps the creation of TensorFlow ``tf.train.Server`` for a node in a distributed TensorFlow cluster.
@@ -64,7 +67,8 @@ def start_cluster_server(ctx, num_gpus=1, rdma=False):
   import tensorflow as tf
   from . import gpu_info
 
-  logging.info("{0}: ======== {1}:{2} ========".format(ctx.worker_num, ctx.job_name, ctx.task_index))
+  logging.info("{0}: ======== {1}:{2} ========".format(
+      ctx.worker_num, ctx.job_name, ctx.task_index))
   cluster_spec = ctx.cluster_spec
   logging.info("{0}: Cluster spec: {1}".format(ctx.worker_num, cluster_spec))
 
@@ -80,7 +84,8 @@ def start_cluster_server(ctx, num_gpus=1, rdma=False):
         # Find a free gpu(s) to use
         gpus_to_use = gpu_info.get_gpus(num_gpus)
         gpu_prompt = "GPU" if num_gpus == 1 else "GPUs"
-        logging.info("{0}: Using {1}: {2}".format(ctx.worker_num, gpu_prompt, gpus_to_use))
+        logging.info("{0}: Using {1}: {2}".format(
+            ctx.worker_num, gpu_prompt, gpus_to_use))
 
         # Set GPU device to use for TensorFlow
         os.environ['CUDA_VISIBLE_DEVICES'] = gpus_to_use
@@ -90,13 +95,16 @@ def start_cluster_server(ctx, num_gpus=1, rdma=False):
 
         # Create and start a server for the local task.
         if rdma:
-          server = tf.train.Server(cluster, ctx.job_name, ctx.task_index, protocol="grpc+verbs")
+          server = tf.train.Server(
+              cluster, ctx.job_name, ctx.task_index, protocol="grpc+verbs")
         else:
-          server = tf.train.Server(cluster, ctx.job_name, ctx.task_index)
+          server = tf.train.Server(
+              cluster, ctx.job_name, ctx.task_index)
         gpu_initialized = True
       except Exception as e:
         print(e)
-        logging.error("{0}: Failed to allocate GPU, trying again...".format(ctx.worker_num))
+        logging.error(
+            "{0}: Failed to allocate GPU, trying again...".format(ctx.worker_num))
         time.sleep(10)
   else:
     # CPU
@@ -111,9 +119,11 @@ def start_cluster_server(ctx, num_gpus=1, rdma=False):
 
   return (cluster, server)
 
+
 def next_batch(mgr, batch_size, qname='input'):
   """*DEPRECATED*. Use TFNode.DataFeed class instead."""
   raise Exception("DEPRECATED: Use TFNode.DataFeed class instead")
+
 
 def export_saved_model(sess, export_dir, tag_set, signatures):
   """Convenience function to export a saved_model using provided arguments
@@ -148,24 +158,29 @@ def export_saved_model(sess, export_dir, tag_set, signatures):
   signature_def_map = {}
   for key, sig in signatures.items():
     signature_def_map[key] = tf.saved_model.signature_def_utils.build_signature_def(
-              inputs={ name:tf.saved_model.utils.build_tensor_info(tensor) for name, tensor in sig['inputs'].items() },
-              outputs={ name:tf.saved_model.utils.build_tensor_info(tensor) for name, tensor in sig['outputs'].items() },
-              method_name=sig['method_name'] if 'method_name' in sig else key)
+        inputs={name: tf.saved_model.utils.build_tensor_info(
+            tensor) for name, tensor in sig['inputs'].items()},
+        outputs={name: tf.saved_model.utils.build_tensor_info(
+            tensor) for name, tensor in sig['outputs'].items()},
+        method_name=sig['method_name'] if 'method_name' in sig else key)
   logging.info("===== signature_def_map: {}".format(signature_def_map))
   builder.add_meta_graph_and_variables(sess,
-              tag_set.split(','),
-              signature_def_map=signature_def_map,
-              clear_devices=True)
+                                       tag_set.split(','),
+                                       signature_def_map=signature_def_map,
+                                       clear_devices=True)
   g.finalize()
   builder.save()
+
 
 def batch_results(mgr, results, qname='output'):
   """*DEPRECATED*. Use TFNode.DataFeed class instead."""
   raise Exception("DEPRECATED: Use TFNode.DataFeed class instead")
 
+
 def terminate(mgr, qname='input'):
   """*DEPRECATED*. Use TFNode.DataFeed class instead."""
   raise Exception("DEPRECATED: Use TFNode.DataFeed class instead")
+
 
 class DataFeed(object):
   """This class manages the *InputMode.SPARK* data feeding process from the perspective of the TensorFlow application.
@@ -177,6 +192,7 @@ class DataFeed(object):
     :qname_out: *INTERNAL_USE*
     :input_mapping: *For Spark ML Pipelines only*.  Dictionary of input DataFrame columns to input TensorFlow tensors.
   """
+
   def __init__(self, mgr, train_mode=True, qname_in='input', qname_out='output', input_mapping=None):
 
     self.mgr = mgr
@@ -184,7 +200,8 @@ class DataFeed(object):
     self.qname_in = qname_in
     self.qname_out = qname_out
     self.done_feeding = False
-    self.input_tensors = [ tensor for col, tensor in sorted(input_mapping.items()) ] if input_mapping is not None else None
+    self.input_tensors = [tensor for col, tensor in sorted(
+        input_mapping.items())] if input_mapping is not None else None
 
   def next_batch(self, batch_size):
     """Gets a batch of items from the input RDD.
@@ -206,7 +223,8 @@ class DataFeed(object):
     """
     logging.debug("next_batch() invoked")
     queue = self.mgr.get_queue(self.qname_in)
-    tensors = [] if self.input_tensors is None else { tensor:[] for tensor in self.input_tensors }
+    tensors = [] if self.input_tensors is None else {
+        tensor: [] for tensor in self.input_tensors}
     count = 0
     while count < batch_size:
       item = queue.get(block=True)
@@ -276,4 +294,3 @@ class DataFeed(object):
       except Empty:
         logging.info("dropped {0} items from queue".format(count))
         done = True
-

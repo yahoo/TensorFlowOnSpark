@@ -124,7 +124,8 @@ class CollectionsTest(tf.test.TestCase):
       with slim.arg_scope([slim.ops.conv2d, slim.ops.fc], weight_decay=0.00004):
         slim.inception.inception_v3(inputs)
       losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
-      self.assertEqual(len(losses), len(get_variables_by_name('weights')))
+      self.assertEqual(len(losses), len(
+          get_variables_by_name('weights')))
 
   def testTotalLossWithoutRegularization(self):
     batch_size = 5
@@ -159,7 +160,8 @@ class CollectionsTest(tf.test.TestCase):
       inputs = tf.random_uniform((batch_size, height, width, 3))
       dense_labels = tf.random_uniform((batch_size, num_classes))
       with slim.arg_scope([slim.ops.conv2d, slim.ops.fc], weight_decay=0.00004):
-        logits, end_points = slim.inception.inception_v3(inputs, num_classes)
+        logits, end_points = slim.inception.inception_v3(
+            inputs, num_classes)
         # Cross entropy loss for the main softmax prediction.
         slim.losses.cross_entropy_loss(logits,
                                        dense_labels,

@@ -181,16 +181,19 @@ class VariablesTest(tf.test.TestCase):
       self.assertDeviceEqual(b.device, '/job:ps/task:1/cpu:0')
       self.assertDeviceEqual(b.initial_value.device, '/job:worker/cpu:0')
       self.assertDeviceEqual(c.device, '/job:ps/task:0/cpu:12')
-      self.assertDeviceEqual(c.initial_value.device, '/job:worker/cpu:12')
+      self.assertDeviceEqual(
+          c.initial_value.device, '/job:worker/cpu:12')
       self.assertDeviceEqual(d.device, '/job:ps/task:1/cpu:0')
       self.assertDeviceEqual(d.initial_value.device, '/job:worker/cpu:0')
       self.assertDeviceEqual(e.device, '/job:ps/task:0/cpu:0')
-      self.assertDeviceEqual(e.initial_value.device, '/job:worker/cpu:99')
+      self.assertDeviceEqual(
+          e.initial_value.device, '/job:worker/cpu:99')
 
   def testVariableWithVariableDeviceChooser(self):
 
     with tf.Graph().as_default():
-      device_fn = variables.VariableDeviceChooser(num_parameter_servers=2)
+      device_fn = variables.VariableDeviceChooser(
+          num_parameter_servers=2)
       with scopes.arg_scope([variables.variable], device=device_fn):
         a = variables.variable('a', [])
         b = variables.variable('b', [])
@@ -286,7 +289,8 @@ class VariablesTest(tf.test.TestCase):
                               collections=['A', 'B']):
           b = variables.variable('b', [])
         c = variables.variable('c', [])
-      self.assertListEqual([a, b, c], variables.get_variables_to_restore())
+      self.assertListEqual(
+          [a, b, c], variables.get_variables_to_restore())
       self.assertListEqual([a, c], tf.trainable_variables())
       self.assertListEqual([b], tf.get_collection('A'))
       self.assertListEqual([b], tf.get_collection('B'))
@@ -370,9 +374,11 @@ class GlobalStepTest(tf.test.TestCase):
         gs2 = variables.global_step()
         self.assertEquals(gs, gs2)
         self.assertDeviceEqual(gs.device, '/job:ps/task:0')
-        self.assertDeviceEqual(gs.initial_value.device, '/job:ps/task:0')
+        self.assertDeviceEqual(
+            gs.initial_value.device, '/job:ps/task:0')
         self.assertDeviceEqual(gs2.device, '/job:ps/task:0')
-        self.assertDeviceEqual(gs2.initial_value.device, '/job:ps/task:0')
+        self.assertDeviceEqual(
+            gs2.initial_value.device, '/job:ps/task:0')
 
   def testVariableWithVariableDeviceChooser(self):
 

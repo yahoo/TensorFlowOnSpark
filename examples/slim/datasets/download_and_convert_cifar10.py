@@ -132,7 +132,8 @@ def _download_and_uncompress_dataset(dataset_dir):
       sys.stdout.write('\r>> Downloading %s %.1f%%' % (
           filename, float(count * block_size) / float(total_size) * 100.0))
       sys.stdout.flush()
-    filepath, _ = urllib.request.urlretrieve(_DATA_URL, filepath, _progress)
+    filepath, _ = urllib.request.urlretrieve(
+        _DATA_URL, filepath, _progress)
     print()
     statinfo = os.stat(filepath)
     print('Successfully downloaded', filename, statinfo.st_size, 'bytes.')

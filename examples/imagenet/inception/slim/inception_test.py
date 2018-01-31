@@ -118,10 +118,12 @@ class InceptionTest(tf.test.TestCase):
     height, width = 150, 150
     num_classes = 1000
     with self.test_session() as sess:
-      train_inputs = tf.random_uniform((train_batch_size, height, width, 3))
+      train_inputs = tf.random_uniform(
+          (train_batch_size, height, width, 3))
       inception.inception_v3(train_inputs, num_classes)
       tf.get_variable_scope().reuse_variables()
-      eval_inputs = tf.random_uniform((eval_batch_size, height, width, 3))
+      eval_inputs = tf.random_uniform(
+          (eval_batch_size, height, width, 3))
       logits, _ = inception.inception_v3(eval_inputs, num_classes,
                                          is_training=False)
       predictions = tf.argmax(logits, 1)

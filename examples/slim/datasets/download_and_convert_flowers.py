@@ -55,7 +55,8 @@ class ImageReader(object):
   def __init__(self):
     # Initializes function that decodes RGB JPEG data.
     self._decode_jpeg_data = tf.placeholder(dtype=tf.string)
-    self._decode_jpeg = tf.image.decode_jpeg(self._decode_jpeg_data, channels=3)
+    self._decode_jpeg = tf.image.decode_jpeg(
+        self._decode_jpeg_data, channels=3)
 
   def read_image_dims(self, sess, image_data):
     image = self.decode_jpeg(sess, image_data)
@@ -136,10 +137,13 @@ def _convert_dataset(split_name, filenames, class_names_to_ids, dataset_dir):
             sys.stdout.flush()
 
             # Read the filename:
-            image_data = tf.gfile.FastGFile(filenames[i], 'r').read()
-            height, width = image_reader.read_image_dims(sess, image_data)
+            image_data = tf.gfile.FastGFile(
+                filenames[i], 'r').read()
+            height, width = image_reader.read_image_dims(
+                sess, image_data)
 
-            class_name = os.path.basename(os.path.dirname(filenames[i]))
+            class_name = os.path.basename(
+                os.path.dirname(filenames[i]))
             class_id = class_names_to_ids[class_name]
 
             example = dataset_utils.image_to_tfexample(
@@ -209,4 +213,3 @@ def run(dataset_dir):
 
   _clean_up_temporary_files(dataset_dir)
   print('\nFinished converting the Flowers dataset!')
-

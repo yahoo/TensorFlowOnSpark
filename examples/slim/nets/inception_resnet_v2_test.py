@@ -31,7 +31,8 @@ class InceptionTest(tf.test.TestCase):
     with self.test_session():
       inputs = tf.random_uniform((batch_size, height, width, 3))
       logits, _ = inception.inception_resnet_v2(inputs, num_classes)
-      self.assertTrue(logits.op.name.startswith('InceptionResnetV2/Logits'))
+      self.assertTrue(logits.op.name.startswith(
+          'InceptionResnetV2/Logits'))
       self.assertListEqual(logits.get_shape().as_list(),
                            [batch_size, num_classes])
 
@@ -76,8 +77,10 @@ class InceptionTest(tf.test.TestCase):
     num_classes = 1000
     with self.test_session():
       inputs = tf.random_uniform((batch_size, height, width, 3))
-      logits, end_points = inception.inception_resnet_v2(inputs, num_classes)
-      self.assertTrue(logits.op.name.startswith('InceptionResnetV2/Logits'))
+      logits, end_points = inception.inception_resnet_v2(
+          inputs, num_classes)
+      self.assertTrue(logits.op.name.startswith(
+          'InceptionResnetV2/Logits'))
       self.assertListEqual(logits.get_shape().as_list(),
                            [batch_size, num_classes])
       pre_pool = end_points['PrePool']
@@ -91,7 +94,8 @@ class InceptionTest(tf.test.TestCase):
     with self.test_session() as sess:
       inputs = tf.placeholder(tf.float32, (None, height, width, 3))
       logits, _ = inception.inception_resnet_v2(inputs, num_classes)
-      self.assertTrue(logits.op.name.startswith('InceptionResnetV2/Logits'))
+      self.assertTrue(logits.op.name.startswith(
+          'InceptionResnetV2/Logits'))
       self.assertListEqual(logits.get_shape().as_list(),
                            [None, num_classes])
       images = tf.random_uniform((batch_size, height, width, 3))
@@ -119,9 +123,11 @@ class InceptionTest(tf.test.TestCase):
     height, width = 150, 150
     num_classes = 1000
     with self.test_session() as sess:
-      train_inputs = tf.random_uniform((train_batch_size, height, width, 3))
+      train_inputs = tf.random_uniform(
+          (train_batch_size, height, width, 3))
       inception.inception_resnet_v2(train_inputs, num_classes)
-      eval_inputs = tf.random_uniform((eval_batch_size, height, width, 3))
+      eval_inputs = tf.random_uniform(
+          (eval_batch_size, height, width, 3))
       logits, _ = inception.inception_resnet_v2(eval_inputs,
                                                 num_classes,
                                                 is_training=False,

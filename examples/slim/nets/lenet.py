@@ -73,6 +73,8 @@ def lenet(images, num_classes=10, is_training=False,
   end_points['Predictions'] = prediction_fn(logits, scope='Predictions')
 
   return logits, end_points
+
+
 lenet.default_image_size = 28
 
 
@@ -89,5 +91,5 @@ def lenet_arg_scope(weight_decay=0.0):
       [slim.conv2d, slim.fully_connected],
       weights_regularizer=slim.l2_regularizer(weight_decay),
       weights_initializer=tf.truncated_normal_initializer(stddev=0.1),
-      activation_fn=tf.nn.relu) as sc:
+          activation_fn=tf.nn.relu) as sc:
     return sc

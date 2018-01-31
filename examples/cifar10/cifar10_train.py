@@ -45,6 +45,7 @@ import os.path
 import sys
 import time
 
+
 def main_fun(argv, ctx):
   import tensorflow as tf
   import cifar10
@@ -106,8 +107,8 @@ def main_fun(argv, ctx):
 
           format_str = ('%s: step %d, loss = %.2f (%.1f examples/sec; %.3f '
                         'sec/batch)')
-          print (format_str % (datetime.now(), self._step, loss_value,
-                               examples_per_sec, sec_per_batch))
+          print(format_str % (datetime.now(), self._step, loss_value,
+                              examples_per_sec, sec_per_batch))
 
     with tf.train.MonitoredTrainingSession(
         checkpoint_dir=FLAGS.train_dir,
@@ -125,5 +126,6 @@ if __name__ == '__main__':
   num_executors = int(sc._conf.get("spark.executor.instances"))
   num_ps = 0
 
-  cluster = TFCluster.run(sc, main_fun, sys.argv, num_executors, num_ps, False, TFCluster.InputMode.TENSORFLOW)
+  cluster = TFCluster.run(sc, main_fun, sys.argv, num_executors,
+                          num_ps, False, TFCluster.InputMode.TENSORFLOW)
   cluster.shutdown()

@@ -32,21 +32,29 @@ from . import reservation
 from . import TFManager
 from . import TFSparkNode
 
+
 class InputMode(object):
   """Enum for the input modes of data feeding."""
   TENSORFLOW = 0                #: TensorFlow application is responsible for reading any data.
-  SPARK = 1                     #: Spark is responsible for feeding data to the TensorFlow application via an RDD.
+  #: Spark is responsible for feeding data to the TensorFlow application via an RDD.
+  SPARK = 1
+
 
 class TFCluster(object):
 
   sc = None                     #: SparkContext
-  defaultFS = None              #: Default FileSystem string, e.g. ``file://`` or ``hdfs://<namenode>/``
+  #: Default FileSystem string, e.g. ``file://`` or ``hdfs://<namenode>/``
+  defaultFS = None
   working_dir = None            #: Current working directory
-  num_executors = None          #: Number of executors in the Spark job (and therefore, the number of nodes in the TensorFlow cluster).
-  nodeRDD = None                #: RDD representing the nodes of the cluster, i.e. ``sc.parallelize(range(num_executors), num_executors)``
-  cluster_id = None             #: Unique ID for this cluster, used to invalidate state for new clusters.
+  #: Number of executors in the Spark job (and therefore, the number of nodes in the TensorFlow cluster).
+  num_executors = None
+  #: RDD representing the nodes of the cluster, i.e. ``sc.parallelize(range(num_executors), num_executors)``
+  nodeRDD = None
+  #: Unique ID for this cluster, used to invalidate state for new clusters.
+  cluster_id = None
   cluster_info = None           #: Cluster node reservations
-  cluster_meta = None           #: Cluster metadata dictionary, e.g. cluster_id, defaultFS, reservation.Server address, etc.
+  #: Cluster metadata dictionary, e.g. cluster_id, defaultFS, reservation.Server address, etc.
+  cluster_meta = None
   input_mode = None             #: TFCluster.InputMode for this cluster
   queues = None                 #: *INTERNAL_USE*
   server = None                 #: reservation.Server for this cluster
@@ -72,7 +80,8 @@ class TFCluster(object):
 
     if isinstance(dataRDD, DStream):
       # Spark Streaming
-      dataRDD.foreachRDD(lambda rdd: rdd.foreachPartition(TFSparkNode.train(self.cluster_info, self.cluster_meta, qname)))
+      dataRDD.foreachRDD(lambda rdd: rdd.foreachPartition(
+          TFSparkNode.train(self.cluster_info, self.cluster_meta, qname)))
     else:
       # Spark RDD
       # if num_epochs unspecified, pick an arbitrarily "large" number for now
@@ -83,7 +92,8 @@ class TFCluster(object):
       for i in range(num_epochs):
         rdds.append(dataRDD)
       unionRDD = self.sc.union(rdds)
-      unionRDD.foreachPartition(TFSparkNode.train(self.cluster_info, self.cluster_meta, qname))
+      unionRDD.foreachPartition(TFSparkNode.train(
+          self.cluster_info, self.cluster_meta, qname))
 
   def inference(self, dataRDD, qname='input'):
     """*For InputMode.SPARK only*: Feeds Spark RDD partitions into the TensorFlow worker nodes and returns an RDD of results
@@ -156,7 +166,8 @@ class TFCluster(object):
       # in TENSORFLOW mode, this will only run after all workers have finished.
       workers = len(worker_list)
       workerRDD = self.sc.parallelize(range(workers), workers)
-      workerRDD.foreachPartition(TFSparkNode.shutdown(self.cluster_info, self.queues))
+      workerRDD.foreachPartition(
+          TFSparkNode.shutdown(self.cluster_info, self.queues))
 
     logging.info("Shutting down cluster")
     # shutdown queues and manageres for "PS" executors.
@@ -186,6 +197,7 @@ class TFCluster(object):
         tb_url = "http://{0}:{1}".format(node['host'], node['tb_port'])
     return tb_url
 
+
 def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mode=InputMode.TENSORFLOW,
         log_dir=None, driver_ps_nodes=False, queues=['input', 'output']):
   """Starts the TensorFlowOnSpark cluster and Runs the TensorFlow "main" function on the Spark executors
@@ -205,17 +217,20 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
   Returns:
     A TFCluster object representing the started cluster.
   """
-  logging.info("Reserving TFSparkNodes {0}".format("w/ TensorBoard" if tensorboard else ""))
+  logging.info("Reserving TFSparkNodes {0}".format(
+      "w/ TensorBoard" if tensorboard else ""))
   assert num_ps < num_executors
 
   if driver_ps_nodes and input_mode != InputMode.TENSORFLOW:
-    raise Exception('running PS nodes on driver locally is only supported in InputMode.TENSORFLOW')
+    raise Exception(
+        'running PS nodes on driver locally is only supported in InputMode.TENSORFLOW')
 
   # build a cluster_spec template using worker_nums
   cluster_template = {}
   cluster_template['ps'] = range(num_ps)
   cluster_template['worker'] = range(num_ps, num_executors)
-  logging.info("worker node range %s, ps node range %s" % (cluster_template['worker'], cluster_template['ps']))
+  logging.info("worker node range %s, ps node range %s" %
+               (cluster_template['worker'], cluster_template['ps']))
 
   # get default filesystem from spark
   defaultFS = sc._jsc.hadoopConfiguration().get("fs.defaultFS")
@@ -233,15 +248,16 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
   # start TF nodes on all executors
   logging.info("Starting TensorFlow on executors")
   cluster_meta = {
-    'id': random.getrandbits(64),
-    'cluster_template': cluster_template,
-    'num_executors': num_executors,
-    'default_fs': defaultFS,
-    'working_dir': working_dir,
-    'server_addr': server_addr
+      'id': random.getrandbits(64),
+      'cluster_template': cluster_template,
+      'num_executors': num_executors,
+      'default_fs': defaultFS,
+      'working_dir': working_dir,
+      'server_addr': server_addr
   }
   if driver_ps_nodes:
-    nodeRDD = sc.parallelize(range(num_ps, num_executors), num_executors - num_ps)
+    nodeRDD = sc.parallelize(
+        range(num_ps, num_executors), num_executors - num_ps)
   else:
     nodeRDD = sc.parallelize(range(num_executors), num_executors)
 
@@ -263,12 +279,12 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
   # start TF on a background thread (on Spark driver) to allow for feeding job
   def _start():
     nodeRDD.foreachPartition(TFSparkNode.run(map_fun,
-                                              tf_args,
-                                              cluster_meta,
-                                              tensorboard,
-                                              log_dir,
-                                              queues,
-                                              background=(input_mode == InputMode.SPARK)))
+                                             tf_args,
+                                             cluster_meta,
+                                             tensorboard,
+                                             log_dir,
+                                             queues,
+                                             background=(input_mode == InputMode.SPARK)))
   t = threading.Thread(target=_start)
   t.start()
 
@@ -285,19 +301,22 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
       tb_url = "http://{0}:{1}".format(node['host'], node['tb_port'])
 
   if tb_url is not None:
-    logging.info("========================================================================================")
+    logging.info(
+        "========================================================================================")
     logging.info("")
     logging.info("TensorBoard running at:       {0}".format(tb_url))
     logging.info("")
-    logging.info("========================================================================================")
+    logging.info(
+        "========================================================================================")
 
   # since our "primary key" for each executor's TFManager is (host, ppid), sanity check for duplicates
   # Note: this may occur if Spark retries failed Python tasks on the same executor.
   tb_nodes = set()
   for node in cluster_info:
-    node_id = (node['host'],node['ppid'])
+    node_id = (node['host'], node['ppid'])
     if node_id in tb_nodes:
-      raise Exception("Duplicate cluster node id detected (host={0}, ppid={1}).  Please ensure that (1) the number of executors >= number of TensorFlow nodes, (2) the number of tasks per executors == 1, and (3) TFCluster.shutdown() is successfully invoked when done.".format(node_id[0], node_id[1]))
+      raise Exception("Duplicate cluster node id detected (host={0}, ppid={1}).  Please ensure that (1) the number of executors >= number of TensorFlow nodes, (2) the number of tasks per executors == 1, and (3) TFCluster.shutdown() is successfully invoked when done.".format(
+          node_id[0], node_id[1]))
     else:
       tb_nodes.add(node_id)
 

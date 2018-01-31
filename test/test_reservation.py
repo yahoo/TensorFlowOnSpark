@@ -3,6 +3,7 @@ import unittest
 
 from tensorflowonspark.reservation import Reservations, Server, Client
 
+
 class ReservationTest(unittest.TestCase):
   def test_reservation_class(self):
     """Test core reservation class, expecting 2 reservations"""
@@ -10,12 +11,12 @@ class ReservationTest(unittest.TestCase):
     self.assertFalse(r.done())
 
     # add first reservation
-    r.add({'node':1})
+    r.add({'node': 1})
     self.assertFalse(r.done())
     self.assertEquals(r.remaining(), 1)
 
     # add second reservation
-    r.add({'node':2})
+    r.add({'node': 2})
     self.assertTrue(r.done())
     self.assertEquals(r.remaining(), 0)
 
@@ -30,7 +31,7 @@ class ReservationTest(unittest.TestCase):
 
     # add first reservation
     c = Client(addr)
-    resp = c.register({'node':1})
+    resp = c.register({'node': 1})
     self.assertEqual(resp, 'OK')
 
     # get list of reservations
@@ -53,8 +54,8 @@ class ReservationTest(unittest.TestCase):
 
     def reserve(num):
       c = Client(addr)
-      #time.sleep(random.randint(0,5))     # simulate varying start times
-      resp = c.register({'node':num})
+      # time.sleep(random.randint(0,5))     # simulate varying start times
+      resp = c.register({'node': num})
       self.assertEqual(resp, 'OK')
       c.await_reservations()
       c.close()

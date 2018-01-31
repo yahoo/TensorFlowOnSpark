@@ -87,7 +87,8 @@ def bottleneck(inputs, depth, depth_bottleneck, stride, rate=1,
   """
   with tf.variable_scope(scope, 'bottleneck_v2', [inputs]) as sc:
     depth_in = slim.utils.last_dimension(inputs.get_shape(), min_rank=4)
-    preact = slim.batch_norm(inputs, activation_fn=tf.nn.relu, scope='preact')
+    preact = slim.batch_norm(
+        inputs, activation_fn=tf.nn.relu, scope='preact')
     if depth == depth_in:
       shortcut = resnet_utils.subsample(inputs, stride, 'shortcut')
     else:
@@ -189,33 +190,42 @@ def resnet_v2(inputs,
         if include_root_block:
           if output_stride is not None:
             if output_stride % 4 != 0:
-              raise ValueError('The output_stride needs to be a multiple of 4.')
+              raise ValueError(
+                  'The output_stride needs to be a multiple of 4.')
             output_stride /= 4
           # We do not include batch normalization or activation functions in
           # conv1 because the first ResNet unit will perform these. Cf.
           # Appendix of [2].
           with slim.arg_scope([slim.conv2d],
                               activation_fn=None, normalizer_fn=None):
-            net = resnet_utils.conv2d_same(net, 64, 7, stride=2, scope='conv1')
+            net = resnet_utils.conv2d_same(
+                net, 64, 7, stride=2, scope='conv1')
           net = slim.max_pool2d(net, [3, 3], stride=2, scope='pool1')
-        net = resnet_utils.stack_blocks_dense(net, blocks, output_stride)
+        net = resnet_utils.stack_blocks_dense(
+            net, blocks, output_stride)
         # This is needed because the pre-activation variant does not have batch
         # normalization or activation functions in the residual unit output. See
         # Appendix of [2].
-        net = slim.batch_norm(net, activation_fn=tf.nn.relu, scope='postnorm')
+        net = slim.batch_norm(
+            net, activation_fn=tf.nn.relu, scope='postnorm')
         if global_pool:
           # Global average pooling.
-          net = tf.reduce_mean(net, [1, 2], name='pool5', keep_dims=True)
+          net = tf.reduce_mean(
+              net, [1, 2], name='pool5', keep_dims=True)
         if num_classes is not None:
           net = slim.conv2d(net, num_classes, [1, 1], activation_fn=None,
                             normalizer_fn=None, scope='logits')
         if spatial_squeeze:
           logits = tf.squeeze(net, [1, 2], name='SpatialSqueeze')
         # Convert end_points_collection into a dictionary of end_points.
-        end_points = slim.utils.convert_collection_to_dict(end_points_collection)
+        end_points = slim.utils.convert_collection_to_dict(
+            end_points_collection)
         if num_classes is not None:
-          end_points['predictions'] = slim.softmax(logits, scope='predictions')
+          end_points['predictions'] = slim.softmax(
+              logits, scope='predictions')
         return logits, end_points
+
+
 resnet_v2.default_image_size = 224
 
 
@@ -239,6 +249,8 @@ def resnet_v2_50(inputs,
   return resnet_v2(inputs, blocks, num_classes, is_training=is_training,
                    global_pool=global_pool, output_stride=output_stride,
                    include_root_block=True, reuse=reuse, scope=scope)
+
+
 resnet_v2_50.default_image_size = resnet_v2.default_image_size
 
 
@@ -262,6 +274,8 @@ def resnet_v2_101(inputs,
   return resnet_v2(inputs, blocks, num_classes, is_training=is_training,
                    global_pool=global_pool, output_stride=output_stride,
                    include_root_block=True, reuse=reuse, scope=scope)
+
+
 resnet_v2_101.default_image_size = resnet_v2.default_image_size
 
 
@@ -285,6 +299,8 @@ def resnet_v2_152(inputs,
   return resnet_v2(inputs, blocks, num_classes, is_training=is_training,
                    global_pool=global_pool, output_stride=output_stride,
                    include_root_block=True, reuse=reuse, scope=scope)
+
+
 resnet_v2_152.default_image_size = resnet_v2.default_image_size
 
 
@@ -308,4 +324,6 @@ def resnet_v2_200(inputs,
   return resnet_v2(inputs, blocks, num_classes, is_training=is_training,
                    global_pool=global_pool, output_stride=output_stride,
                    include_root_block=True, reuse=reuse, scope=scope)
+
+
 resnet_v2_200.default_image_size = resnet_v2.default_image_size

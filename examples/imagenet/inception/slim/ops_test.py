@@ -36,7 +36,8 @@ class ConvTest(tf.test.TestCase):
       images = tf.random_uniform((5, height, width, 3), seed=1)
       output = ops.conv2d(images, 32, [3, 3])
       self.assertEquals(output.op.name, 'Conv/Relu')
-      self.assertListEqual(output.get_shape().as_list(), [5, height, width, 32])
+      self.assertListEqual(output.get_shape().as_list(), [
+                           5, height, width, 32])
 
   def testCreateSquareConv(self):
     height, width = 3, 3
@@ -44,7 +45,8 @@ class ConvTest(tf.test.TestCase):
       images = tf.random_uniform((5, height, width, 3), seed=1)
       output = ops.conv2d(images, 32, 3)
       self.assertEquals(output.op.name, 'Conv/Relu')
-      self.assertListEqual(output.get_shape().as_list(), [5, height, width, 32])
+      self.assertListEqual(output.get_shape().as_list(), [
+                           5, height, width, 32])
 
   def testCreateConvWithTensorShape(self):
     height, width = 3, 3
@@ -52,13 +54,15 @@ class ConvTest(tf.test.TestCase):
       images = tf.random_uniform((5, height, width, 3), seed=1)
       output = ops.conv2d(images, 32, images.get_shape()[1:3])
       self.assertEquals(output.op.name, 'Conv/Relu')
-      self.assertListEqual(output.get_shape().as_list(), [5, height, width, 32])
+      self.assertListEqual(output.get_shape().as_list(), [
+                           5, height, width, 32])
 
   def testCreateFullyConv(self):
     height, width = 6, 6
     with self.test_session():
       images = tf.random_uniform((5, height, width, 32), seed=1)
-      output = ops.conv2d(images, 64, images.get_shape()[1:3], padding='VALID')
+      output = ops.conv2d(images, 64, images.get_shape()[
+                          1:3], padding='VALID')
       self.assertEquals(output.op.name, 'Conv/Relu')
       self.assertListEqual(output.get_shape().as_list(), [5, 1, 1, 64])
 
@@ -179,8 +183,10 @@ class ConvTest(tf.test.TestCase):
         net = ops.conv2d(images, 32, [3, 3])
         net = ops.conv2d(net, 32, [3, 3])
       self.assertEquals(len(variables.get_variables()), 8)
-      self.assertEquals(len(variables.get_variables('Conv/BatchNorm')), 3)
-      self.assertEquals(len(variables.get_variables('Conv_1/BatchNorm')), 3)
+      self.assertEquals(
+          len(variables.get_variables('Conv/BatchNorm')), 3)
+      self.assertEquals(
+          len(variables.get_variables('Conv_1/BatchNorm')), 3)
 
   def testReuseConvWithBatchNorm(self):
     height, width = 3, 3
@@ -190,8 +196,10 @@ class ConvTest(tf.test.TestCase):
         net = ops.conv2d(images, 32, [3, 3], scope='Conv')
         net = ops.conv2d(net, 32, [3, 3], scope='Conv', reuse=True)
       self.assertEquals(len(variables.get_variables()), 4)
-      self.assertEquals(len(variables.get_variables('Conv/BatchNorm')), 3)
-      self.assertEquals(len(variables.get_variables('Conv_1/BatchNorm')), 0)
+      self.assertEquals(
+          len(variables.get_variables('Conv/BatchNorm')), 3)
+      self.assertEquals(
+          len(variables.get_variables('Conv_1/BatchNorm')), 0)
 
 
 class FCTest(tf.test.TestCase):
@@ -287,7 +295,8 @@ class FCTest(tf.test.TestCase):
         net = ops.fc(net, 27)
       self.assertEquals(len(variables.get_variables()), 8)
       self.assertEquals(len(variables.get_variables('FC/BatchNorm')), 3)
-      self.assertEquals(len(variables.get_variables('FC_1/BatchNorm')), 3)
+      self.assertEquals(
+          len(variables.get_variables('FC_1/BatchNorm')), 3)
 
   def testReuseFCWithBatchNorm(self):
     height, width = 3, 3
@@ -337,7 +346,8 @@ class MaxPoolTest(tf.test.TestCase):
     with self.test_session():
       images = tf.random_uniform((5, height, width, 3), seed=1)
       output = ops.max_pool(images, [3, 3], stride=1, padding='SAME')
-      self.assertListEqual(output.get_shape().as_list(), [5, height, width, 3])
+      self.assertListEqual(output.get_shape().as_list(), [
+                           5, height, width, 3])
 
   def testGlobalMaxPool(self):
     height, width = 3, 3
@@ -384,7 +394,8 @@ class AvgPoolTest(tf.test.TestCase):
     with self.test_session():
       images = tf.random_uniform((5, height, width, 3), seed=1)
       output = ops.avg_pool(images, [3, 3], stride=1, padding='SAME')
-      self.assertListEqual(output.get_shape().as_list(), [5, height, width, 3])
+      self.assertListEqual(output.get_shape().as_list(), [
+                           5, height, width, 3])
 
   def testGlobalAvgPool(self):
     height, width = 3, 3
@@ -426,7 +437,8 @@ class DropoutTest(tf.test.TestCase):
   def testCreateDropoutNoTraining(self):
     height, width = 3, 3
     with self.test_session():
-      images = tf.random_uniform((5, height, width, 3), seed=1, name='images')
+      images = tf.random_uniform(
+          (5, height, width, 3), seed=1, name='images')
       output = ops.dropout(images, is_training=False)
       self.assertEquals(output, images)
 
@@ -436,7 +448,8 @@ class FlattenTest(tf.test.TestCase):
   def testFlatten4D(self):
     height, width = 3, 3
     with self.test_session():
-      images = tf.random_uniform((5, height, width, 3), seed=1, name='images')
+      images = tf.random_uniform(
+          (5, height, width, 3), seed=1, name='images')
       output = ops.flatten(images)
       self.assertEquals(output.get_shape().num_elements(),
                         images.get_shape().num_elements())
@@ -445,7 +458,8 @@ class FlattenTest(tf.test.TestCase):
   def testFlatten3D(self):
     height, width = 3, 3
     with self.test_session():
-      images = tf.random_uniform((5, height, width), seed=1, name='images')
+      images = tf.random_uniform(
+          (5, height, width), seed=1, name='images')
       output = ops.flatten(images)
       self.assertEquals(output.get_shape().num_elements(),
                         images.get_shape().num_elements())
@@ -454,7 +468,8 @@ class FlattenTest(tf.test.TestCase):
   def testFlattenBatchSize(self):
     height, width = 3, 3
     with self.test_session() as sess:
-      images = tf.random_uniform((5, height, width, 3), seed=1, name='images')
+      images = tf.random_uniform(
+          (5, height, width, 3), seed=1, name='images')
       inputs = tf.placeholder(tf.int32, (None, height, width, 3))
       output = ops.flatten(inputs)
       self.assertEquals(output.get_shape().as_list(),
@@ -473,7 +488,8 @@ class BatchNormTest(tf.test.TestCase):
       images = tf.random_uniform((5, height, width, 3), seed=1)
       output = ops.batch_norm(images)
       self.assertTrue(output.op.name.startswith('BatchNorm/batchnorm'))
-      self.assertListEqual(output.get_shape().as_list(), [5, height, width, 3])
+      self.assertListEqual(output.get_shape().as_list(), [
+                           5, height, width, 3])
 
   def testCreateVariables(self):
     height, width = 3, 3
@@ -487,7 +503,8 @@ class BatchNormTest(tf.test.TestCase):
       moving_mean = tf.moving_average_variables()[0]
       moving_variance = tf.moving_average_variables()[1]
       self.assertEquals(moving_mean.op.name, 'BatchNorm/moving_mean')
-      self.assertEquals(moving_variance.op.name, 'BatchNorm/moving_variance')
+      self.assertEquals(moving_variance.op.name,
+                        'BatchNorm/moving_variance')
 
   def testCreateVariablesWithScale(self):
     height, width = 3, 3
@@ -501,7 +518,8 @@ class BatchNormTest(tf.test.TestCase):
       moving_mean = tf.moving_average_variables()[0]
       moving_variance = tf.moving_average_variables()[1]
       self.assertEquals(moving_mean.op.name, 'BatchNorm/moving_mean')
-      self.assertEquals(moving_variance.op.name, 'BatchNorm/moving_variance')
+      self.assertEquals(moving_variance.op.name,
+                        'BatchNorm/moving_variance')
 
   def testCreateVariablesWithoutCenterWithScale(self):
     height, width = 3, 3
@@ -515,7 +533,8 @@ class BatchNormTest(tf.test.TestCase):
       moving_mean = tf.moving_average_variables()[0]
       moving_variance = tf.moving_average_variables()[1]
       self.assertEquals(moving_mean.op.name, 'BatchNorm/moving_mean')
-      self.assertEquals(moving_variance.op.name, 'BatchNorm/moving_variance')
+      self.assertEquals(moving_variance.op.name,
+                        'BatchNorm/moving_variance')
 
   def testCreateVariablesWithoutCenterWithoutScale(self):
     height, width = 3, 3
@@ -529,7 +548,8 @@ class BatchNormTest(tf.test.TestCase):
       moving_mean = tf.moving_average_variables()[0]
       moving_variance = tf.moving_average_variables()[1]
       self.assertEquals(moving_mean.op.name, 'BatchNorm/moving_mean')
-      self.assertEquals(moving_variance.op.name, 'BatchNorm/moving_variance')
+      self.assertEquals(moving_variance.op.name,
+                        'BatchNorm/moving_variance')
 
   def testMovingAverageVariables(self):
     height, width = 3, 3
@@ -539,7 +559,8 @@ class BatchNormTest(tf.test.TestCase):
       moving_mean = tf.moving_average_variables()[0]
       moving_variance = tf.moving_average_variables()[1]
       self.assertEquals(moving_mean.op.name, 'BatchNorm/moving_mean')
-      self.assertEquals(moving_variance.op.name, 'BatchNorm/moving_variance')
+      self.assertEquals(moving_variance.op.name,
+                        'BatchNorm/moving_variance')
 
   def testUpdateOps(self):
     height, width = 3, 3
@@ -572,9 +593,11 @@ class BatchNormTest(tf.test.TestCase):
     with self.test_session():
       images = tf.random_uniform((5, height, width, 3), seed=1)
       ops.batch_norm(images, scope='bn')
-      self.assertEquals(len(tf.get_collection(ops.UPDATE_OPS_COLLECTION)), 2)
+      self.assertEquals(
+          len(tf.get_collection(ops.UPDATE_OPS_COLLECTION)), 2)
       ops.batch_norm(images, scope='bn', reuse=True)
-      self.assertEquals(len(tf.get_collection(ops.UPDATE_OPS_COLLECTION)), 4)
+      self.assertEquals(
+          len(tf.get_collection(ops.UPDATE_OPS_COLLECTION)), 4)
 
   def testCreateMovingVars(self):
     height, width = 3, 3
@@ -588,7 +611,8 @@ class BatchNormTest(tf.test.TestCase):
       moving_variance = tf.get_collection('moving_vars',
                                           'BatchNorm/moving_variance')
       self.assertEquals(len(moving_variance), 1)
-      self.assertEquals(moving_variance[0].op.name, 'BatchNorm/moving_variance')
+      self.assertEquals(
+          moving_variance[0].op.name, 'BatchNorm/moving_variance')
 
   def testComputeMovingVars(self):
     height, width = 3, 3
@@ -597,7 +621,8 @@ class BatchNormTest(tf.test.TestCase):
       image_values = np.random.rand(*image_shape)
       expected_mean = np.mean(image_values, axis=(0, 1, 2))
       expected_var = np.var(image_values, axis=(0, 1, 2))
-      images = tf.constant(image_values, shape=image_shape, dtype=tf.float32)
+      images = tf.constant(
+          image_values, shape=image_shape, dtype=tf.float32)
       output = ops.batch_norm(images, decay=0.1)
       update_ops = tf.get_collection(ops.UPDATE_OPS_COLLECTION)
       with tf.control_dependencies(update_ops):
@@ -606,7 +631,8 @@ class BatchNormTest(tf.test.TestCase):
       # Initialize all variables
       sess.run(tf.global_variables_initializer())
       moving_mean = variables.get_variables('BatchNorm/moving_mean')[0]
-      moving_variance = variables.get_variables('BatchNorm/moving_variance')[0]
+      moving_variance = variables.get_variables(
+          'BatchNorm/moving_variance')[0]
       mean, variance = sess.run([moving_mean, moving_variance])
       # After initialization moving_mean == 0 and moving_variance == 1.
       self.assertAllClose(mean, [0] * 3)
@@ -627,7 +653,8 @@ class BatchNormTest(tf.test.TestCase):
       image_values = np.random.rand(*image_shape)
       expected_mean = np.mean(image_values, axis=(0, 1, 2))
       expected_var = np.var(image_values, axis=(0, 1, 2))
-      images = tf.constant(image_values, shape=image_shape, dtype=tf.float32)
+      images = tf.constant(
+          image_values, shape=image_shape, dtype=tf.float32)
       output = ops.batch_norm(images, decay=0.1, is_training=False)
       update_ops = tf.get_collection(ops.UPDATE_OPS_COLLECTION)
       with tf.control_dependencies(update_ops):
@@ -636,7 +663,8 @@ class BatchNormTest(tf.test.TestCase):
       # Initialize all variables
       sess.run(tf.global_variables_initializer())
       moving_mean = variables.get_variables('BatchNorm/moving_mean')[0]
-      moving_variance = variables.get_variables('BatchNorm/moving_variance')[0]
+      moving_variance = variables.get_variables(
+          'BatchNorm/moving_variance')[0]
       mean, variance = sess.run([moving_mean, moving_variance])
       # After initialization moving_mean == 0 and moving_variance == 1.
       self.assertAllClose(mean, [0] * 3)
@@ -661,7 +689,8 @@ class BatchNormTest(tf.test.TestCase):
       image_values = np.random.rand(*image_shape)
       expected_mean = np.mean(image_values, axis=(0, 1, 2))
       expected_var = np.var(image_values, axis=(0, 1, 2))
-      images = tf.constant(image_values, shape=image_shape, dtype=tf.float32)
+      images = tf.constant(
+          image_values, shape=image_shape, dtype=tf.float32)
       output = ops.batch_norm(images, decay=0.1, is_training=False)
       update_ops = tf.get_collection(ops.UPDATE_OPS_COLLECTION)
       with tf.control_dependencies(update_ops):
@@ -670,7 +699,8 @@ class BatchNormTest(tf.test.TestCase):
       # Initialize all variables
       sess.run(tf.global_variables_initializer())
       moving_mean = variables.get_variables('BatchNorm/moving_mean')[0]
-      moving_variance = variables.get_variables('BatchNorm/moving_variance')[0]
+      moving_variance = variables.get_variables(
+          'BatchNorm/moving_variance')[0]
       mean, variance = sess.run([moving_mean, moving_variance])
       # After initialization moving_mean == 0 and moving_variance == 1.
       self.assertAllClose(mean, [0] * 3)
@@ -687,6 +717,7 @@ class BatchNormTest(tf.test.TestCase):
       # shouldn't change.
       self.assertAllClose(mean, expected_mean)
       self.assertAllClose(variance, expected_var)
+
 
 if __name__ == '__main__':
   tf.test.main()

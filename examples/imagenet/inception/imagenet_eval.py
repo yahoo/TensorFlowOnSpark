@@ -30,6 +30,7 @@ from pyspark.conf import SparkConf
 from tensorflowonspark import TFCluster, TFNode
 import sys
 
+
 def main_fun(argv, ctx):
   import tensorflow as tf
   from inception import inception_eval
@@ -58,5 +59,6 @@ if __name__ == '__main__':
   num_executors = int(sc._conf.get("spark.executor.instances"))
   num_ps = 0
 
-  cluster = TFCluster.run(sc, main_fun, sys.argv, num_executors, num_ps, False, TFCluster.InputMode.TENSORFLOW)
+  cluster = TFCluster.run(sc, main_fun, sys.argv, num_executors,
+                          num_ps, False, TFCluster.InputMode.TENSORFLOW)
   cluster.shutdown()

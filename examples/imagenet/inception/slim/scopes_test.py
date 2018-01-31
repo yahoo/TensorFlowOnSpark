@@ -49,7 +49,8 @@ class ArgScopeTest(tf.test.TestCase):
   def testCurrentArgScopeNested(self):
     func1_kwargs = {'a': 1, 'b': None, 'c': [1]}
     func2_kwargs = {'b': 2, 'd': [2]}
-    key = lambda f: (f.__module__, f.__name__)
+
+    def key(f): return (f.__module__, f.__name__)
     current_scope = {key(func1): func1_kwargs.copy(),
                      key(func2): func2_kwargs.copy()}
     with self.test_session():
@@ -70,7 +71,8 @@ class ArgScopeTest(tf.test.TestCase):
   def testReuseArgScopeNested(self):
     func1_kwargs = {'a': 1, 'b': None, 'c': [1]}
     func2_kwargs = {'b': 2, 'd': [2]}
-    key = lambda f: (f.__module__, f.__name__)
+
+    def key(f): return (f.__module__, f.__name__)
     current_scope1 = {key(func1): func1_kwargs.copy()}
     current_scope2 = {key(func1): func1_kwargs.copy(),
                       key(func2): func2_kwargs.copy()}
@@ -79,9 +81,11 @@ class ArgScopeTest(tf.test.TestCase):
         with scopes.arg_scope([func2], b=2, d=[2]) as scope2:
           pass
       with scopes.arg_scope(scope1):
-        self.assertDictEqual(scopes._current_arg_scope(), current_scope1)
+        self.assertDictEqual(
+            scopes._current_arg_scope(), current_scope1)
       with scopes.arg_scope(scope2):
-        self.assertDictEqual(scopes._current_arg_scope(), current_scope2)
+        self.assertDictEqual(
+            scopes._current_arg_scope(), current_scope2)
 
   def testSimpleArgScope(self):
     func1_args = (0,)
@@ -157,6 +161,7 @@ class ArgScopeTest(tf.test.TestCase):
         args, kwargs = func2(1)
         self.assertTupleEqual(args, func2_args)
         self.assertDictEqual(kwargs, func2_kwargs)
+
 
 if __name__ == '__main__':
   tf.test.main()

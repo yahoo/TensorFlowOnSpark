@@ -71,7 +71,7 @@ class VGGATest(tf.test.TestCase):
                         'vgg_a/fc6',
                         'vgg_a/fc7',
                         'vgg_a/fc8'
-                       ]
+                        ]
       self.assertSetEqual(set(end_points.keys()), set(expected_names))
 
   def testModelVariables(self):
@@ -103,7 +103,7 @@ class VGGATest(tf.test.TestCase):
                         'vgg_a/fc7/biases',
                         'vgg_a/fc8/weights',
                         'vgg_a/fc8/biases',
-                       ]
+                        ]
       model_variables = [v.op.name for v in slim.get_model_variables()]
       self.assertSetEqual(set(model_variables), set(expected_names))
 
@@ -117,7 +117,8 @@ class VGGATest(tf.test.TestCase):
       self.assertListEqual(logits.get_shape().as_list(),
                            [batch_size, num_classes])
       predictions = tf.argmax(logits, 1)
-      self.assertListEqual(predictions.get_shape().as_list(), [batch_size])
+      self.assertListEqual(
+          predictions.get_shape().as_list(), [batch_size])
 
   def testTrainEvalWithReuse(self):
     train_batch_size = 2
@@ -140,7 +141,8 @@ class VGGATest(tf.test.TestCase):
                            [eval_batch_size, 2, 2, num_classes])
       logits = tf.reduce_mean(logits, [1, 2])
       predictions = tf.argmax(logits, 1)
-      self.assertEquals(predictions.get_shape().as_list(), [eval_batch_size])
+      self.assertEquals(
+          predictions.get_shape().as_list(), [eval_batch_size])
 
   def testForward(self):
     batch_size = 1
@@ -205,7 +207,7 @@ class VGG16Test(tf.test.TestCase):
                         'vgg_16/fc6',
                         'vgg_16/fc7',
                         'vgg_16/fc8'
-                       ]
+                        ]
       self.assertSetEqual(set(end_points.keys()), set(expected_names))
 
   def testModelVariables(self):
@@ -247,7 +249,7 @@ class VGG16Test(tf.test.TestCase):
                         'vgg_16/fc7/biases',
                         'vgg_16/fc8/weights',
                         'vgg_16/fc8/biases',
-                       ]
+                        ]
       model_variables = [v.op.name for v in slim.get_model_variables()]
       self.assertSetEqual(set(model_variables), set(expected_names))
 
@@ -261,7 +263,8 @@ class VGG16Test(tf.test.TestCase):
       self.assertListEqual(logits.get_shape().as_list(),
                            [batch_size, num_classes])
       predictions = tf.argmax(logits, 1)
-      self.assertListEqual(predictions.get_shape().as_list(), [batch_size])
+      self.assertListEqual(
+          predictions.get_shape().as_list(), [batch_size])
 
   def testTrainEvalWithReuse(self):
     train_batch_size = 2
@@ -284,7 +287,8 @@ class VGG16Test(tf.test.TestCase):
                            [eval_batch_size, 2, 2, num_classes])
       logits = tf.reduce_mean(logits, [1, 2])
       predictions = tf.argmax(logits, 1)
-      self.assertEquals(predictions.get_shape().as_list(), [eval_batch_size])
+      self.assertEquals(
+          predictions.get_shape().as_list(), [eval_batch_size])
 
   def testForward(self):
     batch_size = 1
@@ -416,7 +420,8 @@ class VGG19Test(tf.test.TestCase):
       self.assertListEqual(logits.get_shape().as_list(),
                            [batch_size, num_classes])
       predictions = tf.argmax(logits, 1)
-      self.assertListEqual(predictions.get_shape().as_list(), [batch_size])
+      self.assertListEqual(
+          predictions.get_shape().as_list(), [batch_size])
 
   def testTrainEvalWithReuse(self):
     train_batch_size = 2
@@ -439,7 +444,8 @@ class VGG19Test(tf.test.TestCase):
                            [eval_batch_size, 2, 2, num_classes])
       logits = tf.reduce_mean(logits, [1, 2])
       predictions = tf.argmax(logits, 1)
-      self.assertEquals(predictions.get_shape().as_list(), [eval_batch_size])
+      self.assertEquals(
+          predictions.get_shape().as_list(), [eval_batch_size])
 
   def testForward(self):
     batch_size = 1
@@ -450,6 +456,7 @@ class VGG19Test(tf.test.TestCase):
       sess.run(tf.global_variables_initializer())
       output = sess.run(logits)
       self.assertTrue(output.any())
+
 
 if __name__ == '__main__':
   tf.test.main()

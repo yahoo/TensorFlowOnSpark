@@ -24,6 +24,7 @@ from tensorflowonspark import TFCluster, TFNode
 from datetime import datetime
 import sys
 
+
 def main_fun(argv, ctx):
   import math
   import six
@@ -92,7 +93,8 @@ def main_fun(argv, ctx):
   FLAGS = tf.app.flags.FLAGS
 
   if not FLAGS.dataset_dir:
-    raise ValueError('You must supply the dataset directory with --dataset_dir')
+    raise ValueError(
+        'You must supply the dataset directory with --dataset_dir')
 
   cluster_spec, server = TFNode.start_cluster_server(ctx)
 
@@ -180,7 +182,8 @@ def main_fun(argv, ctx):
       num_batches = FLAGS.max_num_batches
     else:
       # This ensures that we make a single pass over all of the data.
-      num_batches = math.ceil(dataset.num_samples / float(FLAGS.batch_size))
+      num_batches = math.ceil(
+          dataset.num_samples / float(FLAGS.batch_size))
 
     if tf.gfile.IsDirectory(FLAGS.checkpoint_path):
       checkpoint_path = tf.train.latest_checkpoint(FLAGS.checkpoint_path)
@@ -201,5 +204,6 @@ def main_fun(argv, ctx):
 if __name__ == '__main__':
   sc = SparkContext(conf=SparkConf().setAppName("eval_image_classifier"))
   num_executors = int(sc._conf.get("spark.executor.instances"))
-  cluster = TFCluster.run(sc, main_fun, sys.argv, num_executors, 0, False, TFCluster.InputMode.TENSORFLOW)
+  cluster = TFCluster.run(
+      sc, main_fun, sys.argv, num_executors, 0, False, TFCluster.InputMode.TENSORFLOW)
   cluster.shutdown()

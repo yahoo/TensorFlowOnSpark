@@ -77,7 +77,8 @@ def _extract_images(filename, num_images):
     buf = bytestream.read(
         _IMAGE_SIZE * _IMAGE_SIZE * num_images * _NUM_CHANNELS)
     data = np.frombuffer(buf, dtype=np.uint8)
-    data = data.reshape(num_images, _IMAGE_SIZE, _IMAGE_SIZE, _NUM_CHANNELS)
+    data = data.reshape(num_images, _IMAGE_SIZE,
+                        _IMAGE_SIZE, _NUM_CHANNELS)
   return data
 
 
@@ -119,10 +120,12 @@ def _add_to_tfrecord(data_filename, labels_filename, num_images,
 
     with tf.Session('') as sess:
       for j in range(num_images):
-        sys.stdout.write('\r>> Converting image %d/%d' % (j + 1, num_images))
+        sys.stdout.write('\r>> Converting image %d/%d' %
+                         (j + 1, num_images))
         sys.stdout.flush()
 
-        png_string = sess.run(encoded_png, feed_dict={image: images[j]})
+        png_string = sess.run(
+            encoded_png, feed_dict={image: images[j]})
 
         example = dataset_utils.image_to_tfexample(
             png_string, 'png'.encode(), _IMAGE_SIZE, _IMAGE_SIZE, labels[j])
@@ -156,6 +159,7 @@ def _download_dataset(dataset_dir):
 
     if not os.path.exists(filepath):
       print('Downloading file %s...' % filename)
+
       def _progress(count, block_size, total_size):
         sys.stdout.write('\r>> Downloading %.1f%%' % (
             float(count * block_size) / float(total_size) * 100.0))
@@ -205,13 +209,15 @@ def run(dataset_dir):
   with tf.python_io.TFRecordWriter(training_filename) as tfrecord_writer:
     data_filename = os.path.join(dataset_dir, _TRAIN_DATA_FILENAME)
     labels_filename = os.path.join(dataset_dir, _TRAIN_LABELS_FILENAME)
-    _add_to_tfrecord(data_filename, labels_filename, 60000, tfrecord_writer)
+    _add_to_tfrecord(data_filename, labels_filename,
+                     60000, tfrecord_writer)
 
   # Next, process the testing data:
   with tf.python_io.TFRecordWriter(testing_filename) as tfrecord_writer:
     data_filename = os.path.join(dataset_dir, _TEST_DATA_FILENAME)
     labels_filename = os.path.join(dataset_dir, _TEST_LABELS_FILENAME)
-    _add_to_tfrecord(data_filename, labels_filename, 10000, tfrecord_writer)
+    _add_to_tfrecord(data_filename, labels_filename,
+                     10000, tfrecord_writer)
 
   # Finally, write the labels file:
   labels_to_class_names = dict(zip(range(len(_CLASS_NAMES)), _CLASS_NAMES))

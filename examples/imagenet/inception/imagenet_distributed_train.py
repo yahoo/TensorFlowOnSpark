@@ -31,6 +31,7 @@ import sys
 import tensorflow as tf
 import time
 
+
 def main_fun(argv, ctx):
 
   # extract node metadata from ctx
@@ -54,7 +55,8 @@ def main_fun(argv, ctx):
   print("FLAGS:", FLAGS.__dict__['__flags'])
 
   # Get TF cluster and server instances
-  cluster_spec, server = TFNode.start_cluster_server(ctx, FLAGS.num_gpus, FLAGS.rdma)
+  cluster_spec, server = TFNode.start_cluster_server(
+      ctx, FLAGS.num_gpus, FLAGS.rdma)
 
   if FLAGS.job_name == 'ps':
     # `ps` jobs wait for incoming connections from the workers.
@@ -67,31 +69,38 @@ def main_fun(argv, ctx):
     if FLAGS.task_id == 0:
       if not tf.gfile.Exists(FLAGS.train_dir):
         tf.gfile.MakeDirs(FLAGS.train_dir)
-    inception_distributed_train.train(server.target, dataset, cluster_spec, ctx)
+    inception_distributed_train.train(
+        server.target, dataset, cluster_spec, ctx)
+
 
 if __name__ == '__main__':
   # parse arguments needed by the Spark driver
   import argparse
   parser = argparse.ArgumentParser()
-  parser.add_argument("--epochs", help="number of epochs", type=int, default=0)
+  parser.add_argument("--epochs", help="number of epochs",
+                      type=int, default=0)
   parser.add_argument("--input_data", help="HDFS path to input dataset")
-  parser.add_argument("--input_mode", help="method to ingest data: (spark|tf)", choices=["spark","tf"], default="tf")
-  parser.add_argument("--tensorboard", help="launch tensorboard process", action="store_true")
+  parser.add_argument("--input_mode", help="method to ingest data: (spark|tf)",
+                      choices=["spark", "tf"], default="tf")
+  parser.add_argument(
+      "--tensorboard", help="launch tensorboard process", action="store_true")
 
-  (args,rem) = parser.parse_known_args()
+  (args, rem) = parser.parse_known_args()
 
   input_mode = TFCluster.InputMode.SPARK if args.input_mode == 'spark' else TFCluster.InputMode.TENSORFLOW
 
   print("{0} ===== Start".format(datetime.now().isoformat()))
-  sc = SparkContext(conf=SparkConf().setAppName('imagenet_distributed_train'))
+  sc = SparkContext(conf=SparkConf().setAppName(
+      'imagenet_distributed_train'))
   num_executors = int(sc._conf.get("spark.executor.instances"))
   num_ps = 1
 
-  cluster = TFCluster.run(sc, main_fun, sys.argv, num_executors, num_ps, args.tensorboard, input_mode)
+  cluster = TFCluster.run(sc, main_fun, sys.argv,
+                          num_executors, num_ps, args.tensorboard, input_mode)
   if input_mode == TFCluster.InputMode.SPARK:
     dataRDD = sc.newAPIHadoopFile(args.input_data, "org.tensorflow.hadoop.io.TFRecordFileInputFormat",
-                                keyClass="org.apache.hadoop.io.BytesWritable",
-                                valueClass="org.apache.hadoop.io.NullWritable")
+                                  keyClass="org.apache.hadoop.io.BytesWritable",
+                                  valueClass="org.apache.hadoop.io.NullWritable")
     cluster.train(dataRDD, args.epochs)
   cluster.shutdown()
   print("{0} ===== Stop".format(datetime.now().isoformat()))

@@ -43,7 +43,8 @@ class AlexnetV2Test(tf.test.TestCase):
     num_classes = 1000
     with self.test_session():
       inputs = tf.random_uniform((batch_size, height, width, 3))
-      logits, _ = alexnet.alexnet_v2(inputs, num_classes, spatial_squeeze=False)
+      logits, _ = alexnet.alexnet_v2(
+          inputs, num_classes, spatial_squeeze=False)
       self.assertEquals(logits.op.name, 'alexnet_v2/fc8/BiasAdd')
       self.assertListEqual(logits.get_shape().as_list(),
                            [batch_size, 4, 7, num_classes])
@@ -66,7 +67,7 @@ class AlexnetV2Test(tf.test.TestCase):
                         'alexnet_v2/fc6',
                         'alexnet_v2/fc7',
                         'alexnet_v2/fc8'
-                       ]
+                        ]
       self.assertSetEqual(set(end_points.keys()), set(expected_names))
 
   def testModelVariables(self):
@@ -92,7 +93,7 @@ class AlexnetV2Test(tf.test.TestCase):
                         'alexnet_v2/fc7/biases',
                         'alexnet_v2/fc8/weights',
                         'alexnet_v2/fc8/biases',
-                       ]
+                        ]
       model_variables = [v.op.name for v in slim.get_model_variables()]
       self.assertSetEqual(set(model_variables), set(expected_names))
 
@@ -106,7 +107,8 @@ class AlexnetV2Test(tf.test.TestCase):
       self.assertListEqual(logits.get_shape().as_list(),
                            [batch_size, num_classes])
       predictions = tf.argmax(logits, 1)
-      self.assertListEqual(predictions.get_shape().as_list(), [batch_size])
+      self.assertListEqual(
+          predictions.get_shape().as_list(), [batch_size])
 
   def testTrainEvalWithReuse(self):
     train_batch_size = 2
@@ -129,7 +131,8 @@ class AlexnetV2Test(tf.test.TestCase):
                            [eval_batch_size, 4, 7, num_classes])
       logits = tf.reduce_mean(logits, [1, 2])
       predictions = tf.argmax(logits, 1)
-      self.assertEquals(predictions.get_shape().as_list(), [eval_batch_size])
+      self.assertEquals(
+          predictions.get_shape().as_list(), [eval_batch_size])
 
   def testForward(self):
     batch_size = 1
@@ -140,6 +143,7 @@ class AlexnetV2Test(tf.test.TestCase):
       sess.run(tf.global_variables_initializer())
       output = sess.run(logits)
       self.assertTrue(output.any())
+
 
 if __name__ == '__main__':
   tf.test.main()

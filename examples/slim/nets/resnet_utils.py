@@ -175,7 +175,8 @@ def stack_blocks_dense(net, blocks, output_stride=None,
     with tf.variable_scope(block.scope, 'block', [net]) as sc:
       for i, unit in enumerate(block.args):
         if output_stride is not None and current_stride > output_stride:
-          raise ValueError('The target output_stride cannot be reached.')
+          raise ValueError(
+              'The target output_stride cannot be reached.')
 
         with tf.variable_scope('unit_%d' % (i + 1), values=[net]):
           unit_depth, unit_depth_bottleneck, unit_stride = unit
@@ -198,7 +199,8 @@ def stack_blocks_dense(net, blocks, output_stride=None,
                                 stride=unit_stride,
                                 rate=1)
             current_stride *= unit_stride
-      net = slim.utils.collect_named_outputs(outputs_collections, sc.name, net)
+      net = slim.utils.collect_named_outputs(
+          outputs_collections, sc.name, net)
 
   if output_stride is not None and current_stride != output_stride:
     raise ValueError('The target output_stride cannot be reached.')
@@ -242,7 +244,7 @@ def resnet_arg_scope(weight_decay=0.0001,
       weights_initializer=slim.variance_scaling_initializer(),
       activation_fn=tf.nn.relu,
       normalizer_fn=slim.batch_norm,
-      normalizer_params=batch_norm_params):
+          normalizer_params=batch_norm_params):
     with slim.arg_scope([slim.batch_norm], **batch_norm_params):
       # The following implies padding='SAME' for pool1, which makes feature
       # alignment easier for dense prediction tasks. This is also used in

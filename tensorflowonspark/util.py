@@ -10,6 +10,7 @@ from __future__ import print_function
 import os
 import socket
 
+
 def get_ip_address():
   """Simple utility to get host IP address."""
   s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

@@ -92,9 +92,9 @@ def l1_l2_regularizer(weight_l1=1.0, weight_l2=1.0, scope=None):
                                          dtype=tensor.dtype.base_dtype,
                                          name='weight_l2')
       reg_l1 = tf.multiply(weight_l1_t, tf.reduce_sum(tf.abs(tensor)),
-                      name='value_l1')
+                           name='value_l1')
       reg_l2 = tf.multiply(weight_l2_t, tf.nn.l2_loss(tensor),
-                      name='value_l2')
+                           name='value_l2')
       return tf.add(reg_l1, reg_l2, name='value')
   return regularizer
 

@@ -4,6 +4,7 @@ import unittest
 from pyspark import SparkConf, SparkContext
 from pyspark.sql import SparkSession
 
+
 class SparkTest(unittest.TestCase):
   """Base class for unittests using Spark.  Sets up and tears down a cluster per test class"""
 
@@ -31,6 +32,7 @@ class SparkTest(unittest.TestCase):
 
 class SimpleTest(SparkTest):
   """Check that basic Spark is working"""
+
   def test_spark(self):
     sum = self.sc.parallelize(range(1000)).sum()
     self.assertEqual(sum, 499500)
