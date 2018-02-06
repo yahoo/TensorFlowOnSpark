@@ -5,13 +5,13 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>tensorflowonspark.pipeline &#8212; TensorFlowOnSpark 1.1.0 documentation</title>
+    <title>tensorflowonspark.pipeline &#8212; TensorFlowOnSpark 1.2.0 documentation</title>
     <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.1.0',
+        VERSION:     '1.2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -34,7 +34,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.1.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.2.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
       </ul>
     </div>  
@@ -148,12 +148,17 @@
 
 <div class="viewcode-block" id="HasNumPS"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasNumPS">[docs]</a><span class="k">class</span> <span class="nc">HasNumPS</span><span class="p">(</span><span class="n">Params</span><span class="p">):</span>
   <span class="n">num_ps</span> <span class="o">=</span> <span class="n">Param</span><span class="p">(</span><span class="n">Params</span><span class="o">.</span><span class="n">_dummy</span><span class="p">(),</span> <span class="s2">&quot;num_ps&quot;</span><span class="p">,</span> <span class="s2">&quot;Number of PS nodes in cluster&quot;</span><span class="p">,</span> <span class="n">typeConverter</span><span class="o">=</span><span class="n">TypeConverters</span><span class="o">.</span><span class="n">toInt</span><span class="p">)</span>
+  <span class="n">driver_ps_nodes</span> <span class="o">=</span> <span class="n">Param</span><span class="p">(</span><span class="n">Params</span><span class="o">.</span><span class="n">_dummy</span><span class="p">(),</span> <span class="s2">&quot;driver_ps_nodes&quot;</span><span class="p">,</span> <span class="s2">&quot;Run PS nodes on driver locally&quot;</span><span class="p">,</span> <span class="n">typeConverter</span><span class="o">=</span><span class="n">TypeConverters</span><span class="o">.</span><span class="n">toBoolean</span><span class="p">)</span>
   <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="nb">super</span><span class="p">(</span><span class="n">HasNumPS</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 <div class="viewcode-block" id="HasNumPS.setNumPS"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasNumPS.setNumPS">[docs]</a>  <span class="k">def</span> <span class="nf">setNumPS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">num_ps</span><span class="o">=</span><span class="n">value</span><span class="p">)</span></div>
 <div class="viewcode-block" id="HasNumPS.getNumPS"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasNumPS.getNumPS">[docs]</a>  <span class="k">def</span> <span class="nf">getNumPS</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_ps</span><span class="p">)</span></div></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_ps</span><span class="p">)</span></div>
+<div class="viewcode-block" id="HasNumPS.setDriverPSNodes"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasNumPS.setDriverPSNodes">[docs]</a>  <span class="k">def</span> <span class="nf">setDriverPSNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">driver_ps_nodes</span><span class="o">=</span><span class="n">value</span><span class="p">)</span></div>
+<div class="viewcode-block" id="HasNumPS.getDriverPSNodes"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasNumPS.getDriverPSNodes">[docs]</a>  <span class="k">def</span> <span class="nf">getDriverPSNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">driver_ps_nodes</span><span class="p">)</span></div></div>
 
 <div class="viewcode-block" id="HasOutputMapping"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasOutputMapping">[docs]</a><span class="k">class</span> <span class="nc">HasOutputMapping</span><span class="p">(</span><span class="n">Params</span><span class="p">):</span>
   <span class="n">output_mapping</span> <span class="o">=</span> <span class="n">Param</span><span class="p">(</span><span class="n">Params</span><span class="o">.</span><span class="n">_dummy</span><span class="p">(),</span> <span class="s2">&quot;output_mapping&quot;</span><span class="p">,</span> <span class="s2">&quot;Mapping of output tensor to output DataFrame column&quot;</span><span class="p">,</span> <span class="n">typeConverter</span><span class="o">=</span><span class="n">TFTypeConverters</span><span class="o">.</span><span class="n">toDict</span><span class="p">)</span>
@@ -249,10 +254,14 @@
   <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
       <span class="bp">self</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="n">d</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+      <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">argparse</span><span class="o">.</span><span class="n">Namespace</span><span class="p">):</span>
       <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">vars</span><span class="p">(</span><span class="n">d</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">Namespace</span><span class="p">):</span>
+      <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-      <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+      <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Unsupported Namespace args: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">d</span><span class="p">))</span>
 
   <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">argv</span><span class="p">:</span>
@@ -319,6 +328,7 @@
     <span class="bp">self</span><span class="o">.</span><span class="n">_setDefault</span><span class="p">(</span><span class="n">input_mapping</span><span class="o">=</span><span class="p">{},</span>
                     <span class="n">cluster_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
                     <span class="n">num_ps</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                    <span class="n">driver_ps_nodes</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                     <span class="n">input_mode</span><span class="o">=</span><span class="n">TFCluster</span><span class="o">.</span><span class="n">InputMode</span><span class="o">.</span><span class="n">SPARK</span><span class="p">,</span>
                     <span class="n">protocol</span><span class="o">=</span><span class="s1">&#39;grpc&#39;</span><span class="p">,</span>
                     <span class="n">tensorboard</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
@@ -362,7 +372,8 @@
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Done saving&quot;</span><span class="p">)</span>
 
     <span class="n">tf_args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">argv</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">argv</span> <span class="k">else</span> <span class="n">local_args</span>
-    <span class="n">cluster</span> <span class="o">=</span> <span class="n">TFCluster</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">sc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_fn</span><span class="p">,</span> <span class="n">tf_args</span><span class="p">,</span> <span class="n">local_args</span><span class="o">.</span><span class="n">cluster_size</span><span class="p">,</span> <span class="n">local_args</span><span class="o">.</span><span class="n">num_ps</span><span class="p">,</span> <span class="n">local_args</span><span class="o">.</span><span class="n">tensorboard</span><span class="p">,</span> <span class="n">local_args</span><span class="o">.</span><span class="n">input_mode</span><span class="p">)</span>
+    <span class="n">cluster</span> <span class="o">=</span> <span class="n">TFCluster</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">sc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_fn</span><span class="p">,</span> <span class="n">tf_args</span><span class="p">,</span> <span class="n">local_args</span><span class="o">.</span><span class="n">cluster_size</span><span class="p">,</span> <span class="n">local_args</span><span class="o">.</span><span class="n">num_ps</span><span class="p">,</span>
+                            <span class="n">local_args</span><span class="o">.</span><span class="n">tensorboard</span><span class="p">,</span> <span class="n">local_args</span><span class="o">.</span><span class="n">input_mode</span><span class="p">,</span> <span class="n">driver_ps_nodes</span><span class="o">=</span><span class="n">local_args</span><span class="o">.</span><span class="n">driver_ps_nodes</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">local_args</span><span class="o">.</span><span class="n">input_mode</span> <span class="o">==</span> <span class="n">TFCluster</span><span class="o">.</span><span class="n">InputMode</span><span class="o">.</span><span class="n">SPARK</span><span class="p">:</span>
       <span class="c1"># feed data, using a deterministic order for input columns (lexicographic by key)</span>
       <span class="n">input_cols</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getInputMapping</span><span class="p">()</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
@@ -625,13 +636,13 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.1.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.2.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Yahoo Inc.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.5.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.7.
     </div>
   </body>
 </html>
