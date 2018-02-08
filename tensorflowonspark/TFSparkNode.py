@@ -33,7 +33,7 @@ class TFNodeContext:
     :worker_num: integer identifier for this executor, per ``nodeRDD = sc.parallelize(range(num_executors), num_executors).``
     :job_name: TensorFlow job name (e.g. 'ps' or 'worker') of this TF node, per cluster_spec.
     :task_index: integer rank per job_name, e.g. "worker:0", "worker:1", "ps:0".
-    :cluster_spec: tf.train.ClusterSpec
+    :cluster_spec: dictionary for constructing a tf.train.ClusterSpec.
     :defaultFS: string representation of default FileSystem, e.g. ``file://`` or ``hdfs://<namenode>:8020/``.
     :working_dir: the current working directory for local filesystems, or YARN containers.
     :mgr: TFManager instance for this Python worker.
