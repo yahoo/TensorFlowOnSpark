@@ -5,13 +5,13 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>tensorflowonspark.TFSparkNode &#8212; TensorFlowOnSpark 1.1.0 documentation</title>
+    <title>tensorflowonspark.TFSparkNode &#8212; TensorFlowOnSpark 1.2.0 documentation</title>
     <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.1.0',
+        VERSION:     '1.2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -34,7 +34,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.1.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.2.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
       </ul>
     </div>  
@@ -80,7 +80,7 @@
 <span class="sd">    :worker_num: integer identifier for this executor, per ``nodeRDD = sc.parallelize(range(num_executors), num_executors).``</span>
 <span class="sd">    :job_name: TensorFlow job name (e.g. &#39;ps&#39; or &#39;worker&#39;) of this TF node, per cluster_spec.</span>
 <span class="sd">    :task_index: integer rank per job_name, e.g. &quot;worker:0&quot;, &quot;worker:1&quot;, &quot;ps:0&quot;.</span>
-<span class="sd">    :cluster_spec: tf.train.ClusterSpec</span>
+<span class="sd">    :cluster_spec: dictionary for constructing a tf.train.ClusterSpec.</span>
 <span class="sd">    :defaultFS: string representation of default FileSystem, e.g. ``file://`` or ``hdfs://&lt;namenode&gt;:8020/``.</span>
 <span class="sd">    :working_dir: the current working directory for local filesystems, or YARN containers.</span>
 <span class="sd">    :mgr: TFManager instance for this Python worker.</span>
@@ -317,8 +317,11 @@
 
     <span class="k">if</span> <span class="n">job_name</span> <span class="o">==</span> <span class="s1">&#39;ps&#39;</span> <span class="ow">or</span> <span class="n">background</span><span class="p">:</span>
       <span class="c1"># invoke the TensorFlow main function in a background thread</span>
-      <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting TensorFlow </span><span class="si">{0}</span><span class="s2">:</span><span class="si">{1}</span><span class="s2"> on cluster node </span><span class="si">{2}</span><span class="s2"> on background process&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">job_name</span><span class="p">,</span> <span class="n">task_index</span><span class="p">,</span> <span class="n">worker_num</span><span class="p">))</span>
+      <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting TensorFlow </span><span class="si">{0}</span><span class="s2">:</span><span class="si">{1}</span><span class="s2"> as </span><span class="si">{2}</span><span class="s2"> on cluster node </span><span class="si">{3}</span><span class="s2"> on background process&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="n">job_name</span><span class="p">,</span> <span class="n">task_index</span><span class="p">,</span> <span class="n">job_name</span><span class="p">,</span> <span class="n">worker_num</span><span class="p">))</span>
       <span class="n">p</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">Process</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">wrapper_fn</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">tf_args</span><span class="p">,</span> <span class="n">ctx</span><span class="p">))</span>
+      <span class="k">if</span> <span class="n">job_name</span> <span class="o">==</span> <span class="s1">&#39;ps&#39;</span><span class="p">:</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">daemon</span> <span class="o">=</span> <span class="kc">True</span>
       <span class="n">p</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 
       <span class="c1"># for ps nodes only, wait indefinitely in foreground thread for a &quot;control&quot; event (None == &quot;stop&quot;)</span>
@@ -506,13 +509,13 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.1.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.2.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Yahoo Inc.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.5.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.7.
     </div>
   </body>
 </html>
