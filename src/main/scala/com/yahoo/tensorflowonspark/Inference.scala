@@ -1,25 +1,28 @@
-package com.yahoo.examples
+package com.yahoo.tensorflowonspark
 
-import com.yahoo.tensorflowonspark.{DFUtil, SimpleTypeParser, TFModel}
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types._
 import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.sql.SparkSession
 import org.json4s._
 import org.json4s.native.JsonMethods
 
-object SparkInferTF {
+/**
+  * Spark application that infers from a TensorFlow SavedModel.
+  */
+object Inference {
 
   case class Config(export_dir: String = "",
                     input: String = "",
                     schema_hint: StructType = new StructType(),
                     input_mapping: Map[String, String] = Map.empty,
                     output_mapping: Map[String, String] = Map.empty,
-                    output: String = "")
+                    output: String = "",
+                    verbose: Boolean = false)
 
   def main(args: Array[String]) {
-    val conf = new SparkConf().setAppName("SparkInferTF")
+    val conf = new SparkConf().setAppName("Inference")
     implicit val sc: SparkContext = new SparkContext(conf)
-    val parser = new scopt.OptionParser[Config]("SparkInferTF") {
+    val parser = new scopt.OptionParser[Config]("Inference") {
       opt[String]("export_dir").text("Path to exported saved_model")
         .action((x, conf) => conf.copy(export_dir = x))
       opt[String]("input").text("Path to input TFRecords")
@@ -31,6 +34,7 @@ object SparkInferTF {
       opt[String]("output_mapping").text("JSON mapping of output tensors to output columns")
         .action((x, conf) => conf.copy(output_mapping = JsonMethods.parse(x).values.asInstanceOf[Map[String, String]]))
       opt[String]("output").text("Path to write predictions").action((x, conf) => conf.copy(output = x))
+      opt[Unit]("verbose").text("Print input dataframe sample with schema").action((_, conf) => conf.copy(verbose = true))
     }
 
     parser.parse(args, Config()) match {
@@ -46,8 +50,10 @@ object SparkInferTF {
 
     // load TFRecords as a Spark DataFrame (using a user-provided schema hint)
     val df = DFUtil.loadTFRecords(config.input, config.schema_hint)
-    df.show()
-    df.printSchema()
+    if (config.verbose) {
+      df.show()
+      df.printSchema()
+    }
 
     // instantiate a TFModel pointing to an existing TensorFlow saved_model export
     // set up mappings between input DataFrame columns to input Tensors
