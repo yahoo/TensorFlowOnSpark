@@ -6,7 +6,7 @@ import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.sql.types._
 import org.tensorflow.example.Feature.KindCase
 import org.tensorflow.example._
-import org.tensorflow.hadoop.shaded.protobuf.ByteString
+import com.google.protobuf.ByteString
 
 /**
   * Helper object for loading TFRecords into DataFrames.
@@ -31,11 +31,13 @@ object DFUtil {
                                     classOf[org.tensorflow.hadoop.io.TFRecordFileInputFormat],
                                     classOf[org.apache.hadoop.io.BytesWritable],
                                     classOf[org.apache.hadoop.io.NullWritable])
-    val exampleRDD = rawRDD.map { case (bytes, _) => Example.parseFrom(bytes.getBytes) }
 
     // infer Spark SQL types from tf.Example
-    val example = exampleRDD.take(1).head
+    val bytesRDD = rawRDD.map { case (bytes,_) => bytes.getBytes }
+    val example = Example.parseFrom(bytesRDD.take(1).head)
     val schema = inferSchema(example, schemaHint)
+
+    val exampleRDD = rawRDD.map { case (bytes, _) => Example.parseFrom(bytes.getBytes) }
 
     // convert RDD[Example] to RDD[Row]
     val rdd = exampleRDD.map(fromTFExample(_, schema))
