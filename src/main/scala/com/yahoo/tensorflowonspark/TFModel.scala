@@ -11,6 +11,7 @@ import org.apache.spark.sql.{DataFrame, Dataset, Row}
 import org.tensorflow._
 
 import scala.collection.JavaConversions._
+import scala.collection.mutable.ListBuffer
 
 /**
   * Singleton object which will cache the saved_model, graph, and session per executor JVM.
@@ -42,7 +43,7 @@ class TFModel(override val uid: String) extends Model[TFModel] with TFParams {
     * @param schema schema of the incoming Rows.
     * @return a Map of M entries of (column_name -> Tensor), where each Tensor has N items in the 0-th dimension.
     */
-  def batch2tensors(batch: List[Row], schema: StructType): Map[String, Tensor[_]] = {
+  def batch2tensors(batch: Seq[Row], schema: StructType): Map[String, Tensor[_]] = {
     var tensors = new scala.collection.mutable.HashMap[String, Tensor[_]]()
 
     for (i <- schema.fields.indices) {
@@ -52,52 +53,53 @@ class TFModel(override val uid: String) extends Model[TFModel] with TFParams {
       colType match {
         // scalar types
         case t: sql.types.BinaryType =>
-          val arr = batch.map(row => row.getAs[Array[Byte]](i)).toArray
-          val tensor = Tensors.create(arr)
-          tensors.put(colName, tensor)
+          val arr: Array[Array[Byte]] = batch.map(row => row.getAs[Array[Byte]](i)).toArray
+          tensors.put(colName, Tensors.create(arr))
         case t: sql.types.BooleanType =>
-          val arr = batch.map(row => row.getBoolean(i)).toArray
+          val arr: Array[Boolean] = batch.map(row => row.getBoolean(i)).toArray
           tensors.put(colName, Tensors.create(arr))
         case t: sql.types.DoubleType =>
-          val arr = batch.map(row => row.getDouble(i)).toArray
+          val arr: Array[Double] = batch.map(row => row.getDouble(i)).toArray
           tensors.put(colName, Tensors.create(arr))
         case t: sql.types.FloatType =>
-          val arr = batch.map(row => row.getFloat(i)).toArray
+          val arr: Array[Float] = batch.map(row => row.getFloat(i)).toArray
           tensors.put(colName, Tensors.create(arr))
         case t: sql.types.IntegerType =>
-          val arr = batch.map(row => row.getInt(i)).toArray
+          val arr: Array[Int] = batch.map(row => row.getInt(i)).toArray
           tensors.put(colName, Tensors.create(arr))
         case t: sql.types.LongType =>
-          val arr = batch.map(row => row.getLong(i)).toArray
+          val arr: Array[Long] = batch.map(row => row.getLong(i)).toArray
           tensors.put(colName, Tensors.create(arr))
         case t: sql.types.StringType =>
-          val arr = batch.map(row => row.getAs[String](i).getBytes()).toArray
+          val arr: Array[Array[Byte]] = batch.map(row => row.getAs[String](i).getBytes()).toArray
           tensors.put(colName, Tensors.create(arr))
         case t: sql.types.ArrayType =>
           // array types
           val baseType = t.elementType
           baseType match {
             case sql.types.BinaryType =>
-              val arr = batch.map(row => row.getList[Array[Byte]](i).toList.toArray).toArray
+              val arr: Array[Array[Array[Byte]]] = batch.map(row => row.getList[Array[Byte]](i).toList.toArray).toArray
               tensors.put(colName, Tensors.create(arr))
             case sql.types.BooleanType =>
-              val arr = batch.map(row => row.getList[Boolean](i).toList.toArray).toArray
+              val arr: Array[Array[Boolean]] = batch.map(row => row.getList[Boolean](i).toList.toArray).toArray
               tensors.put(colName, Tensors.create(arr))
             case sql.types.DoubleType =>
-              val arr = batch.map(row => row.getList[Double](i).toList.toArray).toArray
+              val arr: Array[Array[Double]] = batch.map(row => row.getList[Double](i).toList.toArray).toArray
               tensors.put(colName, Tensors.create(arr))
             case sql.types.FloatType =>
-              val arr = batch.map(row => row.getList[Float](i).toList.toArray).toArray
+              val arr: Array[Array[Float]] = batch.map(row => row.getList[Float](i).toList.toArray).toArray
               tensors.put(colName, Tensors.create(arr))
             case sql.types.IntegerType =>
-              val arr = batch.map(row => row.getList[Int](i).toList.toArray).toArray
+              val arr: Array[Array[Int]] = batch.map(row => row.getList[Int](i).toList.toArray).toArray
               tensors.put(colName, Tensors.create(arr))
             case sql.types.LongType =>
-              val arr = batch.map(row => row.getList[Long](i).toList.toArray).toArray
+              val arr: Array[Array[Long]] = batch.map(row => row.getList[Long](i).toList.toArray).toArray
               tensors.put(colName, Tensors.create(arr))
             case sql.types.StringType =>
-              val arr = batch.map(row => row.getList[String](i).map(_.getBytes()).toList.toArray).toArray
+              val arr: Array[Array[Array[Byte]]] = batch.map(row => row.getList[String](i).map(_.getBytes()).toList.toArray).toArray
               tensors.put(colName, Tensors.create(arr))
+            case unsupportedType =>
+              throw new Exception(s"Unsupported base type in array: $unsupportedType")
           }
         case unsupportedType =>
           throw new Exception(s"Unsupported column type: $unsupportedType")
@@ -117,7 +119,7 @@ class TFModel(override val uid: String) extends Model[TFModel] with TFParams {
     val numRows = tensors.head.shape()(0).toInt
 
     // convert Tensors to list of (type, shape, flattened nio buffers)
-    var tensorArrays = Seq.empty[(DataType, Array[Long], Buffer)]
+    var tensorArrays = ListBuffer.empty[(DataType, Array[Long], Buffer)]
     for (t <- tensors) {
       val dtype = t.dataType()
       dtype match {
@@ -160,7 +162,7 @@ class TFModel(override val uid: String) extends Model[TFModel] with TFParams {
       }
     }
 
-    var results = List.empty[Row]
+    var result = ListBuffer.empty[Row]
     for (i <- 0 until numRows) {
       val slices = tensorArrays.map { case (dtype, shape, buf) =>
         // 0-th dimension should be the number of rows
@@ -226,9 +228,9 @@ class TFModel(override val uid: String) extends Model[TFModel] with TFParams {
           }
         }
       }
-      results = results :+ Row(slices:_*)
+      result += Row(slices:_*)
     }
-    results
+    result.toList
   }
 
   /**

@@ -8,6 +8,8 @@ import org.tensorflow.example.Feature.KindCase
 import org.tensorflow.example._
 import com.google.protobuf.ByteString
 
+import scala.collection.mutable.ListBuffer
+
 /**
   * Helper object for loading TFRecords into DataFrames.
   */
@@ -236,7 +238,7 @@ object DFUtil {
       feature.build()
     }
 
-    var result = Seq.empty[Example]
+    var result = ListBuffer.empty[Example]
     for (row <- iter) {
       val fbuilder = Features.newBuilder()
       dtypes.foreach { case (name, dtype, index) =>
@@ -244,7 +246,7 @@ object DFUtil {
       }
       val example = Example.newBuilder.setFeatures(fbuilder.build()).build()
 
-      result = result :+ example
+      result += example
     }
 
     result.iterator

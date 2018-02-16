@@ -23,9 +23,9 @@ object SparkInferTF {
       opt[String]("export_dir").text("Path to exported saved_model")
         .action((x, conf) => conf.copy(export_dir = x))
       opt[String]("input").text("Path to input TFRecords")
-        .action((x,conf) => conf.copy(input = x))
+        .action((x, conf) => conf.copy(input = x))
       opt[String]("schema_hint").text("schema hint (in StructType.simpleString format) for converting TFRecord features to Spark DataFrame types")
-          .action{ case (schema, config) => config.copy(schema_hint = SimpleTypeParser.parse(schema)) }
+        .action{ case (schema, conf) => conf.copy(schema_hint = SimpleTypeParser.parse(schema)) }
       opt[String]("input_mapping").text("JSON mapping of input columns to input tensors")
         .action((x, conf) => conf.copy(input_mapping = JsonMethods.parse(x).values.asInstanceOf[Map[String, String]]))
       opt[String]("output_mapping").text("JSON mapping of output tensors to output columns")
