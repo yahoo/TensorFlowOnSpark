@@ -295,18 +295,10 @@ class TFModel(override val uid: String) extends Model[TFModel] with TFParams {
   }
 
   override def transformSchema(schema: StructType): StructType = {
-    if (TFModel.model == null || TFModel.modelDir != this.getModel) {
-      // load model into a driver singleton reference, if needed.
-      // Note: this implies that the driver memory must be sized similarly to the executors.
-      TFModel.modelDir = this.getModel
-      TFModel.model = SavedModelBundle.load(this.getModel, this.getTag)
-      TFModel.graph = TFModel.model.graph()
-      TFModel.sess = TFModel.model.session()
-    }
+    val model = SavedModelBundle.load(this.getModel, this.getTag)
+    val g = model.graph
 
     val fields = this.getOutputMapping.map { case (tensorName, columnName) =>
-      val g = TFModel.graph
-      require(g != null, "graph is null")
       val op = g.operation(tensorName)
       // if a requested tensorName is not found, dump all operations in the graph to aid user and throw exception.
       if (op == null) {
