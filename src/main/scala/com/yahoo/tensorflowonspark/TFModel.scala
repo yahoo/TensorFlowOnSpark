@@ -257,11 +257,7 @@ class TFModel(override val uid: String) extends Model[TFModel] with TFParams {
         TFModel.sess = TFModel.model.session
       }
 
-      var results = List.empty[Row]
-      val groupedIter = iter.grouped(this.getBatchSize)
-      while (groupedIter.hasNext) {
-        val batch = groupedIter.next()
-
+      iter.grouped(this.getBatchSize).flatMap { batch =>
         // get input batch of Rows and convert to list of input Tensors
         val inputTensors = batch2tensors(batch, inputSchema)
 
@@ -283,12 +279,8 @@ class TFModel(override val uid: String) extends Model[TFModel] with TFParams {
           "Cardinality of output tensors must match")
 
         // convert the list of output Tensors to a batch of output Rows
-        val batchResults = tensors2batch(outputTensors)
-
-        // and add the batch of output Rows to the partition output
-        results ++= batchResults
+        tensors2batch(outputTensors)
       }
-      results.iterator
     }
 
     spark.createDataFrame(outputRDD, outputSchema)
