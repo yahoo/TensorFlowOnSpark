@@ -364,7 +364,9 @@ class TFModel(Model, TFParams,
   def __init__(self, tf_args):
     super(TFModel, self).__init__()
     self.args = Namespace(tf_args)
-    self._setDefault(batch_size=100,
+    self._setDefault(input_mapping={},
+                    output_mapping={},
+                    batch_size=100,
                     model_dir=None,
                     export_dir=None,
                     signature_def_key=None,
@@ -378,11 +380,6 @@ class TFModel(Model, TFParams,
     """
     spark = SparkSession.builder.getOrCreate()
 
-    logging.info("===== 1. inference args: {0}".format(self.args))
-    logging.info("===== 2. inference params: {0}".format(self._paramMap))
-    local_args = self.merge_args_params()
-    logging.info("===== 3. inference args + params: {0}".format(local_args))
-
     # set a deterministic order for input/output columns (lexicographic by key)
     input_cols = [ col for col, tensor in sorted(self.getInputMapping().items()) ]      # input col => input tensor
     output_cols = [ col for tensor, col in sorted(self.getOutputMapping().items()) ]    # output tensor => output col
@@ -391,8 +388,14 @@ class TFModel(Model, TFParams,
     logging.info("input_cols: {}".format(input_cols))
     logging.info("output_cols: {}".format(output_cols))
 
+    # merge args + params
+    logging.info("===== 1. inference args: {0}".format(self.args))
+    logging.info("===== 2. inference params: {0}".format(self._paramMap))
+    local_args = self.merge_args_params()
+    logging.info("===== 3. inference args + params: {0}".format(local_args))
+
     tf_args = self.args.argv if self.args.argv else local_args
-    rdd_out = dataset.select(input_cols).rdd.mapPartitions(lambda it: _run_model(it, tf_args))
+    rdd_out = dataset.select(input_cols).rdd.mapPartitions(lambda it: _run_model(it, local_args, tf_args))
 
     # convert to a DataFrame-friendly format
     rows_out = rdd_out.map(lambda x: Row(*x))
@@ -403,17 +406,18 @@ class TFModel(Model, TFParams,
 global_sess = None            # tf.Session cache
 global_args = None            # args provided to the _run_model() method.  Any change will invalidate the global_sess cache.
 
-def _run_model(iterator, args):
+def _run_model(iterator, args, tf_args):
   """mapPartitions function to run single-node inferencing from a checkpoint/saved_model, using the model's input/output mappings.
 
   Args:
     :iterator: input RDD partition iterator.
-    :args: a merged view of command-line args and ML Params.
+    :args: arguments for TFModel, in argparse format
+    :tf_args: arguments for TensorFlow inferencing code, in argparse or ARGV format.
 
   Returns:
     An iterator of result data.
   """
-  single_node_env(args)
+  single_node_env(tf_args)
 
   logging.info("===== input_mapping: {}".format(args.input_mapping))
   logging.info("===== output_mapping: {}".format(args.output_mapping))
@@ -426,11 +430,11 @@ def _run_model(iterator, args):
     logging.info("===== loading meta_graph_def for tag_set ({0}) from saved_model: {1}".format(args.tag_set, args.export_dir))
     meta_graph_def = get_meta_graph_def(args.export_dir, args.tag_set)
     signature = signature_def_utils.get_signature_def_by_key(meta_graph_def, args.signature_def_key)
-    logging.info("signature: {}".format(signature))
+    logging.debug("signature: {}".format(signature))
     inputs_tensor_info = signature.inputs
-    logging.info("inputs_tensor_info: {0}".format(inputs_tensor_info))
+    logging.debug("inputs_tensor_info: {0}".format(inputs_tensor_info))
     outputs_tensor_info = signature.outputs
-    logging.info("outputs_tensor_info: {0}".format(outputs_tensor_info))
+    logging.debug("outputs_tensor_info: {0}".format(outputs_tensor_info))
 
   result = []
 
@@ -489,10 +493,11 @@ def single_node_env(args):
   """Sets up environment for a single-node TF session.
 
   Args:
-    :args: command line arguments as argparse args.
-    :argv: command line arguments as ARGV (array of string).
+    :args: command line arguments as either argparse args or argv list
   """
-  if args.argv:
+  if isinstance(args, list):
+      sys.argv = args
+  elif args.argv:
       sys.argv = args.argv
 
   # ensure expanded CLASSPATH w/o glob characters (required for Spark 2.1 + JNI)

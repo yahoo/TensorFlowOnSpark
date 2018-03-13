@@ -17,7 +17,6 @@ And, you will need to [download an image dataset](https://github.com/tensorflow/
     # set environment variables (if not already done)
     export PYTHON_ROOT=~/Python
     export PYSPARK_PYTHON=${PYTHON_ROOT}/bin/python
-    export SPARK_YARN_USER_ENV="PYSPARK_PYTHON=Python/bin/python"
     export PATH=${PYTHON_ROOT}/bin/:$PATH
     export QUEUE=gpu
     export DATASET_DIR=<HDFS path to your downloaded files>
@@ -63,7 +62,6 @@ And, you will need to [download an image dataset](https://github.com/tensorflow/
     --conf spark.dynamicAllocation.enabled=false \
     --conf spark.yarn.maxAppAttempts=1 \
     --conf spark.ui.view.acls=* \
-    --conf spark.task.maxFailures=1 \
     --archives hdfs:///user/${USER}/Python.zip#Python \
     --conf spark.executorEnv.LD_LIBRARY_PATH="/usr/local/cuda-7.5/lib64:$JAVA_HOME/jre/lib/amd64/server" \
     --driver-library-path="/usr/local/cuda-7.5/lib64" \

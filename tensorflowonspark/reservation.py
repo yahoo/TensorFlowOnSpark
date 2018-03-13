@@ -13,6 +13,7 @@ import pickle
 import select
 import socket
 import struct
+import sys
 import threading
 import time
 
@@ -102,11 +103,20 @@ class Server(MessageSocket):
     assert count > 0
     self.reservations = Reservations(count)
 
-  def await_reservations(self):
+  def await_reservations(self, sc, status={}, timeout=600):
     """Block until all reservations are received."""
+    timespent = 0
     while not self.reservations.done():
       logging.info("waiting for {0} reservations".format(self.reservations.remaining()))
+      # check status flags for any errors
+      if 'error' in status:
+        sc.cancelAllJobs()
+        sc.stop()
+        sys.exit(1)
       time.sleep(1)
+      timespent += 1
+      if (timespent > timeout):
+        raise Exception("timed out waiting for reservations to complete")
     logging.info("all reservations completed")
     return self.reservations.get()
 

@@ -13,7 +13,7 @@ from tensorflowonspark import TFCluster, TFNode, dfutil
 from tensorflowonspark.pipeline import TFEstimator
 from datetime import datetime
 
-import inception_export
+from inception import inception_export
 
 import sys
 import tensorflow as tf
