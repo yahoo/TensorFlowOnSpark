@@ -4,27 +4,18 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>tensorflowonspark.reservation &#8212; TensorFlowOnSpark 1.2.0 documentation</title>
+    <title>tensorflowonspark.reservation &#8212; TensorFlowOnSpark 1.2.1 documentation</title>
     <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../../',
-        VERSION:     '1.2.0',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
-  </head>
-  <body>
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -34,7 +25,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.2.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.2.1 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
       </ul>
     </div>  
@@ -60,6 +51,7 @@
 <span class="kn">import</span> <span class="nn">select</span>
 <span class="kn">import</span> <span class="nn">socket</span>
 <span class="kn">import</span> <span class="nn">struct</span>
+<span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">threading</span>
 <span class="kn">import</span> <span class="nn">time</span>
 
@@ -86,23 +78,23 @@
 <span class="sd">    Args:</span>
 <span class="sd">      :meta: a dictonary of metadata about a node</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span>
-      <span class="bp">self</span><span class="o">.</span><span class="n">reservations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">meta</span><span class="p">)</span></div>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span></div>
+      <span class="bp">self</span><span class="o">.</span><span class="n">reservations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">meta</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Reservations.done"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.Reservations.done">[docs]</a>  <span class="k">def</span> <span class="nf">done</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Returns True if the ``required`` number of reservations have been fulfilled.&quot;&quot;&quot;</span>
-    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span>
-      <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reservations</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">required</span></div>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span></div>
+      <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reservations</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">required</span>
 
 <div class="viewcode-block" id="Reservations.get"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.Reservations.get">[docs]</a>  <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Get the list of current reservations.&quot;&quot;&quot;</span>
-    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span>
-      <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">reservations</span></div>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span></div>
+      <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">reservations</span>
 
 <div class="viewcode-block" id="Reservations.remaining"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.Reservations.remaining">[docs]</a>  <span class="k">def</span> <span class="nf">remaining</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Get a count of remaining/unfulfilled reservations.&quot;&quot;&quot;</span>
-    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span>
-      <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">required</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reservations</span><span class="p">)</span></div></div>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span></div></div>
+      <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">required</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reservations</span><span class="p">)</span>
 
 <div class="viewcode-block" id="MessageSocket"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.MessageSocket">[docs]</a><span class="k">class</span> <span class="nc">MessageSocket</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Abstract class w/ length-prefixed socket send/receive functions.&quot;&quot;&quot;</span>
@@ -126,14 +118,14 @@
         <span class="n">recv_len</span> <span class="o">-=</span> <span class="nb">len</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span>
       <span class="n">recv_done</span> <span class="o">=</span> <span class="p">(</span><span class="n">recv_len</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
 
-    <span class="n">msg</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">msg</span></div>
+    <span class="n">msg</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">msg</span>
 
 <div class="viewcode-block" id="MessageSocket.send"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.MessageSocket.send">[docs]</a>  <span class="k">def</span> <span class="nf">send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sock</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Send ``msg`` to destination ``sock``.&quot;&quot;&quot;</span>
     <span class="n">data</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-    <span class="n">buf</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s1">&#39;&gt;I&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span> <span class="o">+</span> <span class="n">data</span>
-    <span class="n">sock</span><span class="o">.</span><span class="n">sendall</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span></div></div>
+    <span class="n">buf</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s1">&#39;&gt;I&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span> <span class="o">+</span> <span class="n">data</span></div></div>
+    <span class="n">sock</span><span class="o">.</span><span class="n">sendall</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="Server"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.Server">[docs]</a><span class="k">class</span> <span class="nc">Server</span><span class="p">(</span><span class="n">MessageSocket</span><span class="p">):</span>
@@ -149,13 +141,22 @@
     <span class="k">assert</span> <span class="n">count</span> <span class="o">&gt;</span> <span class="mi">0</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">reservations</span> <span class="o">=</span> <span class="n">Reservations</span><span class="p">(</span><span class="n">count</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Server.await_reservations"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.Server.await_reservations">[docs]</a>  <span class="k">def</span> <span class="nf">await_reservations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Server.await_reservations"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.Server.await_reservations">[docs]</a>  <span class="k">def</span> <span class="nf">await_reservations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sc</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="p">{},</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">600</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Block until all reservations are received.&quot;&quot;&quot;</span>
+    <span class="n">timespent</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">reservations</span><span class="o">.</span><span class="n">done</span><span class="p">():</span>
       <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;waiting for </span><span class="si">{0}</span><span class="s2"> reservations&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reservations</span><span class="o">.</span><span class="n">remaining</span><span class="p">()))</span>
+      <span class="c1"># check status flags for any errors</span>
+      <span class="k">if</span> <span class="s1">&#39;error&#39;</span> <span class="ow">in</span> <span class="n">status</span><span class="p">:</span>
+        <span class="n">sc</span><span class="o">.</span><span class="n">cancelAllJobs</span><span class="p">()</span>
+        <span class="n">sc</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
       <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;all reservations completed&quot;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">reservations</span><span class="o">.</span><span class="n">get</span><span class="p">()</span></div>
+      <span class="n">timespent</span> <span class="o">+=</span> <span class="mi">1</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">timespent</span> <span class="o">&gt;</span> <span class="n">timeout</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;timed out waiting for reservations to complete&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;all reservations completed&quot;</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">reservations</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
 
   <span class="k">def</span> <span class="nf">_handle_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sock</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;received: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">msg</span><span class="p">))</span>
@@ -217,12 +218,12 @@
     <span class="n">t</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">_listen</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">server_sock</span><span class="p">))</span>
     <span class="n">t</span><span class="o">.</span><span class="n">daemon</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="n">t</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
-
-    <span class="k">return</span> <span class="n">addr</span></div>
+</div>
+    <span class="k">return</span> <span class="n">addr</span>
 
 <div class="viewcode-block" id="Server.stop"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.Server.stop">[docs]</a>  <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Stop the Server&#39;s socket listener.&quot;&quot;&quot;</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">done</span> <span class="o">=</span> <span class="kc">True</span></div></div>
+    <span class="sd">&quot;&quot;&quot;Stop the Server&#39;s socket listener.&quot;&quot;&quot;</span></div></div>
+    <span class="bp">self</span><span class="o">.</span><span class="n">done</span> <span class="o">=</span> <span class="kc">True</span>
 
 <div class="viewcode-block" id="Client"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.Client">[docs]</a><span class="k">class</span> <span class="nc">Client</span><span class="p">(</span><span class="n">MessageSocket</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Client to register and await node reservations.</span>
@@ -267,31 +268,31 @@
     <span class="k">return</span> <span class="n">resp</span>
 
 <div class="viewcode-block" id="Client.close"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.Client.close">[docs]</a>  <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Close the client socket.&quot;&quot;&quot;</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+    <span class="sd">&quot;&quot;&quot;Close the client socket.&quot;&quot;&quot;</span></div>
+    <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
 <div class="viewcode-block" id="Client.register"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.Client.register">[docs]</a>  <span class="k">def</span> <span class="nf">register</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reservation</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Register ``reservation`` with server.&quot;&quot;&quot;</span>
-    <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">(</span><span class="s1">&#39;REG&#39;</span><span class="p">,</span> <span class="n">reservation</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">resp</span></div>
+    <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">(</span><span class="s1">&#39;REG&#39;</span><span class="p">,</span> <span class="n">reservation</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">resp</span>
 
 <div class="viewcode-block" id="Client.get_reservations"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.Client.get_reservations">[docs]</a>  <span class="k">def</span> <span class="nf">get_reservations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Get current list of reservations.&quot;&quot;&quot;</span>
-    <span class="n">cluster_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">(</span><span class="s1">&#39;QINFO&#39;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">cluster_info</span></div>
+    <span class="n">cluster_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">(</span><span class="s1">&#39;QINFO&#39;</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">cluster_info</span>
 
 <div class="viewcode-block" id="Client.await_reservations"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.Client.await_reservations">[docs]</a>  <span class="k">def</span> <span class="nf">await_reservations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Poll until all reservations completed, then return cluster_info.&quot;&quot;&quot;</span>
     <span class="n">done</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="k">while</span> <span class="ow">not</span> <span class="n">done</span><span class="p">:</span>
       <span class="n">done</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">(</span><span class="s1">&#39;QUERY&#39;</span><span class="p">)</span>
-      <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_reservations</span><span class="p">()</span></div>
+      <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_reservations</span><span class="p">()</span>
 
 <div class="viewcode-block" id="Client.request_stop"><a class="viewcode-back" href="../../tensorflowonspark.reservation.html#tensorflowonspark.reservation.Client.request_stop">[docs]</a>  <span class="k">def</span> <span class="nf">request_stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Request server stop.&quot;&quot;&quot;</span>
-    <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">(</span><span class="s1">&#39;STOP&#39;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">resp</span></div></div>
+    <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">(</span><span class="s1">&#39;STOP&#39;</span><span class="p">)</span></div></div>
+    <span class="k">return</span> <span class="n">resp</span>
 </pre></div>
 
           </div>
@@ -301,12 +302,14 @@
         <div class="sphinxsidebarwrapper">
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -322,13 +325,13 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.2.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.2.1 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Yahoo Inc.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.7.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.1.
     </div>
   </body>
 </html>

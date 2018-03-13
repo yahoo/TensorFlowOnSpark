@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
   name = 'tensorflowonspark',
   packages = ['tensorflowonspark'],
-  version = '1.2.0',
+  version = '1.2.1',
   description = 'Deep learning with TensorFlow on Apache Spark clusters',
   author = 'Yahoo, Inc.',
   url = 'https://github.com/yahoo/TensorFlowOnSpark',
