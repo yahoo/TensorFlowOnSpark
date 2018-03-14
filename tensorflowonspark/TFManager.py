@@ -26,6 +26,12 @@ def _get(key):
 def _set(key, value):
   kdict[key] = value
 
+def _get_queue(qname):
+  try:
+    return qdict[qname]
+  except KeyError:
+    return None
+
 def start(authkey, queues, mode='local'):
   """Create a new multiprocess.Manager (or return existing one).
 
@@ -42,7 +48,8 @@ def start(authkey, queues, mode='local'):
   kdict.clear()
   for q in queues:
     qdict[q] = JoinableQueue()
-  TFManager.register('get_queue', callable=lambda qname: qdict[qname])
+
+  TFManager.register('get_queue', callable=lambda qname: _get_queue(qname))
   TFManager.register('get', callable=lambda key: _get(key))
   TFManager.register('set', callable=lambda key, value: _set(key, value))
   if mode == 'remote':

@@ -19,7 +19,6 @@ Also, you will need to [download the Imagenet dataset per the original example](
     # set environment variables (if not already done)
     export PYTHON_ROOT=~/Python
     export PYSPARK_PYTHON=${PYTHON_ROOT}/bin/python
-    export SPARK_YARN_USER_ENV="PYSPARK_PYTHON=Python/bin/python"
     export PATH=${PYTHON_ROOT}/bin/:$PATH
     export QUEUE=gpu
     export IMAGENET_DATA=<HDFS path to your downloaded files>

@@ -9,18 +9,21 @@ from __future__ import nested_scopes
 from __future__ import print_function
 
 import logging
+import multiprocessing
 import os
-import sys
 import platform
 import socket
 import subprocess
-import multiprocessing
+import sys
 import uuid
+import time
+import traceback
+from threading import Thread
 
 from . import TFManager
 from . import TFNode
-from . import reservation
 from . import marker
+from . import reservation
 from . import util
 
 class TFNodeContext:
@@ -97,6 +100,14 @@ def _get_manager(cluster_info, host, ppid):
       authkey = node['authkey']
       TFSparkNode.mgr = TFManager.connect(addr,authkey)
       break
+
+  if TFSparkNode.mgr is None:
+    msg = "No TFManager found on this node, please ensure that:\n" + \
+          "1. Spark num_executors matches TensorFlow cluster_size\n" + \
+          "2. Spark cores/tasks per executor is 1.\n" + \
+          "3. Spark dynamic allocation is disabled."
+    raise Exception(msg)
+
   logging.info("Connected to TFSparkNode.mgr on {0}, ppid={1}, state={2}".format(host, ppid, str(TFSparkNode.mgr.get('state'))))
   return TFSparkNode.mgr
 
@@ -152,7 +163,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
     addr = None
     if job_name == 'ps':
       # PS nodes must be remotely accessible in order to shutdown from Spark driver.
-      TFSparkNode.mgr = TFManager.start(authkey, ['control'], 'remote')
+      TFSparkNode.mgr = TFManager.start(authkey, ['control', 'error'], 'remote')
       addr = (host, TFSparkNode.mgr.address[1])
     else:
       # worker nodes only need to be locally accessible within the executor for data feeding
@@ -238,7 +249,11 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
     # construct a TensorFlow clusterspec from cluster_info
     sorted_cluster_info = sorted(cluster_info, key=lambda k: k['worker_num'])
     spec = {}
+    last_worker_num = -1
     for node in sorted_cluster_info:
+      if (node['worker_num'] == last_worker_num):
+        raise Exception("Duplicate worker/task in cluster_info")
+      last_worker_num = node['worker_num']
       logging.info("node: {0}".format(node))
       (njob, nhost, nport) = (node['job_name'], node['host'], node['port'])
       hosts = [] if njob not in spec else spec[njob]
@@ -268,11 +283,21 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
         sys.argv = args
       fn(args, context)
 
+    def wrapper_fn_background(args, context):
+      """Wrapper function that signals exceptions to foreground process."""
+      errq = TFSparkNode.mgr.get_queue('error')
+      try:
+        wrapper_fn(args, context)
+      except Exception:
+        errq.put(traceback.format_exc())
+        errq.join()
+
     if job_name == 'ps' or background:
       # invoke the TensorFlow main function in a background thread
       logging.info("Starting TensorFlow {0}:{1} as {2} on cluster node {3} on background process".format(
         job_name, task_index, job_name, worker_num))
-      p = multiprocessing.Process(target=wrapper_fn, args=(tf_args, ctx))
+
+      p = multiprocessing.Process(target=wrapper_fn_background, args=(tf_args, ctx))
       if job_name == 'ps':
         p.daemon = True
       p.start()
@@ -280,8 +305,15 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
       # for ps nodes only, wait indefinitely in foreground thread for a "control" event (None == "stop")
       if job_name == 'ps':
         queue = TFSparkNode.mgr.get_queue('control')
+        equeue = TFSparkNode.mgr.get_queue('error')
         done = False
         while not done:
+          while (queue.empty() and equeue.empty()):
+            time.sleep(1)
+          if (not equeue.empty()):
+            e_str = equeue.get()
+            equeue.task_done()
+            raise Exception("exception in ps:\n" + e_str)
           msg = queue.get(block=True)
           logging.info("Got msg: {0}".format(msg))
           if msg is None:
@@ -311,7 +343,13 @@ def train(cluster_info, cluster_meta, qname='input'):
   def _train(iter):
     # get shared queue, reconnecting if necessary
     mgr = _get_manager(cluster_info, util.get_ip_address(), os.getppid())
-    queue = mgr.get_queue(qname)
+    try:
+      queue = mgr.get_queue(qname)
+      equeue = mgr.get_queue('error')
+    except (AttributeError, KeyError):
+      msg = "Queue '{}' not found on this node, check for exceptions on other nodes.".format(qname)
+      raise Exception(msg)
+
     state = str(mgr.get('state'))
     logging.info("mgr.state={0}".format(state))
     terminating = state == "'terminating'"
@@ -321,15 +359,23 @@ def train(cluster_info, cluster_meta, qname='input'):
       for item in iter:
         count += 1
       logging.info("Skipped {0} items from partition".format(count))
-
     else:
       logging.info("Feeding partition {0} into {1} queue {2}".format(iter, qname, queue))
       count = 0
       for item in iter:
         count += 1
         queue.put(item, block=True)
+
       # wait for consumers to finish processing all items in queue before "finishing" this iterator
-      queue.join()
+      joinThr = Thread(target=queue.join)
+      joinThr.start()
+      while (joinThr.isAlive()):
+        if (not equeue.empty()):
+          e_str = equeue.get()
+          equeue.task_done()
+          raise Exception("exception in worker:\n" + e_str)
+        time.sleep(1)
+#      queue.join()
       logging.info("Processed {0} items in partition".format(count))
 
     # check if TF is terminating feed after this partition
@@ -361,7 +407,12 @@ def inference(cluster_info, qname='input'):
   def _inference(iter):
     # get shared queue, reconnecting if necessary
     mgr = _get_manager(cluster_info, util.get_ip_address(), os.getppid())
-    queue_in = mgr.get_queue(qname)
+    try:
+      queue_in = mgr.get_queue(qname)
+      equeue = mgr.get_queue('error')
+    except (AttributeError, KeyError):
+      msg = "Queue '{}' not found on this node, check for exceptions on other nodes.".format(qname)
+      raise Exception(msg)
 
     logging.info("Feeding partition {0} into {1} queue {2}".format(iter, qname, queue_in))
     count = 0
@@ -377,7 +428,15 @@ def inference(cluster_info, qname='input'):
       return []
 
     # wait for consumers to finish processing all items in queue before "finishing" this iterator
-    queue_in.join()
+    joinThr = Thread(target=queue_in.join)
+    joinThr.start()
+    while (joinThr.isAlive()):
+      if (not equeue.empty()):
+        e_str = equeue.get()
+        equeue.task_done()
+        raise Exception("exception in worker:\n" + e_str)
+      time.sleep(1)
+
     logging.info("Processed {0} items in partition".format(count))
 
     # read result queue
@@ -422,9 +481,13 @@ def shutdown(cluster_info, queues=['input']):
     # terminate any listening queues
     logging.info("Stopping all queues")
     for q in queues:
-      queue = mgr.get_queue(q)
-      logging.info("Feeding None into {0} queue".format(q))
-      queue.put(None, block=True)
+      try:
+        queue = mgr.get_queue(q)
+        logging.info("Feeding None into {0} queue".format(q))
+        queue.put(None, block=True)
+      except (AttributeError, KeyError):
+        msg = "Queue '{}' not found on this node, check for exceptions on other nodes.".format(q)
+        raise Exception(msg)
 
     logging.info("Setting mgr.state to 'stopped'")
     mgr.set('state', 'stopped')

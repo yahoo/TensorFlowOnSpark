@@ -4,20 +4,12 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>tensorflowonspark.TFNode module &#8212; TensorFlowOnSpark 1.2.0 documentation</title>
+    <title>tensorflowonspark.TFNode module &#8212; TensorFlowOnSpark 1.2.1 documentation</title>
     <link rel="stylesheet" href="_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '1.2.0',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
@@ -25,8 +17,7 @@
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="tensorflowonspark.TFSparkNode module" href="tensorflowonspark.TFSparkNode.html" />
     <link rel="prev" title="tensorflowonspark.TFManager module" href="tensorflowonspark.TFManager.html" /> 
-  </head>
-  <body>
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -42,7 +33,7 @@
         <li class="right" >
           <a href="tensorflowonspark.TFManager.html" title="tensorflowonspark.TFManager module"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">TensorFlowOnSpark 1.2.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TensorFlowOnSpark 1.2.1 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="tensorflowonspark.html" accesskey="U">tensorflowonspark package</a> &#187;</li> 
       </ul>
     </div>  
@@ -57,13 +48,13 @@
 <p>This module provides helper functions for the TensorFlow application.</p>
 <p>Primarily, these functions help with:</p>
 <ul class="simple">
-<li>starting the TensorFlow <code class="docutils literal"><span class="pre">tf.train.Server</span></code> for the node (allocating GPUs as desired, and determining the node’s role in the cluster).</li>
+<li>starting the TensorFlow <code class="docutils literal notranslate"><span class="pre">tf.train.Server</span></code> for the node (allocating GPUs as desired, and determining the node’s role in the cluster).</li>
 <li>managing input/output data for <em>InputMode.SPARK</em>.</li>
 </ul>
 <dl class="class">
 <dt id="tensorflowonspark.TFNode.DataFeed">
 <em class="property">class </em><code class="descname">DataFeed</code><span class="sig-paren">(</span><em>mgr</em>, <em>train_mode=True</em>, <em>qname_in='input'</em>, <em>qname_out='output'</em>, <em>input_mapping=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFNode.html#DataFeed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.TFNode.DataFeed" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>This class manages the <em>InputMode.SPARK</em> data feeding process from the perspective of the TensorFlow application.</p>
 <dl class="docutils">
 <dt>Args:</dt>
@@ -88,8 +79,8 @@
 <dl class="method">
 <dt id="tensorflowonspark.TFNode.DataFeed.batch_results">
 <code class="descname">batch_results</code><span class="sig-paren">(</span><em>results</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFNode.html#DataFeed.batch_results"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.TFNode.DataFeed.batch_results" title="Permalink to this definition">¶</a></dt>
-<dd><p>Push a batch of output results to the Spark output RDD of <code class="docutils literal"><span class="pre">TFCluster.inference()</span></code>.</p>
-<p>Note: this currently expects a one-to-one mapping of input to output data, so the length of the <code class="docutils literal"><span class="pre">results</span></code> array should match the length of
+<dd><p>Push a batch of output results to the Spark output RDD of <code class="docutils literal notranslate"><span class="pre">TFCluster.inference()</span></code>.</p>
+<p>Note: this currently expects a one-to-one mapping of input to output data, so the length of the <code class="docutils literal notranslate"><span class="pre">results</span></code> array should match the length of
 the previously retrieved batch of input data.</p>
 <dl class="docutils">
 <dt>Args:</dt>
@@ -111,12 +102,12 @@ the previously retrieved batch of input data.</p>
 <dd><p>Gets a batch of items from the input RDD.</p>
 <p>If multiple tensors are provided per row in the input RDD, e.g. tuple of (tensor1, tensor2, …, tensorN) and:</p>
 <ul class="simple">
-<li>no <code class="docutils literal"><span class="pre">input_mapping</span></code> was provided to the DataFeed constructor, this will return an array of <code class="docutils literal"><span class="pre">batch_size</span></code> tuples,
+<li>no <code class="docutils literal notranslate"><span class="pre">input_mapping</span></code> was provided to the DataFeed constructor, this will return an array of <code class="docutils literal notranslate"><span class="pre">batch_size</span></code> tuples,
 and the caller is responsible for separating the tensors.</li>
-<li>an <code class="docutils literal"><span class="pre">input_mapping</span></code> was provided to the DataFeed constructor, this will return a dictionary of N tensors,
-with tensor names as keys and arrays of length <code class="docutils literal"><span class="pre">batch_size</span></code> as values.</li>
+<li>an <code class="docutils literal notranslate"><span class="pre">input_mapping</span></code> was provided to the DataFeed constructor, this will return a dictionary of N tensors,
+with tensor names as keys and arrays of length <code class="docutils literal notranslate"><span class="pre">batch_size</span></code> as values.</li>
 </ul>
-<p>Note: if the end of the data is reached, this may return with fewer than <code class="docutils literal"><span class="pre">batch_size</span></code> items.</p>
+<p>Note: if the end of the data is reached, this may return with fewer than <code class="docutils literal notranslate"><span class="pre">batch_size</span></code> items.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><table class="first last docutils field-list" frame="void" rules="none">
@@ -136,7 +127,7 @@ with tensor names as keys and arrays of length <code class="docutils literal"><s
 <dl class="method">
 <dt id="tensorflowonspark.TFNode.DataFeed.should_stop">
 <code class="descname">should_stop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFNode.html#DataFeed.should_stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.TFNode.DataFeed.should_stop" title="Permalink to this definition">¶</a></dt>
-<dd><p>Check if the feed process was told to stop (by a call to <code class="docutils literal"><span class="pre">terminate</span></code>).</p>
+<dd><p>Check if the feed process was told to stop (by a call to <code class="docutils literal notranslate"><span class="pre">terminate</span></code>).</p>
 </dd></dl>
 
 <dl class="method">
@@ -162,7 +153,7 @@ of this, you should size your input data accordingly to avoid excessive overhead
 <code class="descname">export_saved_model</code><span class="sig-paren">(</span><em>sess</em>, <em>export_dir</em>, <em>tag_set</em>, <em>signatures</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFNode.html#export_saved_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.TFNode.export_saved_model" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convenience function to export a saved_model using provided arguments</p>
 <p>The caller specifies the saved_model signatures in a simplified python dictionary form, as follows:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">signatures</span> <span class="o">=</span> <span class="p">{</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">signatures</span> <span class="o">=</span> <span class="p">{</span>
   <span class="s1">&#39;signature_def_key&#39;</span><span class="p">:</span> <span class="p">{</span>
     <span class="s1">&#39;inputs&#39;</span><span class="p">:</span> <span class="p">{</span> <span class="s1">&#39;input_tensor_alias&#39;</span><span class="p">:</span> <span class="n">input_tensor_name</span> <span class="p">},</span>
     <span class="s1">&#39;outputs&#39;</span><span class="p">:</span> <span class="p">{</span> <span class="s1">&#39;output_tensor_alias&#39;</span><span class="p">:</span> <span class="n">output_tensor_name</span> <span class="p">},</span>
@@ -190,7 +181,7 @@ of this, you should size your input data accordingly to avoid excessive overhead
 </table>
 </dd>
 <dt>Returns:</dt>
-<dd>A saved_model exported to disk at <code class="docutils literal"><span class="pre">export_dir</span></code>.</dd>
+<dd>A saved_model exported to disk at <code class="docutils literal notranslate"><span class="pre">export_dir</span></code>.</dd>
 </dl>
 </dd></dl>
 
@@ -225,9 +216,9 @@ of this, you should size your input data accordingly to avoid excessive overhead
 <dl class="function">
 <dt id="tensorflowonspark.TFNode.start_cluster_server">
 <code class="descname">start_cluster_server</code><span class="sig-paren">(</span><em>ctx</em>, <em>num_gpus=1</em>, <em>rdma=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFNode.html#start_cluster_server"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.TFNode.start_cluster_server" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function that wraps the creation of TensorFlow <code class="docutils literal"><span class="pre">tf.train.Server</span></code> for a node in a distributed TensorFlow cluster.</p>
-<p>This is intended to be invoked from within the TF <code class="docutils literal"><span class="pre">map_fun</span></code>, replacing explicit code to instantiate <code class="docutils literal"><span class="pre">tf.train.ClusterSpec</span></code>
-and <code class="docutils literal"><span class="pre">tf.train.Server</span></code> objects.</p>
+<dd><p>Function that wraps the creation of TensorFlow <code class="docutils literal notranslate"><span class="pre">tf.train.Server</span></code> for a node in a distributed TensorFlow cluster.</p>
+<p>This is intended to be invoked from within the TF <code class="docutils literal notranslate"><span class="pre">map_fun</span></code>, replacing explicit code to instantiate <code class="docutils literal notranslate"><span class="pre">tf.train.ClusterSpec</span></code>
+and <code class="docutils literal notranslate"><span class="pre">tf.train.Server</span></code> objects.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><table class="first last docutils field-list" frame="void" rules="none">
@@ -277,12 +268,14 @@ and <code class="docutils literal"><span class="pre">tf.train.Server</span></cod
    </div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -304,13 +297,13 @@ and <code class="docutils literal"><span class="pre">tf.train.Server</span></cod
         <li class="right" >
           <a href="tensorflowonspark.TFManager.html" title="tensorflowonspark.TFManager module"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">TensorFlowOnSpark 1.2.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TensorFlowOnSpark 1.2.1 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="tensorflowonspark.html" >tensorflowonspark package</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Yahoo Inc.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.7.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.1.
     </div>
   </body>
 </html>

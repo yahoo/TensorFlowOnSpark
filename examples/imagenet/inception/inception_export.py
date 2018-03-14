@@ -27,7 +27,7 @@ tf.app.flags.DEFINE_string('train_dir', '/tmp/imagenet_train',
 tf.app.flags.DEFINE_string('subset', 'validation',
                            """Either 'validation' or 'train'.""")
 
-def export(args):
+def export(_):
   FLAGS = tf.app.flags.FLAGS
 
   """Evaluate model on Dataset for a number of steps."""
@@ -99,7 +99,7 @@ def export(args):
     print('Successfully loaded model from %s at step=%s.' %
           (ckpt.model_checkpoint_path, global_step))
 
-    print("Exporting saved_model to: {}".format(args.export_dir))
+    print("Exporting saved_model to: {}".format(FLAGS.export_dir))
     # exported signatures defined in code
     signatures = {
       tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: {
@@ -109,7 +109,7 @@ def export(args):
       }
     }
     TFNode.export_saved_model(sess,
-                              args.export_dir,
+                              FLAGS.export_dir,
                               tf.saved_model.tag_constants.SERVING,
                               signatures)
     print("Exported saved_model")
