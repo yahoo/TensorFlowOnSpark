@@ -82,7 +82,7 @@ def map_fun(args, ctx):
 
       y = tf.nn.softmax(tf.nn.xw_plus_b(hid, sm_w, sm_b))
 
-      global_step = tf.Variable(0)
+      global_step = tf.train.get_or_create_global_step()
 
       loss = -tf.reduce_sum(y_ * tf.log(tf.clip_by_value(y, 1e-10, 1.0)))
       tf.summary.scalar("loss", loss)
@@ -98,27 +98,22 @@ def map_fun(args, ctx):
       accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32), name="accuracy")
       tf.summary.scalar("acc", accuracy)
 
-      saver = tf.train.Saver()
       summary_op = tf.summary.merge_all()
-      init_op = tf.global_variables_initializer()
 
-    # Create a "supervisor", which oversees the training process and stores model state into HDFS
+    # Create a "MonitoredTrainingSession", which oversees the training process and stores model state into HDFS
     logdir = ctx.absolute_path(args.model)
     print("tensorflow model path: {0}".format(logdir))
-
+    hooks = [tf.train.StopAtStepHook(last_step=100000)]
+    
     if job_name == "worker" and task_index == 0:
       summary_writer = tf.summary.FileWriter(logdir, graph=tf.get_default_graph())
 
     if args.mode == "train":
-      sv = tf.train.Supervisor(is_chief=(task_index == 0),
-                               logdir=logdir,
-                               init_op=init_op,
-                               summary_op=None,
-                               summary_writer=None,
-                               saver=saver,
-                               global_step=global_step,
-                               stop_grace_secs=300,
-                               save_model_secs=10)
+      with tf.train.MonitoredTrainingSession(master=server.target,
+                                             is_chief=(task_index == 0),
+                                             checkpoint_dir=logdir,
+                                             hooks=hooks,
+      ) as mon_sess:
     else:
       sv = tf.train.Supervisor(is_chief=(task_index == 0),
                                logdir=logdir,
@@ -128,15 +123,13 @@ def map_fun(args, ctx):
                                stop_grace_secs=300,
                                save_model_secs=0)
 
-    # The supervisor takes care of session initialization, restoring from
-    # a checkpoint, and closing when done or an error occurs.
-    with sv.managed_session(server.target) as sess:
-      print("{0} session ready".format(datetime.now().isoformat()))
+    # The MonitoredTrainingSession takes care of session initialization, restoring from
+    # a checkpoint, and closing when done or an error occurs
 
       # Loop until the supervisor shuts down or 1000000 steps have completed.
       step = 0
       tf_feed = ctx.get_data_feed(args.mode == "train")
-      while not sv.should_stop() and not tf_feed.should_stop() and step < args.steps:
+      while not mon_sess.should_stop() and not tf_feed.should_stop() and step < args.steps:
         # Run a training step asynchronously.
         # See `tf.train.SyncReplicasOptimizer` for additional details on how to
         # perform *synchronous* training.
@@ -147,24 +140,24 @@ def map_fun(args, ctx):
 
         if len(batch_xs) > 0:
           if args.mode == "train":
-            _, summary, step = sess.run([train_op, summary_op, global_step], feed_dict=feed)
+            _, summary, step = mon_sess.run([train_op, summary_op, global_step], feed_dict=feed)
             # print accuracy and save model checkpoint to HDFS every 100 steps
             if (step % 100 == 0):
-              print("{0} step: {1} accuracy: {2}".format(datetime.now().isoformat(), step, sess.run(accuracy,{x: batch_xs, y_: batch_ys})))
+              print("{0} step: {1} accuracy: {2}".format(datetime.now().isoformat(), step, mon_sess.run(accuracy,{x: batch_xs, y_: batch_ys})))
 
-            if sv.is_chief:
+            if task_index == 0:
               summary_writer.add_summary(summary, step)
           else:  # args.mode == "inference"
-            labels, preds, acc = sess.run([label, prediction, accuracy], feed_dict=feed)
+            labels, preds, acc = mon_sess.run([label, prediction, accuracy], feed_dict=feed)
 
             results = ["{0} Label: {1}, Prediction: {2}".format(datetime.now().isoformat(), l, p) for l,p in zip(labels,preds)]
             tf_feed.batch_results(results)
             print("acc: {0}".format(acc))
 
-      if sv.should_stop() or step >= args.steps:
+      if mon_sess.should_stop() or step >= args.steps:
         tf_feed.terminate()
 
     # Ask for all the services to stop.
-    print("{0} stopping supervisor".format(datetime.now().isoformat()))
-    sv.stop()
+    print("{0} stopping MonitoredTrainingSession".format(datetime.now().isoformat()))
+
 
