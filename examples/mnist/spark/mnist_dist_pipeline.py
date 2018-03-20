@@ -9,8 +9,10 @@ from __future__ import division
 from __future__ import nested_scopes
 from __future__ import print_function
 
+
 def print_log(worker_num, arg):
   print("{0}: {1}".format(worker_num, arg))
+
 
 def map_fun(args, ctx):
   from tensorflowonspark import TFNode
@@ -32,7 +34,7 @@ def map_fun(args, ctx):
 
   # Parameters
   hidden_units = 128
-  batch_size   = args.batch_size
+  batch_size = args.batch_size
 
   # Get TF cluster and server instances
   cluster, server = TFNode.start_cluster_server(ctx, 1, args.protocol == 'rdma')
@@ -54,18 +56,18 @@ def map_fun(args, ctx):
 
     # Assigns ops to the local worker by default.
     with tf.device(tf.train.replica_device_setter(
-        worker_device="/job:worker/task:%d" % task_index,
-        cluster=cluster)):
+      worker_device="/job:worker/task:%d" % task_index,
+      cluster=cluster)):
 
       # Variables of the hidden layer
       hid_w = tf.Variable(tf.truncated_normal([IMAGE_PIXELS * IMAGE_PIXELS, hidden_units],
-                              stddev=1.0 / IMAGE_PIXELS), name="hid_w")
+                          stddev=1.0 / IMAGE_PIXELS), name="hid_w")
       hid_b = tf.Variable(tf.zeros([hidden_units]), name="hid_b")
       tf.summary.histogram("hidden_weights", hid_w)
 
       # Variables of the softmax layer
       sm_w = tf.Variable(tf.truncated_normal([hidden_units, 10],
-                              stddev=1.0 / math.sqrt(hidden_units)), name="sm_w")
+                         stddev=1.0 / math.sqrt(hidden_units)), name="sm_w")
       sm_b = tf.Variable(tf.zeros([10]), name="sm_b")
       tf.summary.histogram("softmax_weights", sm_w)
 
@@ -91,7 +93,7 @@ def map_fun(args, ctx):
 
       # Test trained model
       label = tf.argmax(y_, 1, name="label")
-      prediction = tf.argmax(y, 1,name="prediction")
+      prediction = tf.argmax(y, 1, name="prediction")
       correct_prediction = tf.equal(prediction, label)
 
       accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32), name="accuracy")
@@ -122,7 +124,6 @@ def map_fun(args, ctx):
 
       # Loop until the supervisor shuts down or 1000000 steps have completed.
       step = 0
-      #tf_feed = TFNode.DataFeed(ctx.mgr)
       tf_feed = TFNode.DataFeed(ctx.mgr, input_mapping=args.input_mapping)
       while not sv.should_stop() and not tf_feed.should_stop() and step < args.steps:
         # Run a training step asynchronously.
@@ -137,7 +138,7 @@ def map_fun(args, ctx):
           _, summary, step = sess.run([train_op, summary_op, global_step], feed_dict=feed)
           # print accuracy and save model checkpoint to HDFS every 100 steps
           if (step % 100 == 0):
-            print("{0} step: {1} accuracy: {2}".format(datetime.now().isoformat(), step, sess.run(accuracy,{x: batch_xs, y_: batch_ys})))
+            print("{0} step: {1} accuracy: {2}".format(datetime.now().isoformat(), step, sess.run(accuracy, {x: batch_xs, y_: batch_ys})))
 
           if sv.is_chief:
             summary_writer.add_summary(summary, step)
@@ -150,13 +151,13 @@ def map_fun(args, ctx):
         # exported signatures defined in code
         signatures = {
           tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: {
-            'inputs': { 'image': x },
-            'outputs': { 'prediction': prediction },
+            'inputs': {'image': x},
+            'outputs': {'prediction': prediction},
             'method_name': tf.saved_model.signature_constants.PREDICT_METHOD_NAME
           },
           'featurize': {
-            'inputs': { 'image': x },
-            'outputs': { 'features': hid },
+            'inputs': {'image': x},
+            'outputs': {'features': hid},
             'method_name': 'featurize'
           }
         }

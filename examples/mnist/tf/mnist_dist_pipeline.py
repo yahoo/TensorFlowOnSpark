@@ -17,8 +17,9 @@ import tensorflow as tf
 
 # Parameters
 hidden_units = 128
-batch_size   = 100
+batch_size = 100
 IMAGE_PIXELS = 28
+
 
 def map_fun(args, ctx):
   worker_num = ctx.worker_num
@@ -33,18 +34,18 @@ def map_fun(args, ctx):
   elif job_name == "worker":
     # Assigns ops to the local worker by default.
     with tf.device(tf.train.replica_device_setter(
-        worker_device="/job:worker/task:%d" % task_index,
-        cluster=cluster)):
+      worker_device="/job:worker/task:%d" % task_index,
+      cluster=cluster)):
 
       # Variables of the hidden layer
       hid_w = tf.Variable(tf.truncated_normal([IMAGE_PIXELS * IMAGE_PIXELS, hidden_units],
-                              stddev=1.0 / IMAGE_PIXELS), name="hid_w")
+                          stddev=1.0 / IMAGE_PIXELS), name="hid_w")
       hid_b = tf.Variable(tf.zeros([hidden_units]), name="hid_b")
       tf.summary.histogram("hidden_weights", hid_w)
 
       # Variables of the softmax layer
       sm_w = tf.Variable(tf.truncated_normal([hidden_units, 10],
-                              stddev=1.0 / math.sqrt(hidden_units)), name="sm_w")
+                         stddev=1.0 / math.sqrt(hidden_units)), name="sm_w")
       sm_b = tf.Variable(tf.zeros([10]), name="sm_b")
       tf.summary.histogram("softmax_weights", sm_w)
 
@@ -70,7 +71,7 @@ def map_fun(args, ctx):
 
       # Test trained model
       label = tf.argmax(y_, 1, name="label")
-      prediction = tf.argmax(y, 1,name="prediction")
+      prediction = tf.argmax(y, 1, name="prediction")
       correct_prediction = tf.equal(prediction, label)
       accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32), name="accuracy")
       tf.summary.scalar("acc", accuracy)
@@ -116,6 +117,7 @@ def map_fun(args, ctx):
     print("{0} stopping supervisor".format(datetime.now().isoformat()))
     sv.stop()
 
+
 def export_fun(args):
   """Define/export a single-node TF graph for inferencing"""
   # Input placeholder for inferencing
@@ -123,13 +125,13 @@ def export_fun(args):
 
   # Variables of the hidden layer
   hid_w = tf.Variable(tf.truncated_normal([IMAGE_PIXELS * IMAGE_PIXELS, hidden_units],
-                          stddev=1.0 / IMAGE_PIXELS), name="hid_w")
+                      stddev=1.0 / IMAGE_PIXELS), name="hid_w")
   hid_b = tf.Variable(tf.zeros([hidden_units]), name="hid_b")
   tf.summary.histogram("hidden_weights", hid_w)
 
   # Variables of the softmax layer
   sm_w = tf.Variable(tf.truncated_normal([hidden_units, 10],
-                          stddev=1.0 / math.sqrt(hidden_units)), name="sm_w")
+                     stddev=1.0 / math.sqrt(hidden_units)), name="sm_w")
   sm_b = tf.Variable(tf.zeros([10]), name="sm_b")
 
   hid_lin = tf.nn.xw_plus_b(x, hid_w, hid_b)
@@ -151,13 +153,13 @@ def export_fun(args):
     # exported signatures defined in code
     signatures = {
       tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: {
-        'inputs': { 'image': x },
-        'outputs': { 'prediction': prediction },
+        'inputs': {'image': x},
+        'outputs': {'prediction': prediction},
         'method_name': tf.saved_model.signature_constants.PREDICT_METHOD_NAME
       },
       'featurize': {
-        'inputs': { 'image': x },
-        'outputs': { 'features': hid },
+        'inputs': {'image': x},
+        'outputs': {'features': hid},
         'method_name': 'featurize'
       }
     }
@@ -185,7 +187,7 @@ def read_csv_examples(image_dir, label_dir, batch_size=100, num_readers=1, num_e
   # Setup reader for image queue
   img_reader = tf.TextLineReader(name="img_reader")
   _, img_csv = img_reader.read(image_queue)
-  image_defaults = [ [1.0] for col in range(784) ]
+  image_defaults = [[1.0] for col in range(784)]
   img = tf.stack(tf.decode_csv(img_csv, image_defaults))
   # Normalize values to [0,1]
   norm = tf.constant(255, dtype=tf.float32, shape=(784,))
@@ -195,12 +197,13 @@ def read_csv_examples(image_dir, label_dir, batch_size=100, num_readers=1, num_e
   # Setup reader for label queue
   label_reader = tf.TextLineReader(name="label_reader")
   _, label_csv = label_reader.read(label_queue)
-  label_defaults = [ [1.0] for col in range(10) ]
+  label_defaults = [[1.0] for col in range(10)]
   label = tf.stack(tf.decode_csv(label_csv, label_defaults))
   logging.info("label: {0}".format(label))
 
   # Return a batch of examples
-  return tf.train.batch([image,label], batch_size, num_threads=num_readers, name="batch_csv")
+  return tf.train.batch([image, label], batch_size, num_threads=num_readers, name="batch_csv")
+
 
 def read_tfr_examples(path, batch_size=100, num_epochs=None, num_readers=1, task_index=None, num_workers=None):
   logging.info("num_epochs: {0}".format(num_epochs))
@@ -222,7 +225,7 @@ def read_tfr_examples(path, batch_size=100, num_epochs=None, num_readers=1, task
   # Setup reader for examples
   reader = tf.TFRecordReader(name="reader")
   _, serialized = reader.read(file_queue)
-  feature_def = {'label': tf.FixedLenFeature([10], tf.int64), 'image': tf.FixedLenFeature([784], tf.int64) }
+  feature_def = {'label': tf.FixedLenFeature([10], tf.int64), 'image': tf.FixedLenFeature([784], tf.int64)}
   features = tf.parse_single_example(serialized, feature_def)
   norm = tf.constant(255, dtype=tf.float32, shape=(784,))
   image = tf.div(tf.to_float(features['image']), norm)
@@ -231,4 +234,4 @@ def read_tfr_examples(path, batch_size=100, num_epochs=None, num_readers=1, task
   logging.info("label: {0}".format(label))
 
   # Return a batch of examples
-  return tf.train.batch([image,label], batch_size, num_threads=num_readers, name="batch")
+  return tf.train.batch([image, label], batch_size, num_threads=num_readers, name="batch")

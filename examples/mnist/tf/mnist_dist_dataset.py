@@ -8,9 +8,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+
 def print_log(worker_num, arg):
   print("%d: " % worker_num, end=" ")
   print(arg)
+
 
 def map_fun(args, ctx):
   from tensorflowonspark import TFNode
@@ -35,7 +37,7 @@ def map_fun(args, ctx):
     splits = tf.string_split([ln], delimiter='|')
     lbl = splits.values[0]
     img = splits.values[1]
-    image_defaults = [ [0.0] for col in range(IMAGE_PIXELS * IMAGE_PIXELS) ]
+    image_defaults = [[0.0] for col in range(IMAGE_PIXELS * IMAGE_PIXELS)]
     image = tf.stack(tf.decode_csv(img, record_defaults=image_defaults))
     norm = tf.constant(255, dtype=tf.float32, shape=(784,))
     normalized_image = tf.div(image, norm)
@@ -46,7 +48,7 @@ def map_fun(args, ctx):
   def _parse_tfr(example_proto):
     print("example_proto: {}".format(example_proto))
     feature_def = {"label": tf.FixedLenFeature(10, tf.int64),
-                "image": tf.FixedLenFeature(IMAGE_PIXELS * IMAGE_PIXELS, tf.int64)}
+                   "image": tf.FixedLenFeature(IMAGE_PIXELS * IMAGE_PIXELS, tf.int64)}
     features = tf.parse_single_example(example_proto, feature_def)
     norm = tf.constant(255, dtype=tf.float32, shape=(784,))
     image = tf.div(tf.to_float(features['image']), norm)
@@ -58,8 +60,8 @@ def map_fun(args, ctx):
   elif job_name == "worker":
     # Assigns ops to the local worker by default.
     with tf.device(tf.train.replica_device_setter(
-        worker_device="/job:worker/task:%d" % task_index,
-        cluster=cluster)):
+      worker_device="/job:worker/task:%d" % task_index,
+      cluster=cluster)):
 
       # Dataset for input data
       image_dir = TFNode.hdfs_path(ctx, args.images)
@@ -73,13 +75,13 @@ def map_fun(args, ctx):
 
       # Variables of the hidden layer
       hid_w = tf.Variable(tf.truncated_normal([IMAGE_PIXELS * IMAGE_PIXELS, hidden_units],
-                              stddev=1.0 / IMAGE_PIXELS), name="hid_w")
+                          stddev=1.0 / IMAGE_PIXELS), name="hid_w")
       hid_b = tf.Variable(tf.zeros([hidden_units]), name="hid_b")
       tf.summary.histogram("hidden_weights", hid_w)
 
       # Variables of the softmax layer
       sm_w = tf.Variable(tf.truncated_normal([hidden_units, 10],
-                              stddev=1.0 / math.sqrt(hidden_units)), name="sm_w")
+                         stddev=1.0 / math.sqrt(hidden_units)), name="sm_w")
       sm_b = tf.Variable(tf.zeros([10]), name="sm_b")
       tf.summary.histogram("softmax_weights", sm_w)
 
@@ -155,12 +157,12 @@ def map_fun(args, ctx):
           if (step % 100 == 0):
             print("{0} step: {1} accuracy: {2}".format(datetime.now().isoformat(), step, sess.run(accuracy)))
           _, summary, step, yv = sess.run([train_op, summary_op, global_step, y_val])
-          #print("yval: {}".format(yv))
+          # print("yval: {}".format(yv))
           if sv.is_chief:
             summary_writer.add_summary(summary, step)
         else:  # args.mode == "inference"
           labels, pred, acc = sess.run([label, prediction, accuracy])
-          #print("label: {0}, pred: {1}".format(labels, pred))
+          # print("label: {0}, pred: {1}".format(labels, pred))
           print("acc: {0}".format(acc))
           for i in range(len(labels)):
             count += 1
@@ -177,4 +179,3 @@ def map_fun(args, ctx):
     # Ask for all the services to stop.
     print("{0} stopping supervisor".format(datetime.now().isoformat()))
     sv.stop()
-

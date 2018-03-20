@@ -6,6 +6,7 @@ Gets to 98.40% test accuracy after 20 epochs
 
 from __future__ import print_function
 
+
 def main_fun(args, ctx):
   import numpy
   import os
@@ -16,12 +17,9 @@ def main_fun(args, ctx):
   from tensorflow.contrib.keras.api.keras.layers import Dense, Dropout
   from tensorflow.contrib.keras.api.keras.optimizers import RMSprop
   from tensorflow.contrib.keras.python.keras.callbacks import LambdaCallback, TensorBoard
-
   from tensorflow.python.saved_model import builder as saved_model_builder
   from tensorflow.python.saved_model import tag_constants
   from tensorflow.python.saved_model.signature_def_utils_impl import predict_signature_def
-
-
   from tensorflowonspark import TFNode
 
   cluster, server = TFNode.start_cluster_server(ctx)
@@ -44,8 +42,8 @@ def main_fun(args, ctx):
             yield (images, labels)
 
     with tf.device(tf.train.replica_device_setter(
-                  worker_device="/job:worker/task:%d" % ctx.task_index,
-                  cluster=cluster)):
+      worker_device="/job:worker/task:%d" % ctx.task_index,
+      cluster=cluster)):
 
       IMAGE_PIXELS = 28
       batch_size = 100
@@ -98,21 +96,20 @@ def main_fun(args, ctx):
 
       if args.input_mode == 'tf':
         # train & validate on in-memory data
-        history = model.fit(x_train, y_train,
-                          batch_size=batch_size,
-                          epochs=args.epochs,
-                          verbose=1,
-                          validation_data=(x_test, y_test),
-                          callbacks=callbacks)
+        model.fit(x_train, y_train,
+                            batch_size=batch_size,
+                            epochs=args.epochs,
+                            verbose=1,
+                            validation_data=(x_test, y_test),
+                            callbacks=callbacks)
       else:  # args.input_mode == 'spark':
         # train on data read from a generator which is producing data from a Spark RDD
         tf_feed = TFNode.DataFeed(ctx.mgr)
-        history = model.fit_generator(
-                          generator=generate_rdd_data(tf_feed, batch_size),
-                          steps_per_epoch=args.steps_per_epoch,
-                          epochs=args.epochs,
-                          verbose=1,
-                          callbacks=callbacks)
+        model.fit_generator(generator=generate_rdd_data(tf_feed, batch_size),
+                            steps_per_epoch=args.steps_per_epoch,
+                            epochs=args.epochs,
+                            verbose=1,
+                            callbacks=callbacks)
 
       if args.export_dir and ctx.job_name == 'worker' and ctx.task_index == 0:
         # save a local Keras model, so we can reload it with an inferencing learning_phase
@@ -125,11 +122,11 @@ def main_fun(args, ctx):
         # export a saved_model for inferencing
         builder = saved_model_builder.SavedModelBuilder(args.export_dir)
         signature = predict_signature_def(inputs={'images': new_model.input},
-                                         outputs={'scores': new_model.output})
+                                          outputs={'scores': new_model.output})
         builder.add_meta_graph_and_variables(sess=sess,
-                                           tags=[tag_constants.SERVING],
-                                           signature_def_map={'predict': signature},
-                                           clear_devices=True)
+                                             tags=[tag_constants.SERVING],
+                                             signature_def_map={'predict': signature},
+                                             clear_devices=True)
         builder.save()
 
       if args.input_mode == 'spark':
@@ -160,7 +157,7 @@ if __name__ == '__main__':
     parser.add_argument("--tensorboard", help="launch tensorboard process", action="store_true")
 
     args = parser.parse_args()
-    print("args:",args)
+    print("args:", args)
 
     if args.input_mode == 'tf':
       cluster = TFCluster.run(sc, main_fun, args, args.cluster_size, args.num_ps, args.tensorboard, TFCluster.InputMode.TENSORFLOW, log_dir=args.model_dir)
