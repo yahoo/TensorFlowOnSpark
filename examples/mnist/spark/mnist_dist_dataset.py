@@ -9,8 +9,10 @@ from __future__ import division
 from __future__ import nested_scopes
 from __future__ import print_function
 
+
 def print_log(worker_num, arg):
   print("{0}: {1}".format(worker_num, arg))
+
 
 def map_fun(args, ctx):
   from tensorflowonspark import TFNode
@@ -48,8 +50,8 @@ def map_fun(args, ctx):
 
     # Assigns ops to the local worker by default.
     with tf.device(tf.train.replica_device_setter(
-        worker_device="/job:worker/task:%d" % task_index,
-        cluster=cluster)):
+      worker_device="/job:worker/task:%d" % task_index,
+      cluster=cluster)):
 
       # Dataset for input data
       ds = tf.data.Dataset.from_generator(rdd_generator, (tf.float32, tf.float32), (tf.TensorShape([IMAGE_PIXELS * IMAGE_PIXELS]), tf.TensorShape([10]))).batch(args.batch_size)
@@ -58,13 +60,13 @@ def map_fun(args, ctx):
 
       # Variables of the hidden layer
       hid_w = tf.Variable(tf.truncated_normal([IMAGE_PIXELS * IMAGE_PIXELS, hidden_units],
-                              stddev=1.0 / IMAGE_PIXELS), name="hid_w")
+                          stddev=1.0 / IMAGE_PIXELS), name="hid_w")
       hid_b = tf.Variable(tf.zeros([hidden_units]), name="hid_b")
       tf.summary.histogram("hidden_weights", hid_w)
 
       # Variables of the softmax layer
       sm_w = tf.Variable(tf.truncated_normal([hidden_units, 10],
-                              stddev=1.0 / math.sqrt(hidden_units)), name="sm_w")
+                         stddev=1.0 / math.sqrt(hidden_units)), name="sm_w")
       sm_b = tf.Variable(tf.zeros([10]), name="sm_b")
       tf.summary.histogram("softmax_weights", sm_w)
 
@@ -90,7 +92,7 @@ def map_fun(args, ctx):
 
       # Test trained model
       label = tf.argmax(y_, 1, name="label")
-      prediction = tf.argmax(y, 1,name="prediction")
+      prediction = tf.argmax(y, 1, name="prediction")
       correct_prediction = tf.equal(prediction, label)
 
       accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32), name="accuracy")
@@ -146,7 +148,7 @@ def map_fun(args, ctx):
         else:  # args.mode == "inference"
           labels, preds, acc = sess.run([label, prediction, accuracy])
 
-          results = ["{0} Label: {1}, Prediction: {2}".format(datetime.now().isoformat(), l, p) for l,p in zip(labels,preds)]
+          results = ["{0} Label: {1}, Prediction: {2}".format(datetime.now().isoformat(), l, p) for l, p in zip(labels, preds)]
           tf_feed.batch_results(results)
           print("acc: {0}".format(acc))
 
@@ -156,4 +158,3 @@ def map_fun(args, ctx):
     # Ask for all the services to stop.
     print("{0} stopping supervisor".format(datetime.now().isoformat()))
     sv.stop()
-

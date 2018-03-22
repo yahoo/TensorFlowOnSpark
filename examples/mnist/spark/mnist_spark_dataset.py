@@ -25,7 +25,7 @@ num_ps = 1
 parser = argparse.ArgumentParser()
 parser.add_argument("-b", "--batch_size", help="number of records per batch", type=int, default=100)
 parser.add_argument("-e", "--epochs", help="number of epochs", type=int, default=1)
-parser.add_argument("-f", "--format", help="example format: (csv|tfr)", choices=["csv","tfr"], default="csv")
+parser.add_argument("-f", "--format", help="example format: (csv|tfr)", choices=["csv", "tfr"], default="csv")
 parser.add_argument("-i", "--images", help="HDFS path to MNIST images in parallelized format")
 parser.add_argument("-l", "--labels", help="HDFS path to MNIST labels in parallelized format")
 parser.add_argument("-m", "--model", help="HDFS path to save/load model during train/inference", default="mnist_model")
@@ -37,14 +37,15 @@ parser.add_argument("-tb", "--tensorboard", help="launch tensorboard process", a
 parser.add_argument("-X", "--mode", help="train|inference", default="train")
 parser.add_argument("-c", "--rdma", help="use rdma connection", default=False)
 args = parser.parse_args()
-print("args:",args)
+print("args:", args)
 
 print("{0} ===== Start".format(datetime.now().isoformat()))
 
 if args.format == "tfr":
   images = sc.newAPIHadoopFile(args.images, "org.tensorflow.hadoop.io.TFRecordFileInputFormat",
-                              keyClass="org.apache.hadoop.io.BytesWritable",
-                              valueClass="org.apache.hadoop.io.NullWritable")
+                               keyClass="org.apache.hadoop.io.BytesWritable",
+                               valueClass="org.apache.hadoop.io.NullWritable")
+
   def toNumpy(bytestr):
     example = tf.train.Example()
     example.ParseFromString(bytestr)
@@ -52,6 +53,7 @@ if args.format == "tfr":
     image = numpy.array(features['image'].int64_list.value)
     label = numpy.array(features['label'].int64_list.value)
     return (image, label)
+
   dataRDD = images.map(lambda x: toNumpy(str(x[0])))
 else:  # args.format == "csv":
   images = sc.textFile(args.images).map(lambda ln: [int(x) for x in ln.split(',')])
@@ -68,4 +70,3 @@ else:
 cluster.shutdown()
 
 print("{0} ===== Stop".format(datetime.now().isoformat()))
-
