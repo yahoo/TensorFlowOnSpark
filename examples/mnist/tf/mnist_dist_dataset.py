@@ -22,6 +22,7 @@ def map_fun(args, ctx):
   import tensorflow as tf
   import time
 
+  num_workers = args.cluster_size if args.driver_ps_nodes else args.cluster_size - args.num_ps
   worker_num = ctx.worker_num
   job_name = ctx.job_name
   task_index = ctx.task_index
@@ -43,10 +44,9 @@ def map_fun(args, ctx):
     normalized_image = tf.div(image, norm)
     label_value = tf.string_to_number(lbl, tf.int32)
     label = tf.one_hot(label_value, 10)
-    return (normalized_image, label, label_value)
+    return (normalized_image, label)
 
   def _parse_tfr(example_proto):
-    print("example_proto: {}".format(example_proto))
     feature_def = {"label": tf.FixedLenFeature(10, tf.int64),
                    "image": tf.FixedLenFeature(IMAGE_PIXELS * IMAGE_PIXELS, tf.int64)}
     features = tf.parse_single_example(example_proto, feature_def)
@@ -68,10 +68,17 @@ def map_fun(args, ctx):
       file_pattern = os.path.join(image_dir, 'part-*')
       files = tf.gfile.Glob(file_pattern)
 
-      parse_fn = _parse_tfr if args.format == 'tfr' else _parse_csv
-      ds = tf.data.TextLineDataset(files).map(parse_fn).batch(args.batch_size)
+      if args.format == 'csv2':
+        ds = tf.data.TextLineDataset(files)
+        parse_fn = _parse_csv
+      else:  # args.format == 'tfr'
+        ds = tf.data.TFRecordDataset(files)
+        parse_fn = _parse_tfr
+
+      ds = ds.shard(num_workers, task_index).repeat(args.epochs).shuffle(args.shuffle_size)
+      ds = ds.map(parse_fn).batch(args.batch_size)
       iterator = ds.make_initializable_iterator()
-      x, y_, y_val = iterator.get_next()
+      x, y_ = iterator.get_next()
 
       # Variables of the hidden layer
       hid_w = tf.Variable(tf.truncated_normal([IMAGE_PIXELS * IMAGE_PIXELS, hidden_units],
@@ -156,8 +163,7 @@ def map_fun(args, ctx):
         if args.mode == "train":
           if (step % 100 == 0):
             print("{0} step: {1} accuracy: {2}".format(datetime.now().isoformat(), step, sess.run(accuracy)))
-          _, summary, step, yv = sess.run([train_op, summary_op, global_step, y_val])
-          # print("yval: {}".format(yv))
+          _, summary, step = sess.run([train_op, summary_op, global_step])
           if sv.is_chief:
             summary_writer.add_summary(summary, step)
         else:  # args.mode == "inference"
