@@ -110,7 +110,7 @@ def readMNIST(sc, output, format):
     tfRDD = sc.newAPIHadoopFile(output, "org.tensorflow.hadoop.io.TFRecordFileInputFormat",
                                 keyClass="org.apache.hadoop.io.BytesWritable",
                                 valueClass="org.apache.hadoop.io.NullWritable")
-    imageRDD = tfRDD.map(lambda x: fromTFExample(str(x[0])))
+    imageRDD = tfRDD.map(lambda x: fromTFExample(bytes(x[0])))
 
   num_images = imageRDD.count()
   num_labels = labelRDD.count() if labelRDD is not None else num_images

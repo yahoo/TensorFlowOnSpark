@@ -54,7 +54,7 @@ if args.format == "tfr":
     label = numpy.array(features['label'].int64_list.value)
     return (image, label)
 
-  dataRDD = images.map(lambda x: toNumpy(str(x[0])))
+  dataRDD = images.map(lambda x: toNumpy(bytes(x[0])))
 else:  # args.format == "csv":
   images = sc.textFile(args.images).map(lambda ln: [int(x) for x in ln.split(',')])
   labels = sc.textFile(args.labels).map(lambda ln: [float(x) for x in ln.split(',')])
