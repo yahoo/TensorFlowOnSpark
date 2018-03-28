@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>tensorflowonspark.TFSparkNode &#8212; TensorFlowOnSpark 1.2.1 documentation</title>
+    <title>tensorflowonspark.TFSparkNode &#8212; TensorFlowOnSpark 1.3.0 documentation</title>
     <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" src="../../_static/documentation_options.js"></script>
@@ -25,7 +25,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.2.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.3.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
       </ul>
     </div>  
@@ -46,6 +46,7 @@
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">nested_scopes</span>
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
 
+<span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">multiprocessing</span>
 <span class="kn">import</span> <span class="nn">os</span>
@@ -60,9 +61,11 @@
 
 <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">TFManager</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">TFNode</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">gpu_info</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">marker</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">reservation</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">util</span>
+
 
 <div class="viewcode-block" id="TFNodeContext"><a class="viewcode-back" href="../../tensorflowonspark.TFSparkNode.html#tensorflowonspark.TFSparkNode.TFNodeContext">[docs]</a><span class="k">class</span> <span class="nc">TFNodeContext</span><span class="p">:</span>
   <span class="sd">&quot;&quot;&quot;Encapsulates unique metadata for a TensorFlowOnSpark node/executor and provides methods to interact with Spark and HDFS.</span>
@@ -71,7 +74,7 @@
 <span class="sd">  To simply the end-user API, this class now mirrors the functions of the TFNode module.</span>
 
 <span class="sd">  Args:</span>
-<span class="sd">    :worker_num: integer identifier for this executor, per ``nodeRDD = sc.parallelize(range(num_executors), num_executors).``</span>
+<span class="sd">    :executor_id: integer identifier for this executor, per ``nodeRDD = sc.parallelize(range(num_executors), num_executors).``</span>
 <span class="sd">    :job_name: TensorFlow job name (e.g. &#39;ps&#39; or &#39;worker&#39;) of this TF node, per cluster_spec.</span>
 <span class="sd">    :task_index: integer rank per job_name, e.g. &quot;worker:0&quot;, &quot;worker:1&quot;, &quot;ps:0&quot;.</span>
 <span class="sd">    :cluster_spec: dictionary for constructing a tf.train.ClusterSpec.</span>
@@ -79,8 +82,9 @@
 <span class="sd">    :working_dir: the current working directory for local filesystems, or YARN containers.</span>
 <span class="sd">    :mgr: TFManager instance for this Python worker.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">worker_num</span><span class="p">,</span> <span class="n">job_name</span><span class="p">,</span> <span class="n">task_index</span><span class="p">,</span> <span class="n">cluster_spec</span><span class="p">,</span> <span class="n">defaultFS</span><span class="p">,</span> <span class="n">working_dir</span><span class="p">,</span> <span class="n">mgr</span><span class="p">):</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">worker_num</span> <span class="o">=</span> <span class="n">worker_num</span>
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">executor_id</span><span class="p">,</span> <span class="n">job_name</span><span class="p">,</span> <span class="n">task_index</span><span class="p">,</span> <span class="n">cluster_spec</span><span class="p">,</span> <span class="n">defaultFS</span><span class="p">,</span> <span class="n">working_dir</span><span class="p">,</span> <span class="n">mgr</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">worker_num</span> <span class="o">=</span> <span class="n">executor_id</span>       <span class="c1"># for backwards-compatibility</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">executor_id</span> <span class="o">=</span> <span class="n">executor_id</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">job_name</span> <span class="o">=</span> <span class="n">job_name</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">task_index</span> <span class="o">=</span> <span class="n">task_index</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">cluster_spec</span> <span class="o">=</span> <span class="n">cluster_spec</span>
@@ -121,22 +125,23 @@
   <span class="n">mgr</span> <span class="o">=</span> <span class="kc">None</span>                <span class="c1">#: TFManager instance</span></div>
   <span class="n">cluster_id</span> <span class="o">=</span> <span class="kc">None</span>         <span class="c1">#: Unique ID for a given TensorFlowOnSpark cluster, used for invalidating state for new clusters.</span>
 
-<span class="k">def</span> <span class="nf">_get_manager</span><span class="p">(</span><span class="n">cluster_info</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">ppid</span><span class="p">):</span>
+
+<span class="k">def</span> <span class="nf">_get_manager</span><span class="p">(</span><span class="n">cluster_info</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">executor_id</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Returns this executor&#39;s &quot;singleton&quot; instance of the multiprocessing.Manager, reconnecting per python-worker if needed.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    :cluster_info: cluster node reservations</span>
-<span class="sd">    :host: host IP</span>
-<span class="sd">    :ppid: parent (executor JVM) PID</span>
+<span class="sd">    :host: host IP address</span>
+<span class="sd">    :executor_id: unique id per executor (created during initial call to run())</span>
 
 <span class="sd">  Returns:</span>
 <span class="sd">    TFManager instance for this executor/python-worker</span>
 <span class="sd">  &quot;&quot;&quot;</span>
   <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">cluster_info</span><span class="p">:</span>
-    <span class="k">if</span> <span class="n">node</span><span class="p">[</span><span class="s1">&#39;host&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">host</span> <span class="ow">and</span> <span class="n">node</span><span class="p">[</span><span class="s1">&#39;ppid&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">ppid</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">node</span><span class="p">[</span><span class="s1">&#39;host&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">host</span> <span class="ow">and</span> <span class="n">node</span><span class="p">[</span><span class="s1">&#39;executor_id&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">executor_id</span><span class="p">:</span>
       <span class="n">addr</span> <span class="o">=</span> <span class="n">node</span><span class="p">[</span><span class="s1">&#39;addr&#39;</span><span class="p">]</span>
       <span class="n">authkey</span> <span class="o">=</span> <span class="n">node</span><span class="p">[</span><span class="s1">&#39;authkey&#39;</span><span class="p">]</span>
-      <span class="n">TFSparkNode</span><span class="o">.</span><span class="n">mgr</span> <span class="o">=</span> <span class="n">TFManager</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">addr</span><span class="p">,</span><span class="n">authkey</span><span class="p">)</span>
+      <span class="n">TFSparkNode</span><span class="o">.</span><span class="n">mgr</span> <span class="o">=</span> <span class="n">TFManager</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">addr</span><span class="p">,</span> <span class="n">authkey</span><span class="p">)</span>
       <span class="k">break</span>
 
   <span class="k">if</span> <span class="n">TFSparkNode</span><span class="o">.</span><span class="n">mgr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -146,8 +151,9 @@
           <span class="s2">&quot;3. Spark dynamic allocation is disabled.&quot;</span>
     <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
-  <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Connected to TFSparkNode.mgr on </span><span class="si">{0}</span><span class="s2">, ppid=</span><span class="si">{1}</span><span class="s2">, state=</span><span class="si">{2}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">ppid</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">TFSparkNode</span><span class="o">.</span><span class="n">mgr</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;state&#39;</span><span class="p">))))</span>
+  <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Connected to TFSparkNode.mgr on </span><span class="si">{0}</span><span class="s2">, executor=</span><span class="si">{1}</span><span class="s2">, state=</span><span class="si">{2}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">executor_id</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">TFSparkNode</span><span class="o">.</span><span class="n">mgr</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;state&#39;</span><span class="p">))))</span>
   <span class="k">return</span> <span class="n">TFSparkNode</span><span class="o">.</span><span class="n">mgr</span>
+
 
 <div class="viewcode-block" id="run"><a class="viewcode-back" href="../../tensorflowonspark.TFSparkNode.html#tensorflowonspark.TFSparkNode.run">[docs]</a><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">tf_args</span><span class="p">,</span> <span class="n">cluster_meta</span><span class="p">,</span> <span class="n">tensorboard</span><span class="p">,</span> <span class="n">log_dir</span><span class="p">,</span> <span class="n">queues</span><span class="p">,</span> <span class="n">background</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Wraps the user-provided TensorFlow main function in a Spark mapPartitions function.</span>
@@ -165,9 +171,15 @@
 <span class="sd">    A nodeRDD.mapPartitions() function.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
   <span class="k">def</span> <span class="nf">_mapfn</span><span class="p">(</span><span class="nb">iter</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+
     <span class="c1"># Note: consuming the input iterator helps Pyspark re-use this worker,</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">iter</span><span class="p">:</span>
-      <span class="n">worker_num</span> <span class="o">=</span> <span class="n">i</span>
+      <span class="n">executor_id</span> <span class="o">=</span> <span class="n">i</span>
+
+    <span class="c1"># run quick check of GPU infrastructure if using tensorflow-gpu</span>
+    <span class="k">if</span> <span class="n">tf</span><span class="o">.</span><span class="n">test</span><span class="o">.</span><span class="n">is_built_with_cuda</span><span class="p">():</span>
+      <span class="n">gpus_to_use</span> <span class="o">=</span> <span class="n">gpu_info</span><span class="o">.</span><span class="n">get_gpus</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 
     <span class="c1"># assign TF job/task based on provided cluster_spec template (or use default/null values)</span>
     <span class="n">job_name</span> <span class="o">=</span> <span class="s1">&#39;default&#39;</span>
@@ -176,21 +188,21 @@
     <span class="n">cluster_template</span> <span class="o">=</span> <span class="n">cluster_meta</span><span class="p">[</span><span class="s1">&#39;cluster_template&#39;</span><span class="p">]</span>
     <span class="k">for</span> <span class="n">jobtype</span> <span class="ow">in</span> <span class="n">cluster_template</span><span class="p">:</span>
       <span class="n">nodes</span> <span class="o">=</span> <span class="n">cluster_template</span><span class="p">[</span><span class="n">jobtype</span><span class="p">]</span>
-      <span class="k">if</span> <span class="n">worker_num</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
+      <span class="k">if</span> <span class="n">executor_id</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
         <span class="n">job_name</span> <span class="o">=</span> <span class="n">jobtype</span>
-        <span class="n">task_index</span> <span class="o">=</span> <span class="n">nodes</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">worker_num</span><span class="p">)</span>
+        <span class="n">task_index</span> <span class="o">=</span> <span class="n">nodes</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">executor_id</span><span class="p">)</span>
         <span class="k">break</span>
 
-    <span class="c1"># get unique id (hostname,ppid) for this executor&#39;s JVM</span>
+    <span class="c1"># get unique key (hostname, executor_id) for this executor</span>
     <span class="n">host</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">get_ip_address</span><span class="p">()</span>
-    <span class="n">ppid</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getppid</span><span class="p">()</span>
+    <span class="n">util</span><span class="o">.</span><span class="n">write_executor_id</span><span class="p">(</span><span class="n">executor_id</span><span class="p">)</span>
     <span class="n">port</span> <span class="o">=</span> <span class="mi">0</span>
 
     <span class="c1"># check for existing TFManagers</span>
     <span class="k">if</span> <span class="n">TFSparkNode</span><span class="o">.</span><span class="n">mgr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="n">TFSparkNode</span><span class="o">.</span><span class="n">mgr</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;state&#39;</span><span class="p">))</span> <span class="o">!=</span> <span class="s2">&quot;&#39;stopped&#39;&quot;</span><span class="p">:</span>
       <span class="k">if</span> <span class="n">TFSparkNode</span><span class="o">.</span><span class="n">cluster_id</span> <span class="o">==</span> <span class="n">cluster_id</span><span class="p">:</span>
         <span class="c1"># raise an exception to force Spark to retry this &quot;reservation&quot; task on another executor</span>
-        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;TFManager already started on </span><span class="si">{0}</span><span class="s2">, ppid=</span><span class="si">{1}</span><span class="s2">, state=</span><span class="si">{2}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">ppid</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">TFSparkNode</span><span class="o">.</span><span class="n">mgr</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;state&quot;</span><span class="p">))))</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;TFManager already started on </span><span class="si">{0}</span><span class="s2">, executor=</span><span class="si">{1}</span><span class="s2">, state=</span><span class="si">{2}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">executor_id</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">TFSparkNode</span><span class="o">.</span><span class="n">mgr</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;state&quot;</span><span class="p">))))</span>
       <span class="k">else</span><span class="p">:</span>
         <span class="c1"># old state, just continue with creating new manager</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Ignoring old TFManager with cluster_id </span><span class="si">{0}</span><span class="s2">, requested cluster_id </span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">TFSparkNode</span><span class="o">.</span><span class="n">cluster_id</span><span class="p">,</span> <span class="n">cluster_id</span><span class="p">))</span>
@@ -225,10 +237,10 @@
     <span class="n">tb_port</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">if</span> <span class="n">tensorboard</span> <span class="ow">and</span> <span class="n">job_name</span> <span class="o">==</span> <span class="s1">&#39;worker&#39;</span> <span class="ow">and</span> <span class="n">task_index</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
       <span class="n">tb_sock</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
-      <span class="n">tb_sock</span><span class="o">.</span><span class="n">bind</span><span class="p">((</span><span class="s1">&#39;&#39;</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+      <span class="n">tb_sock</span><span class="o">.</span><span class="n">bind</span><span class="p">((</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
       <span class="n">tb_port</span> <span class="o">=</span> <span class="n">tb_sock</span><span class="o">.</span><span class="n">getsockname</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
       <span class="n">tb_sock</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-      <span class="n">logdir</span> <span class="o">=</span> <span class="n">log_dir</span> <span class="k">if</span> <span class="n">log_dir</span> <span class="k">else</span> <span class="s2">&quot;tensorboard_</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">worker_num</span>
+      <span class="n">logdir</span> <span class="o">=</span> <span class="n">log_dir</span> <span class="k">if</span> <span class="n">log_dir</span> <span class="k">else</span> <span class="s2">&quot;tensorboard_</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">executor_id</span>
 
       <span class="c1"># search for tensorboard in python/bin, PATH, and PYTHONPATH</span>
       <span class="n">pypath</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">executable</span>
@@ -252,8 +264,8 @@
     <span class="n">tmp_sock</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">node_meta</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">cluster_info</span><span class="p">:</span>
-      <span class="p">(</span><span class="n">nhost</span><span class="p">,</span> <span class="n">nppid</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="n">node</span><span class="p">[</span><span class="s1">&#39;host&#39;</span><span class="p">],</span> <span class="n">node</span><span class="p">[</span><span class="s1">&#39;ppid&#39;</span><span class="p">])</span>
-      <span class="k">if</span> <span class="n">nhost</span> <span class="o">==</span> <span class="n">host</span> <span class="ow">and</span> <span class="n">nppid</span> <span class="o">==</span> <span class="n">ppid</span><span class="p">:</span>
+      <span class="p">(</span><span class="n">nhost</span><span class="p">,</span> <span class="n">nexec</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="n">node</span><span class="p">[</span><span class="s1">&#39;host&#39;</span><span class="p">],</span> <span class="n">node</span><span class="p">[</span><span class="s1">&#39;executor_id&#39;</span><span class="p">])</span>
+      <span class="k">if</span> <span class="n">nhost</span> <span class="o">==</span> <span class="n">host</span> <span class="ow">and</span> <span class="n">nexec</span> <span class="o">==</span> <span class="n">executor_id</span><span class="p">:</span>
         <span class="n">node_meta</span> <span class="o">=</span> <span class="n">node</span>
         <span class="n">port</span> <span class="o">=</span> <span class="n">node</span><span class="p">[</span><span class="s1">&#39;port&#39;</span><span class="p">]</span>
 
@@ -262,13 +274,12 @@
       <span class="c1"># first, find a free port for TF</span>
       <span class="n">tmp_sock</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
       <span class="n">tmp_sock</span><span class="o">.</span><span class="n">setsockopt</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">SOL_SOCKET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SO_REUSEADDR</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-      <span class="n">tmp_sock</span><span class="o">.</span><span class="n">bind</span><span class="p">((</span><span class="s1">&#39;&#39;</span><span class="p">,</span><span class="n">port</span><span class="p">))</span>
+      <span class="n">tmp_sock</span><span class="o">.</span><span class="n">bind</span><span class="p">((</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">port</span><span class="p">))</span>
       <span class="n">port</span> <span class="o">=</span> <span class="n">tmp_sock</span><span class="o">.</span><span class="n">getsockname</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
 
       <span class="n">node_meta</span> <span class="o">=</span> <span class="p">{</span>
-          <span class="s1">&#39;worker_num&#39;</span><span class="p">:</span> <span class="n">worker_num</span><span class="p">,</span>
+          <span class="s1">&#39;executor_id&#39;</span><span class="p">:</span> <span class="n">executor_id</span><span class="p">,</span>
           <span class="s1">&#39;host&#39;</span><span class="p">:</span> <span class="n">host</span><span class="p">,</span>
-          <span class="s1">&#39;ppid&#39;</span><span class="p">:</span> <span class="n">ppid</span><span class="p">,</span>
           <span class="s1">&#39;job_name&#39;</span><span class="p">:</span> <span class="n">job_name</span><span class="p">,</span>
           <span class="s1">&#39;task_index&#39;</span><span class="p">:</span> <span class="n">task_index</span><span class="p">,</span>
           <span class="s1">&#39;port&#39;</span><span class="p">:</span> <span class="n">port</span><span class="p">,</span>
@@ -285,21 +296,36 @@
       <span class="n">client</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
     <span class="c1"># construct a TensorFlow clusterspec from cluster_info</span>
-    <span class="n">sorted_cluster_info</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">cluster_info</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">k</span><span class="p">:</span> <span class="n">k</span><span class="p">[</span><span class="s1">&#39;worker_num&#39;</span><span class="p">])</span>
+    <span class="n">sorted_cluster_info</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">cluster_info</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">k</span><span class="p">:</span> <span class="n">k</span><span class="p">[</span><span class="s1">&#39;executor_id&#39;</span><span class="p">])</span>
     <span class="n">spec</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">last_worker_num</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">last_executor_id</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
     <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">sorted_cluster_info</span><span class="p">:</span>
-      <span class="k">if</span> <span class="p">(</span><span class="n">node</span><span class="p">[</span><span class="s1">&#39;worker_num&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">last_worker_num</span><span class="p">):</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">node</span><span class="p">[</span><span class="s1">&#39;executor_id&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">last_executor_id</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Duplicate worker/task in cluster_info&quot;</span><span class="p">)</span>
-      <span class="n">last_worker_num</span> <span class="o">=</span> <span class="n">node</span><span class="p">[</span><span class="s1">&#39;worker_num&#39;</span><span class="p">]</span>
+      <span class="n">last_executor_id</span> <span class="o">=</span> <span class="n">node</span><span class="p">[</span><span class="s1">&#39;executor_id&#39;</span><span class="p">]</span>
       <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;node: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
       <span class="p">(</span><span class="n">njob</span><span class="p">,</span> <span class="n">nhost</span><span class="p">,</span> <span class="n">nport</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="n">node</span><span class="p">[</span><span class="s1">&#39;job_name&#39;</span><span class="p">],</span> <span class="n">node</span><span class="p">[</span><span class="s1">&#39;host&#39;</span><span class="p">],</span> <span class="n">node</span><span class="p">[</span><span class="s1">&#39;port&#39;</span><span class="p">])</span>
       <span class="n">hosts</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">njob</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">spec</span> <span class="k">else</span> <span class="n">spec</span><span class="p">[</span><span class="n">njob</span><span class="p">]</span>
       <span class="n">hosts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">:</span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">nhost</span><span class="p">,</span> <span class="n">nport</span><span class="p">))</span>
       <span class="n">spec</span><span class="p">[</span><span class="n">njob</span><span class="p">]</span> <span class="o">=</span> <span class="n">hosts</span>
 
+    <span class="c1"># update TF_CONFIG and reserve GPU for tf.estimator based code</span>
+    <span class="c1"># Note: this will execute but be ignored by non-tf.estimator code</span>
+    <span class="n">tf_config</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span>
+      <span class="s1">&#39;cluster&#39;</span><span class="p">:</span> <span class="n">spec</span><span class="p">,</span>
+      <span class="s1">&#39;task&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="n">job_name</span><span class="p">,</span> <span class="s1">&#39;index&#39;</span><span class="p">:</span> <span class="n">task_index</span><span class="p">},</span>
+      <span class="s1">&#39;environment&#39;</span><span class="p">:</span> <span class="s1">&#39;cloud&#39;</span>
+    <span class="p">})</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;TF_CONFIG&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tf_config</span>
+    <span class="k">if</span> <span class="n">tf</span><span class="o">.</span><span class="n">test</span><span class="o">.</span><span class="n">is_built_with_cuda</span><span class="p">():</span>
+      <span class="n">num_gpus</span> <span class="o">=</span> <span class="n">tf_args</span><span class="o">.</span><span class="n">num_gpus</span> <span class="k">if</span> <span class="s1">&#39;num_gpus&#39;</span> <span class="ow">in</span> <span class="n">tf_args</span> <span class="k">else</span> <span class="mi">1</span>
+      <span class="n">gpus_to_use</span> <span class="o">=</span> <span class="n">gpu_info</span><span class="o">.</span><span class="n">get_gpus</span><span class="p">(</span><span class="n">num_gpus</span><span class="p">)</span>
+      <span class="n">gpu_str</span> <span class="o">=</span> <span class="s2">&quot;GPUs&quot;</span> <span class="k">if</span> <span class="n">num_gpus</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="s2">&quot;GPU&quot;</span>
+      <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Requested </span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2">, setting CUDA_VISIBLE_DEVICES=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num_gpus</span><span class="p">,</span> <span class="n">gpu_str</span><span class="p">,</span> <span class="n">gpus_to_use</span><span class="p">))</span>
+      <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;CUDA_VISIBLE_DEVICES&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gpus_to_use</span>
+
     <span class="c1"># create a context object to hold metadata for TF</span>
-    <span class="n">ctx</span> <span class="o">=</span> <span class="n">TFNodeContext</span><span class="p">(</span><span class="n">worker_num</span><span class="p">,</span> <span class="n">job_name</span><span class="p">,</span> <span class="n">task_index</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">cluster_meta</span><span class="p">[</span><span class="s1">&#39;default_fs&#39;</span><span class="p">],</span> <span class="n">cluster_meta</span><span class="p">[</span><span class="s1">&#39;working_dir&#39;</span><span class="p">],</span> <span class="n">TFSparkNode</span><span class="o">.</span><span class="n">mgr</span><span class="p">)</span>
+    <span class="n">ctx</span> <span class="o">=</span> <span class="n">TFNodeContext</span><span class="p">(</span><span class="n">executor_id</span><span class="p">,</span> <span class="n">job_name</span><span class="p">,</span> <span class="n">task_index</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">cluster_meta</span><span class="p">[</span><span class="s1">&#39;default_fs&#39;</span><span class="p">],</span> <span class="n">cluster_meta</span><span class="p">[</span><span class="s1">&#39;working_dir&#39;</span><span class="p">],</span> <span class="n">TFSparkNode</span><span class="o">.</span><span class="n">mgr</span><span class="p">)</span>
 
     <span class="c1"># release port reserved for TF as late as possible</span>
     <span class="k">if</span> <span class="n">tmp_sock</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -333,7 +359,7 @@
     <span class="k">if</span> <span class="n">job_name</span> <span class="o">==</span> <span class="s1">&#39;ps&#39;</span> <span class="ow">or</span> <span class="n">background</span><span class="p">:</span>
       <span class="c1"># invoke the TensorFlow main function in a background thread</span>
       <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting TensorFlow </span><span class="si">{0}</span><span class="s2">:</span><span class="si">{1}</span><span class="s2"> as </span><span class="si">{2}</span><span class="s2"> on cluster node </span><span class="si">{3}</span><span class="s2"> on background process&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-        <span class="n">job_name</span><span class="p">,</span> <span class="n">task_index</span><span class="p">,</span> <span class="n">job_name</span><span class="p">,</span> <span class="n">worker_num</span><span class="p">))</span>
+        <span class="n">job_name</span><span class="p">,</span> <span class="n">task_index</span><span class="p">,</span> <span class="n">job_name</span><span class="p">,</span> <span class="n">executor_id</span><span class="p">))</span>
 
       <span class="n">p</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">Process</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">wrapper_fn_background</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">tf_args</span><span class="p">,</span> <span class="n">ctx</span><span class="p">))</span>
       <span class="k">if</span> <span class="n">job_name</span> <span class="o">==</span> <span class="s1">&#39;ps&#39;</span><span class="p">:</span>
@@ -361,17 +387,18 @@
           <span class="n">queue</span><span class="o">.</span><span class="n">task_done</span><span class="p">()</span>
     <span class="k">else</span><span class="p">:</span>
       <span class="c1"># otherwise, just run TF function in the main executor/worker thread</span>
-      <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting TensorFlow </span><span class="si">{0}</span><span class="s2">:</span><span class="si">{1}</span><span class="s2"> on cluster node </span><span class="si">{2}</span><span class="s2"> on foreground thread&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">job_name</span><span class="p">,</span> <span class="n">task_index</span><span class="p">,</span> <span class="n">worker_num</span><span class="p">))</span>
+      <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting TensorFlow </span><span class="si">{0}</span><span class="s2">:</span><span class="si">{1}</span><span class="s2"> on cluster node </span><span class="si">{2}</span><span class="s2"> on foreground thread&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">job_name</span><span class="p">,</span> <span class="n">task_index</span><span class="p">,</span> <span class="n">executor_id</span><span class="p">))</span>
       <span class="n">wrapper_fn</span><span class="p">(</span><span class="n">tf_args</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span>
-      <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Finished TensorFlow </span><span class="si">{0}</span><span class="s2">:</span><span class="si">{1}</span><span class="s2"> on cluster node </span><span class="si">{2}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">job_name</span><span class="p">,</span> <span class="n">task_index</span><span class="p">,</span> <span class="n">worker_num</span><span class="p">))</span>
+      <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Finished TensorFlow </span><span class="si">{0}</span><span class="s2">:</span><span class="si">{1}</span><span class="s2"> on cluster node </span><span class="si">{2}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">job_name</span><span class="p">,</span> <span class="n">task_index</span><span class="p">,</span> <span class="n">executor_id</span><span class="p">))</span>
 </div>
   <span class="k">return</span> <span class="n">_mapfn</span>
+
 
 <div class="viewcode-block" id="train"><a class="viewcode-back" href="../../tensorflowonspark.TFSparkNode.html#tensorflowonspark.TFSparkNode.train">[docs]</a><span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="n">cluster_info</span><span class="p">,</span> <span class="n">cluster_meta</span><span class="p">,</span> <span class="n">qname</span><span class="o">=</span><span class="s1">&#39;input&#39;</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Feeds Spark partitions into the shared multiprocessing.Queue.</span>
 
 <span class="sd">  Args:</span>
-<span class="sd">    :cluster_info: node reservation information for the cluster (e.g. host, ppid, pid, ports, etc)</span>
+<span class="sd">    :cluster_info: node reservation information for the cluster (e.g. host, executor_id, pid, ports, etc)</span>
 <span class="sd">    :cluster_meta: dictionary of cluster metadata (e.g. cluster_id, reservation.Server address, etc)</span>
 <span class="sd">    :qname: *INTERNAL_USE*</span>
 
@@ -380,7 +407,7 @@
 <span class="sd">  &quot;&quot;&quot;</span>
   <span class="k">def</span> <span class="nf">_train</span><span class="p">(</span><span class="nb">iter</span><span class="p">):</span>
     <span class="c1"># get shared queue, reconnecting if necessary</span>
-    <span class="n">mgr</span> <span class="o">=</span> <span class="n">_get_manager</span><span class="p">(</span><span class="n">cluster_info</span><span class="p">,</span> <span class="n">util</span><span class="o">.</span><span class="n">get_ip_address</span><span class="p">(),</span> <span class="n">os</span><span class="o">.</span><span class="n">getppid</span><span class="p">())</span>
+    <span class="n">mgr</span> <span class="o">=</span> <span class="n">_get_manager</span><span class="p">(</span><span class="n">cluster_info</span><span class="p">,</span> <span class="n">util</span><span class="o">.</span><span class="n">get_ip_address</span><span class="p">(),</span> <span class="n">util</span><span class="o">.</span><span class="n">read_executor_id</span><span class="p">())</span>
     <span class="k">try</span><span class="p">:</span>
       <span class="n">queue</span> <span class="o">=</span> <span class="n">mgr</span><span class="o">.</span><span class="n">get_queue</span><span class="p">(</span><span class="n">qname</span><span class="p">)</span>
       <span class="n">equeue</span> <span class="o">=</span> <span class="n">mgr</span><span class="o">.</span><span class="n">get_queue</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">)</span>
@@ -432,11 +459,12 @@
 </div>
   <span class="k">return</span> <span class="n">_train</span>
 
+
 <div class="viewcode-block" id="inference"><a class="viewcode-back" href="../../tensorflowonspark.TFSparkNode.html#tensorflowonspark.TFSparkNode.inference">[docs]</a><span class="k">def</span> <span class="nf">inference</span><span class="p">(</span><span class="n">cluster_info</span><span class="p">,</span> <span class="n">qname</span><span class="o">=</span><span class="s1">&#39;input&#39;</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Feeds Spark partitions into the shared multiprocessing.Queue and returns inference results.</span>
 
 <span class="sd">  Args:</span>
-<span class="sd">    :cluster_info: node reservation information for the cluster (e.g. host, ppid, pid, ports, etc)</span>
+<span class="sd">    :cluster_info: node reservation information for the cluster (e.g. host, executor_id, pid, ports, etc)</span>
 <span class="sd">    :qname: *INTERNAL_USE*</span>
 
 <span class="sd">  Returns:</span>
@@ -444,7 +472,7 @@
 <span class="sd">  &quot;&quot;&quot;</span>
   <span class="k">def</span> <span class="nf">_inference</span><span class="p">(</span><span class="nb">iter</span><span class="p">):</span>
     <span class="c1"># get shared queue, reconnecting if necessary</span>
-    <span class="n">mgr</span> <span class="o">=</span> <span class="n">_get_manager</span><span class="p">(</span><span class="n">cluster_info</span><span class="p">,</span> <span class="n">util</span><span class="o">.</span><span class="n">get_ip_address</span><span class="p">(),</span> <span class="n">os</span><span class="o">.</span><span class="n">getppid</span><span class="p">())</span>
+    <span class="n">mgr</span> <span class="o">=</span> <span class="n">_get_manager</span><span class="p">(</span><span class="n">cluster_info</span><span class="p">,</span> <span class="n">util</span><span class="o">.</span><span class="n">get_ip_address</span><span class="p">(),</span> <span class="n">util</span><span class="o">.</span><span class="n">read_executor_id</span><span class="p">())</span>
     <span class="k">try</span><span class="p">:</span>
       <span class="n">queue_in</span> <span class="o">=</span> <span class="n">mgr</span><span class="o">.</span><span class="n">get_queue</span><span class="p">(</span><span class="n">qname</span><span class="p">)</span>
       <span class="n">equeue</span> <span class="o">=</span> <span class="n">mgr</span><span class="o">.</span><span class="n">get_queue</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">)</span>
@@ -491,11 +519,12 @@
 </div>
   <span class="k">return</span> <span class="n">_inference</span>
 
+
 <div class="viewcode-block" id="shutdown"><a class="viewcode-back" href="../../tensorflowonspark.TFSparkNode.html#tensorflowonspark.TFSparkNode.shutdown">[docs]</a><span class="k">def</span> <span class="nf">shutdown</span><span class="p">(</span><span class="n">cluster_info</span><span class="p">,</span> <span class="n">queues</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;input&#39;</span><span class="p">]):</span>
   <span class="sd">&quot;&quot;&quot;Stops all TensorFlow nodes by feeding ``None`` into the multiprocessing.Queues.</span>
 
 <span class="sd">  Args:</span>
-<span class="sd">    :cluster_info: node reservation information for the cluster (e.g. host, ppid, pid, ports, etc).</span>
+<span class="sd">    :cluster_info: node reservation information for the cluster (e.g. host, executor_id, pid, ports, etc).</span>
 <span class="sd">    :queues: *INTERNAL_USE*</span>
 
 <span class="sd">  Returns:</span>
@@ -503,14 +532,14 @@
 <span class="sd">  &quot;&quot;&quot;</span>
   <span class="k">def</span> <span class="nf">_shutdown</span><span class="p">(</span><span class="nb">iter</span><span class="p">):</span>
     <span class="n">host</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">get_ip_address</span><span class="p">()</span>
-    <span class="n">ppid</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getppid</span><span class="p">()</span>
+    <span class="n">executor_id</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">read_executor_id</span><span class="p">()</span>
 
     <span class="c1"># reconnect to shared queue</span>
-    <span class="n">mgr</span> <span class="o">=</span> <span class="n">_get_manager</span><span class="p">(</span><span class="n">cluster_info</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">ppid</span><span class="p">)</span>
+    <span class="n">mgr</span> <span class="o">=</span> <span class="n">_get_manager</span><span class="p">(</span><span class="n">cluster_info</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">executor_id</span><span class="p">)</span>
 
     <span class="c1"># send SIGTERM to Tensorboard proc (if running)</span>
     <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">cluster_info</span><span class="p">:</span>
-      <span class="k">if</span> <span class="n">node</span><span class="p">[</span><span class="s1">&#39;host&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">host</span> <span class="ow">and</span> <span class="n">node</span><span class="p">[</span><span class="s1">&#39;ppid&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">ppid</span><span class="p">:</span>
+      <span class="k">if</span> <span class="n">node</span><span class="p">[</span><span class="s1">&#39;host&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">host</span> <span class="ow">and</span> <span class="n">node</span><span class="p">[</span><span class="s1">&#39;executor_id&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">executor_id</span><span class="p">:</span>
         <span class="n">tb_pid</span> <span class="o">=</span> <span class="n">node</span><span class="p">[</span><span class="s1">&#39;tb_pid&#39;</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">tb_pid</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
           <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Stopping tensorboard (pid=</span><span class="si">{0}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tb_pid</span><span class="p">))</span>
@@ -532,7 +561,6 @@
     <span class="k">return</span> <span class="p">[</span><span class="kc">True</span><span class="p">]</span>
 </div>
   <span class="k">return</span> <span class="n">_shutdown</span>
-
 </pre></div>
 
           </div>
@@ -565,7 +593,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.2.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.3.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
       </ul>
     </div>

@@ -4,27 +4,18 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>tensorflowonspark.dfutil &#8212; TensorFlowOnSpark 1.2.0 documentation</title>
+    <title>tensorflowonspark.dfutil &#8212; TensorFlowOnSpark 1.3.0 documentation</title>
     <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../../',
-        VERSION:     '1.2.0',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
-  </head>
-  <body>
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -34,7 +25,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.2.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.3.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
       </ul>
     </div>  
@@ -69,8 +60,8 @@
 
 <span class="sd">  Args:</span>
 <span class="sd">    :df: Spark Dataframe</span>
-<span class="sd">  &quot;&quot;&quot;</span>
-  <span class="k">return</span> <span class="n">df</span> <span class="ow">in</span> <span class="n">loadedDF</span></div>
+<span class="sd">  &quot;&quot;&quot;</span></div>
+  <span class="k">return</span> <span class="n">df</span> <span class="ow">in</span> <span class="n">loadedDF</span>
 
 
 <div class="viewcode-block" id="saveAsTFRecords"><a class="viewcode-back" href="../../tensorflowonspark.dfutil.html#tensorflowonspark.dfutil.saveAsTFRecords">[docs]</a><span class="k">def</span> <span class="nf">saveAsTFRecords</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">):</span>
@@ -84,8 +75,8 @@
 <span class="sd">  &quot;&quot;&quot;</span>
   <span class="n">tf_rdd</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">rdd</span><span class="o">.</span><span class="n">mapPartitions</span><span class="p">(</span><span class="n">toTFExample</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">dtypes</span><span class="p">))</span>
   <span class="n">tf_rdd</span><span class="o">.</span><span class="n">saveAsNewAPIHadoopFile</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="s2">&quot;org.tensorflow.hadoop.io.TFRecordFileOutputFormat&quot;</span><span class="p">,</span>
-                            <span class="n">keyClass</span><span class="o">=</span><span class="s2">&quot;org.apache.hadoop.io.BytesWritable&quot;</span><span class="p">,</span>
-                            <span class="n">valueClass</span><span class="o">=</span><span class="s2">&quot;org.apache.hadoop.io.NullWritable&quot;</span><span class="p">)</span></div>
+                                <span class="n">keyClass</span><span class="o">=</span><span class="s2">&quot;org.apache.hadoop.io.BytesWritable&quot;</span><span class="p">,</span></div>
+                                <span class="n">valueClass</span><span class="o">=</span><span class="s2">&quot;org.apache.hadoop.io.NullWritable&quot;</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="loadTFRecords"><a class="viewcode-back" href="../../tensorflowonspark.dfutil.html#tensorflowonspark.dfutil.loadTFRecords">[docs]</a><span class="k">def</span> <span class="nf">loadTFRecords</span><span class="p">(</span><span class="n">sc</span><span class="p">,</span> <span class="n">input_dir</span><span class="p">,</span> <span class="n">binary_features</span><span class="o">=</span><span class="p">[]):</span>
@@ -108,8 +99,8 @@
   <span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
 
   <span class="n">tfr_rdd</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">newAPIHadoopFile</span><span class="p">(</span><span class="n">input_dir</span><span class="p">,</span> <span class="s2">&quot;org.tensorflow.hadoop.io.TFRecordFileInputFormat&quot;</span><span class="p">,</span>
-                              <span class="n">keyClass</span><span class="o">=</span><span class="s2">&quot;org.apache.hadoop.io.BytesWritable&quot;</span><span class="p">,</span>
-                              <span class="n">valueClass</span><span class="o">=</span><span class="s2">&quot;org.apache.hadoop.io.NullWritable&quot;</span><span class="p">)</span>
+                                <span class="n">keyClass</span><span class="o">=</span><span class="s2">&quot;org.apache.hadoop.io.BytesWritable&quot;</span><span class="p">,</span>
+                                <span class="n">valueClass</span><span class="o">=</span><span class="s2">&quot;org.apache.hadoop.io.NullWritable&quot;</span><span class="p">)</span>
 
   <span class="c1"># infer Spark SQL types from tf.Example</span>
   <span class="n">record</span> <span class="o">=</span> <span class="n">tfr_rdd</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
@@ -124,8 +115,8 @@
   <span class="n">df</span> <span class="o">=</span> <span class="n">example_rdd</span><span class="o">.</span><span class="n">toDF</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 
   <span class="c1"># save reference of this dataframe</span>
-  <span class="n">loadedDF</span><span class="p">[</span><span class="n">df</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_dir</span>
-  <span class="k">return</span> <span class="n">df</span></div>
+  <span class="n">loadedDF</span><span class="p">[</span><span class="n">df</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_dir</span></div>
+  <span class="k">return</span> <span class="n">df</span>
 
 
 <div class="viewcode-block" id="toTFExample"><a class="viewcode-back" href="../../tensorflowonspark.dfutil.html#tensorflowonspark.dfutil.toTFExample">[docs]</a><span class="k">def</span> <span class="nf">toTFExample</span><span class="p">(</span><span class="n">dtypes</span><span class="p">):</span>
@@ -171,8 +162,8 @@
       <span class="n">example</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">train</span><span class="o">.</span><span class="n">Example</span><span class="p">(</span><span class="n">features</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">train</span><span class="o">.</span><span class="n">Features</span><span class="p">(</span><span class="n">feature</span><span class="o">=</span><span class="n">features</span><span class="p">))</span>
       <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="nb">bytearray</span><span class="p">(</span><span class="n">example</span><span class="o">.</span><span class="n">SerializeToString</span><span class="p">()),</span> <span class="kc">None</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">results</span>
-
-  <span class="k">return</span> <span class="n">_toTFExample</span></div>
+</div>
+  <span class="k">return</span> <span class="n">_toTFExample</span>
 
 
 <div class="viewcode-block" id="infer_schema"><a class="viewcode-back" href="../../tensorflowonspark.dfutil.html#tensorflowonspark.dfutil.infer_schema">[docs]</a><span class="k">def</span> <span class="nf">infer_schema</span><span class="p">(</span><span class="n">example</span><span class="p">,</span> <span class="n">binary_features</span><span class="o">=</span><span class="p">[]):</span>
@@ -208,8 +199,8 @@
       <span class="k">return</span> <span class="n">ArrayType</span><span class="p">(</span><span class="n">sql_type</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>                           <span class="c1"># represent everything else as base types (and empty tensors as StringType())</span>
       <span class="k">return</span> <span class="n">sql_type</span>
-
-  <span class="k">return</span> <span class="n">StructType</span><span class="p">([</span> <span class="n">StructField</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">_infer_sql_type</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">),</span> <span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">example</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">feature</span><span class="o">.</span><span class="n">items</span><span class="p">())</span> <span class="p">])</span></div>
+</div>
+  <span class="k">return</span> <span class="n">StructType</span><span class="p">([</span><span class="n">StructField</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">_infer_sql_type</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">),</span> <span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">example</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">feature</span><span class="o">.</span><span class="n">items</span><span class="p">())])</span>
 
 
 <div class="viewcode-block" id="fromTFExample"><a class="viewcode-back" href="../../tensorflowonspark.dfutil.html#tensorflowonspark.dfutil.fromTFExample">[docs]</a><span class="k">def</span> <span class="nf">fromTFExample</span><span class="p">(</span><span class="nb">iter</span><span class="p">,</span> <span class="n">binary_features</span><span class="o">=</span><span class="p">[]):</span>
@@ -250,12 +241,11 @@
   <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="nb">iter</span><span class="p">:</span>
     <span class="n">example</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">train</span><span class="o">.</span><span class="n">Example</span><span class="p">()</span>
     <span class="n">example</span><span class="o">.</span><span class="n">ParseFromString</span><span class="p">(</span><span class="nb">bytes</span><span class="p">(</span><span class="n">record</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>       <span class="c1"># record is (bytestr, None)</span>
-    <span class="n">d</span> <span class="o">=</span> <span class="p">{</span> <span class="n">k</span><span class="p">:</span> <span class="n">_get_value</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">example</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">feature</span><span class="o">.</span><span class="n">items</span><span class="p">())</span> <span class="p">}</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">_get_value</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">example</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">feature</span><span class="o">.</span><span class="n">items</span><span class="p">())}</span>
     <span class="n">row</span> <span class="o">=</span> <span class="n">Row</span><span class="p">(</span><span class="o">**</span><span class="n">d</span><span class="p">)</span>
     <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
-
-  <span class="k">return</span> <span class="n">results</span></div>
-
+</div>
+  <span class="k">return</span> <span class="n">results</span>
 </pre></div>
 
           </div>
@@ -265,12 +255,14 @@
         <div class="sphinxsidebarwrapper">
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -286,13 +278,13 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.2.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.3.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Yahoo Inc.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.7.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.1.
     </div>
   </body>
 </html>
