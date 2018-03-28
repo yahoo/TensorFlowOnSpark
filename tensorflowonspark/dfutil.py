@@ -37,8 +37,8 @@ def saveAsTFRecords(df, output_dir):
   """
   tf_rdd = df.rdd.mapPartitions(toTFExample(df.dtypes))
   tf_rdd.saveAsNewAPIHadoopFile(output_dir, "org.tensorflow.hadoop.io.TFRecordFileOutputFormat",
-                            keyClass="org.apache.hadoop.io.BytesWritable",
-                            valueClass="org.apache.hadoop.io.NullWritable")
+                                keyClass="org.apache.hadoop.io.BytesWritable",
+                                valueClass="org.apache.hadoop.io.NullWritable")
 
 
 def loadTFRecords(sc, input_dir, binary_features=[]):
@@ -61,8 +61,8 @@ def loadTFRecords(sc, input_dir, binary_features=[]):
   import tensorflow as tf
 
   tfr_rdd = sc.newAPIHadoopFile(input_dir, "org.tensorflow.hadoop.io.TFRecordFileInputFormat",
-                              keyClass="org.apache.hadoop.io.BytesWritable",
-                              valueClass="org.apache.hadoop.io.NullWritable")
+                                keyClass="org.apache.hadoop.io.BytesWritable",
+                                valueClass="org.apache.hadoop.io.NullWritable")
 
   # infer Spark SQL types from tf.Example
   record = tfr_rdd.take(1)[0]
@@ -162,7 +162,7 @@ def infer_schema(example, binary_features=[]):
     else:                           # represent everything else as base types (and empty tensors as StringType())
       return sql_type
 
-  return StructType([ StructField(k, _infer_sql_type(k, v), True) for k,v in sorted(example.features.feature.items()) ])
+  return StructType([StructField(k, _infer_sql_type(k, v), True) for k, v in sorted(example.features.feature.items())])
 
 
 def fromTFExample(iter, binary_features=[]):
@@ -203,9 +203,8 @@ def fromTFExample(iter, binary_features=[]):
   for record in iter:
     example = tf.train.Example()
     example.ParseFromString(bytes(record[0]))       # record is (bytestr, None)
-    d = { k: _get_value(k, v) for k,v in sorted(example.features.feature.items()) }
+    d = {k: _get_value(k, v) for k, v in sorted(example.features.feature.items())}
     row = Row(**d)
     results.append(row)
 
   return results
-
