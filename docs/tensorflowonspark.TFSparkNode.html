@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>tensorflowonspark.TFSparkNode module &#8212; TensorFlowOnSpark 1.2.1 documentation</title>
+    <title>tensorflowonspark.TFSparkNode module &#8212; TensorFlowOnSpark 1.3.0 documentation</title>
     <link rel="stylesheet" href="_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" src="_static/documentation_options.js"></script>
@@ -33,7 +33,7 @@
         <li class="right" >
           <a href="tensorflowonspark.TFNode.html" title="tensorflowonspark.TFNode module"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">TensorFlowOnSpark 1.2.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TensorFlowOnSpark 1.3.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="tensorflowonspark.html" accesskey="U">tensorflowonspark package</a> &#187;</li> 
       </ul>
     </div>  
@@ -48,7 +48,7 @@
 <p>This module provides low-level functions for managing the TensorFlowOnSpark cluster.</p>
 <dl class="class">
 <dt id="tensorflowonspark.TFSparkNode.TFNodeContext">
-<em class="property">class </em><code class="descname">TFNodeContext</code><span class="sig-paren">(</span><em>worker_num</em>, <em>job_name</em>, <em>task_index</em>, <em>cluster_spec</em>, <em>defaultFS</em>, <em>working_dir</em>, <em>mgr</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFSparkNode.html#TFNodeContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.TFSparkNode.TFNodeContext" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descname">TFNodeContext</code><span class="sig-paren">(</span><em>executor_id</em>, <em>job_name</em>, <em>task_index</em>, <em>cluster_spec</em>, <em>defaultFS</em>, <em>working_dir</em>, <em>mgr</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFSparkNode.html#TFNodeContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.TFSparkNode.TFNodeContext" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Encapsulates unique metadata for a TensorFlowOnSpark node/executor and provides methods to interact with Spark and HDFS.</p>
 <p>An instance of this object will be passed to the TensorFlow “main” function via the <cite>ctx</cite> argument.
@@ -59,7 +59,7 @@ To simply the end-user API, this class now mirrors the functions of the TFNode m
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">worker_num:</th><td class="field-body">integer identifier for this executor, per <code class="docutils literal notranslate"><span class="pre">nodeRDD</span> <span class="pre">=</span> <span class="pre">sc.parallelize(range(num_executors),</span> <span class="pre">num_executors).</span></code></td>
+<tr class="field-odd field"><th class="field-name">executor_id:</th><td class="field-body">integer identifier for this executor, per <code class="docutils literal notranslate"><span class="pre">nodeRDD</span> <span class="pre">=</span> <span class="pre">sc.parallelize(range(num_executors),</span> <span class="pre">num_executors).</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">job_name:</th><td class="field-body">TensorFlow job name (e.g. ‘ps’ or ‘worker’) of this TF node, per cluster_spec.</td>
 </tr>
@@ -138,7 +138,7 @@ per executor, this will reconnect to the “singleton” instance as needed.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">cluster_info:</th><td class="field-body">node reservation information for the cluster (e.g. host, ppid, pid, ports, etc)</td>
+<tr class="field-odd field"><th class="field-name">cluster_info:</th><td class="field-body">node reservation information for the cluster (e.g. host, executor_id, pid, ports, etc)</td>
 </tr>
 <tr class="field-even field"><th class="field-name">qname:</th><td class="field-body"><em>INTERNAL_USE</em></td>
 </tr>
@@ -192,7 +192,7 @@ per executor, this will reconnect to the “singleton” instance as needed.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">cluster_info:</th><td class="field-body">node reservation information for the cluster (e.g. host, ppid, pid, ports, etc).</td>
+<tr class="field-odd field"><th class="field-name">cluster_info:</th><td class="field-body">node reservation information for the cluster (e.g. host, executor_id, pid, ports, etc).</td>
 </tr>
 <tr class="field-even field"><th class="field-name">queues:</th><td class="field-body"><em>INTERNAL_USE</em></td>
 </tr>
@@ -214,7 +214,7 @@ per executor, this will reconnect to the “singleton” instance as needed.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">cluster_info:</th><td class="field-body">node reservation information for the cluster (e.g. host, ppid, pid, ports, etc)</td>
+<tr class="field-odd field"><th class="field-name">cluster_info:</th><td class="field-body">node reservation information for the cluster (e.g. host, executor_id, pid, ports, etc)</td>
 </tr>
 <tr class="field-even field"><th class="field-name">cluster_meta:</th><td class="field-body">dictionary of cluster metadata (e.g. cluster_id, reservation.Server address, etc)</td>
 </tr>
@@ -280,7 +280,7 @@ per executor, this will reconnect to the “singleton” instance as needed.</p>
         <li class="right" >
           <a href="tensorflowonspark.TFNode.html" title="tensorflowonspark.TFNode module"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">TensorFlowOnSpark 1.2.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TensorFlowOnSpark 1.3.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="tensorflowonspark.html" >tensorflowonspark package</a> &#187;</li> 
       </ul>
     </div>

@@ -22,6 +22,7 @@ from . import util
 BUFSIZE = 1024
 MAX_RETRIES = 3
 
+
 class Reservations:
   """Thread-safe store for node reservations.
 
@@ -57,6 +58,7 @@ class Reservations:
     """Get a count of remaining/unfulfilled reservations."""
     with self.lock:
       return self.required - len(self.reservations)
+
 
 class MessageSocket(object):
   """Abstract class w/ length-prefixed socket send/receive functions."""
@@ -146,13 +148,13 @@ class Server(MessageSocket):
     """
     server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server_sock.bind(('',0))
+    server_sock.bind(('', 0))
     server_sock.listen(10)
 
     # hostname may not be resolvable but IP address probably will be
     host = util.get_ip_address()
     port = server_sock.getsockname()[1]
-    addr = (host,port)
+    addr = (host, port)
     logging.info("listening for reservations at {0}".format(addr))
 
     def _listen(self, sock):
@@ -186,6 +188,7 @@ class Server(MessageSocket):
   def stop(self):
     """Stop the Server's socket listener."""
     self.done = True
+
 
 class Client(MessageSocket):
   """Client to register and await node reservations.

@@ -24,3 +24,15 @@ def find_in_path(path, file):
     if os.path.exists(candidate) and os.path.isfile(candidate):
       return candidate
   return False
+
+
+def write_executor_id(num):
+  """Write executor_id into a local file in the executor's current working directory"""
+  with open("executor_id", "w") as f:
+    f.write(str(num))
+
+
+def read_executor_id():
+  """Read worker id from a local file in the executor's current working directory"""
+  with open("executor_id", "r") as f:
+    return int(f.read())

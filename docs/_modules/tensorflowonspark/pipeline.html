@@ -4,27 +4,18 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>tensorflowonspark.pipeline &#8212; TensorFlowOnSpark 1.2.0 documentation</title>
+    <title>tensorflowonspark.pipeline &#8212; TensorFlowOnSpark 1.3.0 documentation</title>
     <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../../',
-        VERSION:     '1.2.0',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
-  </head>
-  <body>
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -34,7 +25,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.2.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.3.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
       </ul>
     </div>  
@@ -81,7 +72,8 @@
 <span class="kn">import</span> <span class="nn">subprocess</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 
-<span class="c1">##### TensorFlowOnSpark Params</span>
+
+<span class="c1"># TensorFlowOnSpark Params</span>
 
 <div class="viewcode-block" id="TFTypeConverters"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.TFTypeConverters">[docs]</a><span class="k">class</span> <span class="nc">TFTypeConverters</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Custom DataFrame TypeConverter for dictionary types (since this is not provided by Spark core).&quot;&quot;&quot;</span>
@@ -89,160 +81,227 @@
   <span class="k">def</span> <span class="nf">toDict</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
     <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">==</span> <span class="nb">dict</span><span class="p">:</span>
       <span class="k">return</span> <span class="n">value</span>
-    <span class="k">else</span><span class="p">:</span>
-      <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Could not convert </span><span class="si">%s</span><span class="s2"> to OrderedDict&quot;</span> <span class="o">%</span> <span class="n">value</span><span class="p">)</span></div></div>
+    <span class="k">else</span><span class="p">:</span></div></div>
+      <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Could not convert </span><span class="si">%s</span><span class="s2"> to OrderedDict&quot;</span> <span class="o">%</span> <span class="n">value</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="HasBatchSize"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasBatchSize">[docs]</a><span class="k">class</span> <span class="nc">HasBatchSize</span><span class="p">(</span><span class="n">Params</span><span class="p">):</span>
   <span class="n">batch_size</span> <span class="o">=</span> <span class="n">Param</span><span class="p">(</span><span class="n">Params</span><span class="o">.</span><span class="n">_dummy</span><span class="p">(),</span> <span class="s2">&quot;batch_size&quot;</span><span class="p">,</span> <span class="s2">&quot;Number of records per batch&quot;</span><span class="p">,</span> <span class="n">typeConverter</span><span class="o">=</span><span class="n">TypeConverters</span><span class="o">.</span><span class="n">toInt</span><span class="p">)</span>
+
   <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="nb">super</span><span class="p">(</span><span class="n">HasBatchSize</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-<div class="viewcode-block" id="HasBatchSize.setBatchSize"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasBatchSize.setBatchSize">[docs]</a>  <span class="k">def</span> <span class="nf">setBatchSize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="n">value</span><span class="p">)</span></div>
-<div class="viewcode-block" id="HasBatchSize.getBatchSize"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasBatchSize.getBatchSize">[docs]</a>  <span class="k">def</span> <span class="nf">getBatchSize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="HasBatchSize.setBatchSize"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasBatchSize.setBatchSize">[docs]</a>  <span class="k">def</span> <span class="nf">setBatchSize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HasBatchSize.getBatchSize"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasBatchSize.getBatchSize">[docs]</a>  <span class="k">def</span> <span class="nf">getBatchSize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></div></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="HasClusterSize"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasClusterSize">[docs]</a><span class="k">class</span> <span class="nc">HasClusterSize</span><span class="p">(</span><span class="n">Params</span><span class="p">):</span>
   <span class="n">cluster_size</span> <span class="o">=</span> <span class="n">Param</span><span class="p">(</span><span class="n">Params</span><span class="o">.</span><span class="n">_dummy</span><span class="p">(),</span> <span class="s2">&quot;cluster_size&quot;</span><span class="p">,</span> <span class="s2">&quot;Number of nodes in the cluster&quot;</span><span class="p">,</span> <span class="n">typeConverter</span><span class="o">=</span><span class="n">TypeConverters</span><span class="o">.</span><span class="n">toInt</span><span class="p">)</span>
+
   <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="nb">super</span><span class="p">(</span><span class="n">HasClusterSize</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-<div class="viewcode-block" id="HasClusterSize.setClusterSize"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasClusterSize.setClusterSize">[docs]</a>  <span class="k">def</span> <span class="nf">setClusterSize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">cluster_size</span><span class="o">=</span><span class="n">value</span><span class="p">)</span></div>
-<div class="viewcode-block" id="HasClusterSize.getClusterSize"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasClusterSize.getClusterSize">[docs]</a>  <span class="k">def</span> <span class="nf">getClusterSize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cluster_size</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="HasClusterSize.setClusterSize"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasClusterSize.setClusterSize">[docs]</a>  <span class="k">def</span> <span class="nf">setClusterSize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">cluster_size</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HasClusterSize.getClusterSize"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasClusterSize.getClusterSize">[docs]</a>  <span class="k">def</span> <span class="nf">getClusterSize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></div></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cluster_size</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="HasEpochs"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasEpochs">[docs]</a><span class="k">class</span> <span class="nc">HasEpochs</span><span class="p">(</span><span class="n">Params</span><span class="p">):</span>
   <span class="n">epochs</span> <span class="o">=</span> <span class="n">Param</span><span class="p">(</span><span class="n">Params</span><span class="o">.</span><span class="n">_dummy</span><span class="p">(),</span> <span class="s2">&quot;epochs&quot;</span><span class="p">,</span> <span class="s2">&quot;Number of epochs to train&quot;</span><span class="p">,</span> <span class="n">typeConverter</span><span class="o">=</span><span class="n">TypeConverters</span><span class="o">.</span><span class="n">toInt</span><span class="p">)</span>
+
   <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="nb">super</span><span class="p">(</span><span class="n">HasEpochs</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-<div class="viewcode-block" id="HasEpochs.setEpochs"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasEpochs.setEpochs">[docs]</a>  <span class="k">def</span> <span class="nf">setEpochs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">epochs</span><span class="o">=</span><span class="n">value</span><span class="p">)</span></div>
-<div class="viewcode-block" id="HasEpochs.getEpochs"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasEpochs.getEpochs">[docs]</a>  <span class="k">def</span> <span class="nf">getEpochs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">epochs</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="HasEpochs.setEpochs"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasEpochs.setEpochs">[docs]</a>  <span class="k">def</span> <span class="nf">setEpochs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">epochs</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HasEpochs.getEpochs"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasEpochs.getEpochs">[docs]</a>  <span class="k">def</span> <span class="nf">getEpochs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></div></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">epochs</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="HasInputMapping"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasInputMapping">[docs]</a><span class="k">class</span> <span class="nc">HasInputMapping</span><span class="p">(</span><span class="n">Params</span><span class="p">):</span>
   <span class="n">input_mapping</span> <span class="o">=</span> <span class="n">Param</span><span class="p">(</span><span class="n">Params</span><span class="o">.</span><span class="n">_dummy</span><span class="p">(),</span> <span class="s2">&quot;input_mapping&quot;</span><span class="p">,</span> <span class="s2">&quot;Mapping of input DataFrame column to input tensor&quot;</span><span class="p">,</span> <span class="n">typeConverter</span><span class="o">=</span><span class="n">TFTypeConverters</span><span class="o">.</span><span class="n">toDict</span><span class="p">)</span>
+
   <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="nb">super</span><span class="p">(</span><span class="n">HasInputMapping</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-<div class="viewcode-block" id="HasInputMapping.setInputMapping"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasInputMapping.setInputMapping">[docs]</a>  <span class="k">def</span> <span class="nf">setInputMapping</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">input_mapping</span><span class="o">=</span><span class="n">value</span><span class="p">)</span></div>
-<div class="viewcode-block" id="HasInputMapping.getInputMapping"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasInputMapping.getInputMapping">[docs]</a>  <span class="k">def</span> <span class="nf">getInputMapping</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_mapping</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="HasInputMapping.setInputMapping"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasInputMapping.setInputMapping">[docs]</a>  <span class="k">def</span> <span class="nf">setInputMapping</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">input_mapping</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HasInputMapping.getInputMapping"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasInputMapping.getInputMapping">[docs]</a>  <span class="k">def</span> <span class="nf">getInputMapping</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></div></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_mapping</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="HasInputMode"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasInputMode">[docs]</a><span class="k">class</span> <span class="nc">HasInputMode</span><span class="p">(</span><span class="n">Params</span><span class="p">):</span>
   <span class="n">input_mode</span> <span class="o">=</span> <span class="n">Param</span><span class="p">(</span><span class="n">Params</span><span class="o">.</span><span class="n">_dummy</span><span class="p">(),</span> <span class="s2">&quot;input_mode&quot;</span><span class="p">,</span> <span class="s2">&quot;Input data feeding mode (0=TENSORFLOW, 1=SPARK)&quot;</span><span class="p">,</span> <span class="n">typeConverter</span><span class="o">=</span><span class="n">TypeConverters</span><span class="o">.</span><span class="n">toInt</span><span class="p">)</span>
+
   <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="nb">super</span><span class="p">(</span><span class="n">HasInputMode</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-<div class="viewcode-block" id="HasInputMode.setInputMode"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasInputMode.setInputMode">[docs]</a>  <span class="k">def</span> <span class="nf">setInputMode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">input_mode</span><span class="o">=</span><span class="n">value</span><span class="p">)</span></div>
-<div class="viewcode-block" id="HasInputMode.getInputMode"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasInputMode.getInputMode">[docs]</a>  <span class="k">def</span> <span class="nf">getInputMode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_mode</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="HasInputMode.setInputMode"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasInputMode.setInputMode">[docs]</a>  <span class="k">def</span> <span class="nf">setInputMode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">input_mode</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HasInputMode.getInputMode"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasInputMode.getInputMode">[docs]</a>  <span class="k">def</span> <span class="nf">getInputMode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></div></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_mode</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="HasModelDir"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasModelDir">[docs]</a><span class="k">class</span> <span class="nc">HasModelDir</span><span class="p">(</span><span class="n">Params</span><span class="p">):</span>
   <span class="n">model_dir</span> <span class="o">=</span> <span class="n">Param</span><span class="p">(</span><span class="n">Params</span><span class="o">.</span><span class="n">_dummy</span><span class="p">(),</span> <span class="s2">&quot;model_dir&quot;</span><span class="p">,</span> <span class="s2">&quot;Path to save/load model checkpoints&quot;</span><span class="p">,</span> <span class="n">typeConverter</span><span class="o">=</span><span class="n">TypeConverters</span><span class="o">.</span><span class="n">toString</span><span class="p">)</span>
+
   <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="nb">super</span><span class="p">(</span><span class="n">HasModelDir</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-<div class="viewcode-block" id="HasModelDir.setModelDir"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasModelDir.setModelDir">[docs]</a>  <span class="k">def</span> <span class="nf">setModelDir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">model_dir</span><span class="o">=</span><span class="n">value</span><span class="p">)</span></div>
-<div class="viewcode-block" id="HasModelDir.getModelDir"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasModelDir.getModelDir">[docs]</a>  <span class="k">def</span> <span class="nf">getModelDir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_dir</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="HasModelDir.setModelDir"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasModelDir.setModelDir">[docs]</a>  <span class="k">def</span> <span class="nf">setModelDir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">model_dir</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HasModelDir.getModelDir"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasModelDir.getModelDir">[docs]</a>  <span class="k">def</span> <span class="nf">getModelDir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></div></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_dir</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="HasNumPS"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasNumPS">[docs]</a><span class="k">class</span> <span class="nc">HasNumPS</span><span class="p">(</span><span class="n">Params</span><span class="p">):</span>
   <span class="n">num_ps</span> <span class="o">=</span> <span class="n">Param</span><span class="p">(</span><span class="n">Params</span><span class="o">.</span><span class="n">_dummy</span><span class="p">(),</span> <span class="s2">&quot;num_ps&quot;</span><span class="p">,</span> <span class="s2">&quot;Number of PS nodes in cluster&quot;</span><span class="p">,</span> <span class="n">typeConverter</span><span class="o">=</span><span class="n">TypeConverters</span><span class="o">.</span><span class="n">toInt</span><span class="p">)</span>
   <span class="n">driver_ps_nodes</span> <span class="o">=</span> <span class="n">Param</span><span class="p">(</span><span class="n">Params</span><span class="o">.</span><span class="n">_dummy</span><span class="p">(),</span> <span class="s2">&quot;driver_ps_nodes&quot;</span><span class="p">,</span> <span class="s2">&quot;Run PS nodes on driver locally&quot;</span><span class="p">,</span> <span class="n">typeConverter</span><span class="o">=</span><span class="n">TypeConverters</span><span class="o">.</span><span class="n">toBoolean</span><span class="p">)</span>
+
   <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="nb">super</span><span class="p">(</span><span class="n">HasNumPS</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-<div class="viewcode-block" id="HasNumPS.setNumPS"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasNumPS.setNumPS">[docs]</a>  <span class="k">def</span> <span class="nf">setNumPS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">num_ps</span><span class="o">=</span><span class="n">value</span><span class="p">)</span></div>
-<div class="viewcode-block" id="HasNumPS.getNumPS"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasNumPS.getNumPS">[docs]</a>  <span class="k">def</span> <span class="nf">getNumPS</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_ps</span><span class="p">)</span></div>
-<div class="viewcode-block" id="HasNumPS.setDriverPSNodes"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasNumPS.setDriverPSNodes">[docs]</a>  <span class="k">def</span> <span class="nf">setDriverPSNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">driver_ps_nodes</span><span class="o">=</span><span class="n">value</span><span class="p">)</span></div>
-<div class="viewcode-block" id="HasNumPS.getDriverPSNodes"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasNumPS.getDriverPSNodes">[docs]</a>  <span class="k">def</span> <span class="nf">getDriverPSNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">driver_ps_nodes</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="HasNumPS.setNumPS"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasNumPS.setNumPS">[docs]</a>  <span class="k">def</span> <span class="nf">setNumPS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">num_ps</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HasNumPS.getNumPS"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasNumPS.getNumPS">[docs]</a>  <span class="k">def</span> <span class="nf">getNumPS</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_ps</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HasNumPS.setDriverPSNodes"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasNumPS.setDriverPSNodes">[docs]</a>  <span class="k">def</span> <span class="nf">setDriverPSNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">driver_ps_nodes</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HasNumPS.getDriverPSNodes"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasNumPS.getDriverPSNodes">[docs]</a>  <span class="k">def</span> <span class="nf">getDriverPSNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></div></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">driver_ps_nodes</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="HasOutputMapping"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasOutputMapping">[docs]</a><span class="k">class</span> <span class="nc">HasOutputMapping</span><span class="p">(</span><span class="n">Params</span><span class="p">):</span>
   <span class="n">output_mapping</span> <span class="o">=</span> <span class="n">Param</span><span class="p">(</span><span class="n">Params</span><span class="o">.</span><span class="n">_dummy</span><span class="p">(),</span> <span class="s2">&quot;output_mapping&quot;</span><span class="p">,</span> <span class="s2">&quot;Mapping of output tensor to output DataFrame column&quot;</span><span class="p">,</span> <span class="n">typeConverter</span><span class="o">=</span><span class="n">TFTypeConverters</span><span class="o">.</span><span class="n">toDict</span><span class="p">)</span>
+
   <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="nb">super</span><span class="p">(</span><span class="n">HasOutputMapping</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-<div class="viewcode-block" id="HasOutputMapping.setOutputMapping"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasOutputMapping.setOutputMapping">[docs]</a>  <span class="k">def</span> <span class="nf">setOutputMapping</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">output_mapping</span><span class="o">=</span><span class="n">value</span><span class="p">)</span></div>
-<div class="viewcode-block" id="HasOutputMapping.getOutputMapping"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasOutputMapping.getOutputMapping">[docs]</a>  <span class="k">def</span> <span class="nf">getOutputMapping</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_mapping</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="HasOutputMapping.setOutputMapping"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasOutputMapping.setOutputMapping">[docs]</a>  <span class="k">def</span> <span class="nf">setOutputMapping</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">output_mapping</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HasOutputMapping.getOutputMapping"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasOutputMapping.getOutputMapping">[docs]</a>  <span class="k">def</span> <span class="nf">getOutputMapping</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></div></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_mapping</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="HasProtocol"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasProtocol">[docs]</a><span class="k">class</span> <span class="nc">HasProtocol</span><span class="p">(</span><span class="n">Params</span><span class="p">):</span>
   <span class="n">protocol</span> <span class="o">=</span> <span class="n">Param</span><span class="p">(</span><span class="n">Params</span><span class="o">.</span><span class="n">_dummy</span><span class="p">(),</span> <span class="s2">&quot;protocol&quot;</span><span class="p">,</span> <span class="s2">&quot;Network protocol for Tensorflow (grpc|rdma)&quot;</span><span class="p">,</span> <span class="n">typeConverter</span><span class="o">=</span><span class="n">TypeConverters</span><span class="o">.</span><span class="n">toString</span><span class="p">)</span>
+
   <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="nb">super</span><span class="p">(</span><span class="n">HasProtocol</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-<div class="viewcode-block" id="HasProtocol.setProtocol"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasProtocol.setProtocol">[docs]</a>  <span class="k">def</span> <span class="nf">setProtocol</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">protocol</span><span class="o">=</span><span class="n">value</span><span class="p">)</span></div>
-<div class="viewcode-block" id="HasProtocol.getProtocol"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasProtocol.getProtocol">[docs]</a>  <span class="k">def</span> <span class="nf">getProtocol</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="HasProtocol.setProtocol"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasProtocol.setProtocol">[docs]</a>  <span class="k">def</span> <span class="nf">setProtocol</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">protocol</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HasProtocol.getProtocol"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasProtocol.getProtocol">[docs]</a>  <span class="k">def</span> <span class="nf">getProtocol</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></div></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="HasReaders"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasReaders">[docs]</a><span class="k">class</span> <span class="nc">HasReaders</span><span class="p">(</span><span class="n">Params</span><span class="p">):</span>
   <span class="n">readers</span> <span class="o">=</span> <span class="n">Param</span><span class="p">(</span><span class="n">Params</span><span class="o">.</span><span class="n">_dummy</span><span class="p">(),</span> <span class="s2">&quot;readers&quot;</span><span class="p">,</span> <span class="s2">&quot;number of reader/enqueue threads&quot;</span><span class="p">,</span> <span class="n">typeConverter</span><span class="o">=</span><span class="n">TypeConverters</span><span class="o">.</span><span class="n">toInt</span><span class="p">)</span>
+
   <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="nb">super</span><span class="p">(</span><span class="n">HasReaders</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-<div class="viewcode-block" id="HasReaders.setReaders"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasReaders.setReaders">[docs]</a>  <span class="k">def</span> <span class="nf">setReaders</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">readers</span><span class="o">=</span><span class="n">value</span><span class="p">)</span></div>
-<div class="viewcode-block" id="HasReaders.getReaders"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasReaders.getReaders">[docs]</a>  <span class="k">def</span> <span class="nf">getReaders</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">readers</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="HasReaders.setReaders"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasReaders.setReaders">[docs]</a>  <span class="k">def</span> <span class="nf">setReaders</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">readers</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HasReaders.getReaders"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasReaders.getReaders">[docs]</a>  <span class="k">def</span> <span class="nf">getReaders</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></div></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">readers</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="HasSteps"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasSteps">[docs]</a><span class="k">class</span> <span class="nc">HasSteps</span><span class="p">(</span><span class="n">Params</span><span class="p">):</span>
   <span class="n">steps</span> <span class="o">=</span> <span class="n">Param</span><span class="p">(</span><span class="n">Params</span><span class="o">.</span><span class="n">_dummy</span><span class="p">(),</span> <span class="s2">&quot;steps&quot;</span><span class="p">,</span> <span class="s2">&quot;Maximum number of steps to train&quot;</span><span class="p">,</span> <span class="n">typeConverter</span><span class="o">=</span><span class="n">TypeConverters</span><span class="o">.</span><span class="n">toInt</span><span class="p">)</span>
+
   <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="nb">super</span><span class="p">(</span><span class="n">HasSteps</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-<div class="viewcode-block" id="HasSteps.setSteps"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasSteps.setSteps">[docs]</a>  <span class="k">def</span> <span class="nf">setSteps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">steps</span><span class="o">=</span><span class="n">value</span><span class="p">)</span></div>
-<div class="viewcode-block" id="HasSteps.getSteps"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasSteps.getSteps">[docs]</a>  <span class="k">def</span> <span class="nf">getSteps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="HasSteps.setSteps"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasSteps.setSteps">[docs]</a>  <span class="k">def</span> <span class="nf">setSteps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">steps</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HasSteps.getSteps"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasSteps.getSteps">[docs]</a>  <span class="k">def</span> <span class="nf">getSteps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></div></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="HasTensorboard"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasTensorboard">[docs]</a><span class="k">class</span> <span class="nc">HasTensorboard</span><span class="p">(</span><span class="n">Params</span><span class="p">):</span>
   <span class="n">tensorboard</span> <span class="o">=</span> <span class="n">Param</span><span class="p">(</span><span class="n">Params</span><span class="o">.</span><span class="n">_dummy</span><span class="p">(),</span> <span class="s2">&quot;tensorboard&quot;</span><span class="p">,</span> <span class="s2">&quot;Launch tensorboard process&quot;</span><span class="p">,</span> <span class="n">typeConverter</span><span class="o">=</span><span class="n">TypeConverters</span><span class="o">.</span><span class="n">toBoolean</span><span class="p">)</span>
+
   <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="nb">super</span><span class="p">(</span><span class="n">HasTensorboard</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-<div class="viewcode-block" id="HasTensorboard.setTensorboard"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasTensorboard.setTensorboard">[docs]</a>  <span class="k">def</span> <span class="nf">setTensorboard</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">tensorboard</span><span class="o">=</span><span class="n">value</span><span class="p">)</span></div>
-<div class="viewcode-block" id="HasTensorboard.getTensorboard"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasTensorboard.getTensorboard">[docs]</a>  <span class="k">def</span> <span class="nf">getTensorboard</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tensorboard</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="HasTensorboard.setTensorboard"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasTensorboard.setTensorboard">[docs]</a>  <span class="k">def</span> <span class="nf">setTensorboard</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">tensorboard</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HasTensorboard.getTensorboard"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasTensorboard.getTensorboard">[docs]</a>  <span class="k">def</span> <span class="nf">getTensorboard</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></div></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tensorboard</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="HasTFRecordDir"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasTFRecordDir">[docs]</a><span class="k">class</span> <span class="nc">HasTFRecordDir</span><span class="p">(</span><span class="n">Params</span><span class="p">):</span>
   <span class="n">tfrecord_dir</span> <span class="o">=</span> <span class="n">Param</span><span class="p">(</span><span class="n">Params</span><span class="o">.</span><span class="n">_dummy</span><span class="p">(),</span> <span class="s2">&quot;tfrecord_dir&quot;</span><span class="p">,</span> <span class="s2">&quot;Path to temporarily export a DataFrame as TFRecords (for InputMode.TENSORFLOW apps)&quot;</span><span class="p">,</span> <span class="n">typeConverter</span><span class="o">=</span><span class="n">TypeConverters</span><span class="o">.</span><span class="n">toString</span><span class="p">)</span>
+
   <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="nb">super</span><span class="p">(</span><span class="n">HasTFRecordDir</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-<div class="viewcode-block" id="HasTFRecordDir.setTFRecordDir"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasTFRecordDir.setTFRecordDir">[docs]</a>  <span class="k">def</span> <span class="nf">setTFRecordDir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">tfrecord_dir</span><span class="o">=</span><span class="n">value</span><span class="p">)</span></div>
-<div class="viewcode-block" id="HasTFRecordDir.getTFRecordDir"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasTFRecordDir.getTFRecordDir">[docs]</a>  <span class="k">def</span> <span class="nf">getTFRecordDir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tfrecord_dir</span><span class="p">)</span></div></div>
 
-<span class="c1">##### SavedModelBuilder Params</span>
+<div class="viewcode-block" id="HasTFRecordDir.setTFRecordDir"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasTFRecordDir.setTFRecordDir">[docs]</a>  <span class="k">def</span> <span class="nf">setTFRecordDir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">tfrecord_dir</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HasTFRecordDir.getTFRecordDir"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasTFRecordDir.getTFRecordDir">[docs]</a>  <span class="k">def</span> <span class="nf">getTFRecordDir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></div></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tfrecord_dir</span><span class="p">)</span>
+
+
+<span class="c1"># SavedModelBuilder Params</span>
 
 <div class="viewcode-block" id="HasExportDir"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasExportDir">[docs]</a><span class="k">class</span> <span class="nc">HasExportDir</span><span class="p">(</span><span class="n">Params</span><span class="p">):</span>
   <span class="n">export_dir</span> <span class="o">=</span> <span class="n">Param</span><span class="p">(</span><span class="n">Params</span><span class="o">.</span><span class="n">_dummy</span><span class="p">(),</span> <span class="s2">&quot;export_dir&quot;</span><span class="p">,</span> <span class="s2">&quot;Directory to export saved_model&quot;</span><span class="p">,</span> <span class="n">typeConverter</span><span class="o">=</span><span class="n">TypeConverters</span><span class="o">.</span><span class="n">toString</span><span class="p">)</span>
+
   <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="nb">super</span><span class="p">(</span><span class="n">HasExportDir</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-<div class="viewcode-block" id="HasExportDir.setExportDir"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasExportDir.setExportDir">[docs]</a>  <span class="k">def</span> <span class="nf">setExportDir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">export_dir</span><span class="o">=</span><span class="n">value</span><span class="p">)</span></div>
-<div class="viewcode-block" id="HasExportDir.getExportDir"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasExportDir.getExportDir">[docs]</a>  <span class="k">def</span> <span class="nf">getExportDir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">export_dir</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="HasExportDir.setExportDir"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasExportDir.setExportDir">[docs]</a>  <span class="k">def</span> <span class="nf">setExportDir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">export_dir</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HasExportDir.getExportDir"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasExportDir.getExportDir">[docs]</a>  <span class="k">def</span> <span class="nf">getExportDir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></div></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">export_dir</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="HasSignatureDefKey"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasSignatureDefKey">[docs]</a><span class="k">class</span> <span class="nc">HasSignatureDefKey</span><span class="p">(</span><span class="n">Params</span><span class="p">):</span>
   <span class="n">signature_def_key</span> <span class="o">=</span> <span class="n">Param</span><span class="p">(</span><span class="n">Params</span><span class="o">.</span><span class="n">_dummy</span><span class="p">(),</span> <span class="s2">&quot;signature_def_key&quot;</span><span class="p">,</span> <span class="s2">&quot;Identifier for a specific saved_model signature&quot;</span><span class="p">,</span> <span class="n">typeConverter</span><span class="o">=</span><span class="n">TypeConverters</span><span class="o">.</span><span class="n">toString</span><span class="p">)</span>
+
   <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="nb">super</span><span class="p">(</span><span class="n">HasSignatureDefKey</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_setDefault</span><span class="p">(</span><span class="n">signature_def_key</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<div class="viewcode-block" id="HasSignatureDefKey.setSignatureDefKey"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasSignatureDefKey.setSignatureDefKey">[docs]</a>  <span class="k">def</span> <span class="nf">setSignatureDefKey</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">signature_def_key</span><span class="o">=</span><span class="n">value</span><span class="p">)</span></div>
-<div class="viewcode-block" id="HasSignatureDefKey.getSignatureDefKey"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasSignatureDefKey.getSignatureDefKey">[docs]</a>  <span class="k">def</span> <span class="nf">getSignatureDefKey</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">signature_def_key</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="HasSignatureDefKey.setSignatureDefKey"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasSignatureDefKey.setSignatureDefKey">[docs]</a>  <span class="k">def</span> <span class="nf">setSignatureDefKey</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">signature_def_key</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HasSignatureDefKey.getSignatureDefKey"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasSignatureDefKey.getSignatureDefKey">[docs]</a>  <span class="k">def</span> <span class="nf">getSignatureDefKey</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></div></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">signature_def_key</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="HasTagSet"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasTagSet">[docs]</a><span class="k">class</span> <span class="nc">HasTagSet</span><span class="p">(</span><span class="n">Params</span><span class="p">):</span>
   <span class="n">tag_set</span> <span class="o">=</span> <span class="n">Param</span><span class="p">(</span><span class="n">Params</span><span class="o">.</span><span class="n">_dummy</span><span class="p">(),</span> <span class="s2">&quot;tag_set&quot;</span><span class="p">,</span> <span class="s2">&quot;Comma-delimited list of tags identifying a saved_model metagraph&quot;</span><span class="p">,</span> <span class="n">typeConverter</span><span class="o">=</span><span class="n">TypeConverters</span><span class="o">.</span><span class="n">toString</span><span class="p">)</span>
+
   <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="nb">super</span><span class="p">(</span><span class="n">HasTagSet</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-<div class="viewcode-block" id="HasTagSet.setTagSet"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasTagSet.setTagSet">[docs]</a>  <span class="k">def</span> <span class="nf">setTagSet</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">tag_set</span><span class="o">=</span><span class="n">value</span><span class="p">)</span></div>
-<div class="viewcode-block" id="HasTagSet.getTagSet"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasTagSet.getTagSet">[docs]</a>  <span class="k">def</span> <span class="nf">getTagSet</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tag_set</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="HasTagSet.setTagSet"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasTagSet.setTagSet">[docs]</a>  <span class="k">def</span> <span class="nf">setTagSet</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">tag_set</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HasTagSet.getTagSet"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasTagSet.getTagSet">[docs]</a>  <span class="k">def</span> <span class="nf">getTagSet</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></div></div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tag_set</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="Namespace"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.Namespace">[docs]</a><span class="k">class</span> <span class="nc">Namespace</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;</span>
@@ -251,6 +310,7 @@
 <span class="sd">  Based on https://docs.python.org/dev/library/types.html#types.SimpleNamespace</span>
 <span class="sd">  &quot;&quot;&quot;</span>
   <span class="n">argv</span> <span class="o">=</span> <span class="kc">None</span>
+
   <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
       <span class="bp">self</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="n">d</span>
@@ -282,18 +342,21 @@
   <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">argv</span><span class="p">:</span>
       <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">argv</span> <span class="o">==</span> <span class="n">other</span>
-    <span class="k">else</span><span class="p">:</span>
-      <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="vm">__dict__</span></div>
+    <span class="k">else</span><span class="p">:</span></div>
+      <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="vm">__dict__</span>
+
 
 <div class="viewcode-block" id="TFParams"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.TFParams">[docs]</a><span class="k">class</span> <span class="nc">TFParams</span><span class="p">(</span><span class="n">Params</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Mix-in class to store namespace-style args and merge w/ SparkML-style params.&quot;&quot;&quot;</span>
   <span class="n">args</span> <span class="o">=</span> <span class="kc">None</span>
+
 <div class="viewcode-block" id="TFParams.merge_args_params"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.TFParams.merge_args_params">[docs]</a>  <span class="k">def</span> <span class="nf">merge_args_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="n">local_args</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>                 <span class="c1"># make a local copy of args</span>
     <span class="n">args_dict</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">local_args</span><span class="p">)</span>                      <span class="c1"># get dictionary view</span>
     <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
-      <span class="n">args_dict</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>   <span class="c1"># update with params</span>
-    <span class="k">return</span> <span class="n">local_args</span></div></div>
+      <span class="n">args_dict</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrDefault</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>   <span class="c1"># update with params</span></div></div>
+    <span class="k">return</span> <span class="n">local_args</span>
+
 
 <div class="viewcode-block" id="TFEstimator"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.TFEstimator">[docs]</a><span class="k">class</span> <span class="nc">TFEstimator</span><span class="p">(</span><span class="n">Estimator</span><span class="p">,</span> <span class="n">TFParams</span><span class="p">,</span> <span class="n">HasInputMapping</span><span class="p">,</span>
                   <span class="n">HasClusterSize</span><span class="p">,</span> <span class="n">HasNumPS</span><span class="p">,</span> <span class="n">HasInputMode</span><span class="p">,</span> <span class="n">HasProtocol</span><span class="p">,</span> <span class="n">HasTensorboard</span><span class="p">,</span> <span class="n">HasModelDir</span><span class="p">,</span> <span class="n">HasExportDir</span><span class="p">,</span> <span class="n">HasTFRecordDir</span><span class="p">,</span>
@@ -326,19 +389,19 @@
     <span class="bp">self</span><span class="o">.</span><span class="n">export_fn</span> <span class="o">=</span> <span class="n">export_fn</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">Namespace</span><span class="p">(</span><span class="n">tf_args</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_setDefault</span><span class="p">(</span><span class="n">input_mapping</span><span class="o">=</span><span class="p">{},</span>
-                    <span class="n">cluster_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                    <span class="n">num_ps</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                    <span class="n">driver_ps_nodes</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                    <span class="n">input_mode</span><span class="o">=</span><span class="n">TFCluster</span><span class="o">.</span><span class="n">InputMode</span><span class="o">.</span><span class="n">SPARK</span><span class="p">,</span>
-                    <span class="n">protocol</span><span class="o">=</span><span class="s1">&#39;grpc&#39;</span><span class="p">,</span>
-                    <span class="n">tensorboard</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                    <span class="n">model_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                    <span class="n">export_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                    <span class="n">tfrecord_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                    <span class="n">batch_size</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
-                    <span class="n">epochs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                    <span class="n">readers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                    <span class="n">steps</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+                     <span class="n">cluster_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                     <span class="n">num_ps</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                     <span class="n">driver_ps_nodes</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                     <span class="n">input_mode</span><span class="o">=</span><span class="n">TFCluster</span><span class="o">.</span><span class="n">InputMode</span><span class="o">.</span><span class="n">SPARK</span><span class="p">,</span>
+                     <span class="n">protocol</span><span class="o">=</span><span class="s1">&#39;grpc&#39;</span><span class="p">,</span>
+                     <span class="n">tensorboard</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                     <span class="n">model_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">export_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">tfrecord_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">batch_size</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+                     <span class="n">epochs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                     <span class="n">readers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                     <span class="n">steps</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
 
   <span class="k">def</span> <span class="nf">_fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Trains a TensorFlow model and returns a TFModel instance with the same args/params pointing to a checkpoint or saved_model on disk.</span>
@@ -391,8 +454,9 @@
 
       <span class="c1"># Run on a single exeucutor</span>
       <span class="n">sc</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">foreachPartition</span><span class="p">(</span><span class="k">lambda</span> <span class="n">it</span><span class="p">:</span> <span class="n">_export</span><span class="p">(</span><span class="n">it</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">export_fn</span><span class="p">,</span> <span class="n">tf_args</span><span class="p">))</span>
+</div>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copyValues</span><span class="p">(</span><span class="n">TFModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">))</span>
 
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copyValues</span><span class="p">(</span><span class="n">TFModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="TFModel"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.TFModel">[docs]</a><span class="k">class</span> <span class="nc">TFModel</span><span class="p">(</span><span class="n">Model</span><span class="p">,</span> <span class="n">TFParams</span><span class="p">,</span>
               <span class="n">HasInputMapping</span><span class="p">,</span> <span class="n">HasOutputMapping</span><span class="p">,</span>
@@ -411,11 +475,13 @@
   <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tf_args</span><span class="p">):</span>
     <span class="nb">super</span><span class="p">(</span><span class="n">TFModel</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">Namespace</span><span class="p">(</span><span class="n">tf_args</span><span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_setDefault</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
-                    <span class="n">model_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                    <span class="n">export_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                    <span class="n">signature_def_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                    <span class="n">tag_set</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_setDefault</span><span class="p">(</span><span class="n">input_mapping</span><span class="o">=</span><span class="p">{},</span>
+                     <span class="n">output_mapping</span><span class="o">=</span><span class="p">{},</span>
+                     <span class="n">batch_size</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+                     <span class="n">model_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">export_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">signature_def_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">tag_set</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 
   <span class="k">def</span> <span class="nf">_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Transforms the input DataFrame by applying the _run_model() mapPartitions function.</span>
@@ -425,47 +491,50 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">spark</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
 
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;===== 1. inference args: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">))</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;===== 2. inference params: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_paramMap</span><span class="p">))</span>
-    <span class="n">local_args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">merge_args_params</span><span class="p">()</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;===== 3. inference args + params: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">local_args</span><span class="p">))</span>
-
     <span class="c1"># set a deterministic order for input/output columns (lexicographic by key)</span>
-    <span class="n">input_cols</span> <span class="o">=</span> <span class="p">[</span> <span class="n">col</span> <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">tensor</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getInputMapping</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">())</span> <span class="p">]</span>      <span class="c1"># input col =&gt; input tensor</span>
-    <span class="n">output_cols</span> <span class="o">=</span> <span class="p">[</span> <span class="n">col</span> <span class="k">for</span> <span class="n">tensor</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getOutputMapping</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">())</span> <span class="p">]</span>    <span class="c1"># output tensor =&gt; output col</span>
+    <span class="n">input_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">tensor</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getInputMapping</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">())]</span>      <span class="c1"># input col =&gt; input tensor</span>
+    <span class="n">output_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">tensor</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getOutputMapping</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">())]</span>    <span class="c1"># output tensor =&gt; output col</span>
 
     <span class="c1"># run single-node inferencing on each executor</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;input_cols: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">input_cols</span><span class="p">))</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;output_cols: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output_cols</span><span class="p">))</span>
 
+    <span class="c1"># merge args + params</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;===== 1. inference args: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;===== 2. inference params: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_paramMap</span><span class="p">))</span>
+    <span class="n">local_args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">merge_args_params</span><span class="p">()</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;===== 3. inference args + params: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">local_args</span><span class="p">))</span>
+
     <span class="n">tf_args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">argv</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">argv</span> <span class="k">else</span> <span class="n">local_args</span>
-    <span class="n">rdd_out</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">input_cols</span><span class="p">)</span><span class="o">.</span><span class="n">rdd</span><span class="o">.</span><span class="n">mapPartitions</span><span class="p">(</span><span class="k">lambda</span> <span class="n">it</span><span class="p">:</span> <span class="n">_run_model</span><span class="p">(</span><span class="n">it</span><span class="p">,</span> <span class="n">tf_args</span><span class="p">))</span>
+    <span class="n">rdd_out</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">input_cols</span><span class="p">)</span><span class="o">.</span><span class="n">rdd</span><span class="o">.</span><span class="n">mapPartitions</span><span class="p">(</span><span class="k">lambda</span> <span class="n">it</span><span class="p">:</span> <span class="n">_run_model</span><span class="p">(</span><span class="n">it</span><span class="p">,</span> <span class="n">local_args</span><span class="p">,</span> <span class="n">tf_args</span><span class="p">))</span>
 
     <span class="c1"># convert to a DataFrame-friendly format</span>
-    <span class="n">rows_out</span> <span class="o">=</span> <span class="n">rdd_out</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">Row</span><span class="p">(</span><span class="o">*</span><span class="n">x</span><span class="p">))</span>
-    <span class="k">return</span> <span class="n">spark</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">(</span><span class="n">rows_out</span><span class="p">,</span> <span class="n">output_cols</span><span class="p">)</span></div>
+    <span class="n">rows_out</span> <span class="o">=</span> <span class="n">rdd_out</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">Row</span><span class="p">(</span><span class="o">*</span><span class="n">x</span><span class="p">))</span></div>
+    <span class="k">return</span> <span class="n">spark</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">(</span><span class="n">rows_out</span><span class="p">,</span> <span class="n">output_cols</span><span class="p">)</span>
 
 
 <span class="c1"># global to each python worker process on the executors</span>
 <span class="n">global_sess</span> <span class="o">=</span> <span class="kc">None</span>            <span class="c1"># tf.Session cache</span>
 <span class="n">global_args</span> <span class="o">=</span> <span class="kc">None</span>            <span class="c1"># args provided to the _run_model() method.  Any change will invalidate the global_sess cache.</span>
 
-<span class="k">def</span> <span class="nf">_run_model</span><span class="p">(</span><span class="n">iterator</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+
+<span class="k">def</span> <span class="nf">_run_model</span><span class="p">(</span><span class="n">iterator</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">tf_args</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;mapPartitions function to run single-node inferencing from a checkpoint/saved_model, using the model&#39;s input/output mappings.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    :iterator: input RDD partition iterator.</span>
-<span class="sd">    :args: a merged view of command-line args and ML Params.</span>
+<span class="sd">    :args: arguments for TFModel, in argparse format</span>
+<span class="sd">    :tf_args: arguments for TensorFlow inferencing code, in argparse or ARGV format.</span>
 
 <span class="sd">  Returns:</span>
 <span class="sd">    An iterator of result data.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="n">single_node_env</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+  <span class="n">single_node_env</span><span class="p">(</span><span class="n">tf_args</span><span class="p">)</span>
 
   <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;===== input_mapping: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">input_mapping</span><span class="p">))</span>
   <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;===== output_mapping: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">output_mapping</span><span class="p">))</span>
-  <span class="n">input_tensor_names</span> <span class="o">=</span> <span class="p">[</span> <span class="n">tensor</span> <span class="k">for</span> <span class="n">col</span><span class="p">,</span><span class="n">tensor</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">input_mapping</span><span class="o">.</span><span class="n">items</span><span class="p">())</span> <span class="p">]</span>
-  <span class="n">output_tensor_names</span> <span class="o">=</span> <span class="p">[</span> <span class="n">tensor</span> <span class="k">for</span> <span class="n">tensor</span><span class="p">,</span><span class="n">col</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">output_mapping</span><span class="o">.</span><span class="n">items</span><span class="p">())</span> <span class="p">]</span>
+  <span class="n">input_tensor_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">tensor</span> <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">tensor</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">input_mapping</span><span class="o">.</span><span class="n">items</span><span class="p">())]</span>
+  <span class="n">output_tensor_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">tensor</span> <span class="k">for</span> <span class="n">tensor</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">output_mapping</span><span class="o">.</span><span class="n">items</span><span class="p">())]</span>
 
   <span class="c1"># if using a signature_def_key, get input/output tensor info from the requested signature</span>
   <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">signature_def_key</span><span class="p">:</span>
@@ -473,11 +542,11 @@
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;===== loading meta_graph_def for tag_set (</span><span class="si">{0}</span><span class="s2">) from saved_model: </span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">tag_set</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">export_dir</span><span class="p">))</span>
     <span class="n">meta_graph_def</span> <span class="o">=</span> <span class="n">get_meta_graph_def</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">export_dir</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">tag_set</span><span class="p">)</span>
     <span class="n">signature</span> <span class="o">=</span> <span class="n">signature_def_utils</span><span class="o">.</span><span class="n">get_signature_def_by_key</span><span class="p">(</span><span class="n">meta_graph_def</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">signature_def_key</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;signature: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">signature</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;signature: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">signature</span><span class="p">))</span>
     <span class="n">inputs_tensor_info</span> <span class="o">=</span> <span class="n">signature</span><span class="o">.</span><span class="n">inputs</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;inputs_tensor_info: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">inputs_tensor_info</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;inputs_tensor_info: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">inputs_tensor_info</span><span class="p">))</span>
     <span class="n">outputs_tensor_info</span> <span class="o">=</span> <span class="n">signature</span><span class="o">.</span><span class="n">outputs</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;outputs_tensor_info: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">outputs_tensor_info</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;outputs_tensor_info: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">outputs_tensor_info</span><span class="p">))</span>
 
   <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
 
@@ -524,22 +593,24 @@
       <span class="n">inputs_feed_dict</span><span class="p">[</span><span class="n">input_tensors</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">tensors</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
 
     <span class="n">outputs</span> <span class="o">=</span> <span class="n">sess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">output_tensors</span><span class="p">,</span> <span class="n">feed_dict</span><span class="o">=</span><span class="n">inputs_feed_dict</span><span class="p">)</span>
-    <span class="n">lengths</span> <span class="o">=</span> <span class="p">[</span> <span class="nb">len</span><span class="p">(</span><span class="n">output</span><span class="p">)</span> <span class="k">for</span> <span class="n">output</span> <span class="ow">in</span> <span class="n">outputs</span> <span class="p">]</span>
+    <span class="n">lengths</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">output</span><span class="p">)</span> <span class="k">for</span> <span class="n">output</span> <span class="ow">in</span> <span class="n">outputs</span><span class="p">]</span>
     <span class="n">input_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tensors</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-    <span class="k">assert</span> <span class="nb">all</span><span class="p">([</span> <span class="n">l</span> <span class="o">==</span> <span class="n">input_size</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">lengths</span> <span class="p">]),</span> <span class="s2">&quot;Output array sizes </span><span class="si">{}</span><span class="s2"> must match input size: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">lengths</span><span class="p">,</span> <span class="n">input_size</span><span class="p">)</span>
-    <span class="n">python_outputs</span> <span class="o">=</span> <span class="p">[</span> <span class="n">output</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="k">for</span> <span class="n">output</span> <span class="ow">in</span> <span class="n">outputs</span> <span class="p">]</span>      <span class="c1"># convert from numpy to standard python types</span>
-    <span class="n">result</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">python_outputs</span><span class="p">))</span>                             <span class="c1"># convert to an array of tuples of &quot;output columns&quot;</span>
+    <span class="k">assert</span> <span class="nb">all</span><span class="p">([</span><span class="n">length</span> <span class="o">==</span> <span class="n">input_size</span> <span class="k">for</span> <span class="n">length</span> <span class="ow">in</span> <span class="n">lengths</span><span class="p">]),</span> <span class="s2">&quot;Output array sizes </span><span class="si">{}</span><span class="s2"> must match input size: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">lengths</span><span class="p">,</span> <span class="n">input_size</span><span class="p">)</span>
+    <span class="n">python_outputs</span> <span class="o">=</span> <span class="p">[</span><span class="n">output</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="k">for</span> <span class="n">output</span> <span class="ow">in</span> <span class="n">outputs</span><span class="p">]</span>      <span class="c1"># convert from numpy to standard python types</span>
+    <span class="n">result</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">python_outputs</span><span class="p">))</span>                           <span class="c1"># convert to an array of tuples of &quot;output columns&quot;</span>
 
   <span class="k">return</span> <span class="n">result</span>
+
 
 <div class="viewcode-block" id="single_node_env"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.single_node_env">[docs]</a><span class="k">def</span> <span class="nf">single_node_env</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Sets up environment for a single-node TF session.</span>
 
 <span class="sd">  Args:</span>
-<span class="sd">    :args: command line arguments as argparse args.</span>
-<span class="sd">    :argv: command line arguments as ARGV (array of string).</span>
+<span class="sd">    :args: command line arguments as either argparse args or argv list</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">argv</span><span class="p">:</span>
+  <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+      <span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="n">args</span>
+  <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">argv</span><span class="p">:</span>
       <span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">argv</span>
 
   <span class="c1"># ensure expanded CLASSPATH w/o glob characters (required for Spark 2.1 + JNI)</span>
@@ -561,8 +632,9 @@
     <span class="c1"># Note: if there is a GPU conflict (CUDA_ERROR_INVALID_DEVICE), the entire task will fail and retry.</span>
   <span class="k">else</span><span class="p">:</span>
     <span class="c1"># CPU</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Using CPU&quot;</span><span class="p">)</span>
-    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;CUDA_VISIBLE_DEVICES&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span></div>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Using CPU&quot;</span><span class="p">)</span></div>
+    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;CUDA_VISIBLE_DEVICES&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
 
 <div class="viewcode-block" id="get_meta_graph_def"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.get_meta_graph_def">[docs]</a><span class="k">def</span> <span class="nf">get_meta_graph_def</span><span class="p">(</span><span class="n">saved_model_dir</span><span class="p">,</span> <span class="n">tag_set</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Utility function to read a meta_graph_def from disk.</span>
@@ -580,8 +652,9 @@
   <span class="n">set_of_tags</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">tag_set</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">))</span>
   <span class="k">for</span> <span class="n">meta_graph_def</span> <span class="ow">in</span> <span class="n">saved_model</span><span class="o">.</span><span class="n">meta_graphs</span><span class="p">:</span>
     <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">meta_graph_def</span><span class="o">.</span><span class="n">meta_info_def</span><span class="o">.</span><span class="n">tags</span><span class="p">)</span> <span class="o">==</span> <span class="n">set_of_tags</span><span class="p">:</span>
-      <span class="k">return</span> <span class="n">meta_graph_def</span>
-  <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;MetaGraphDef associated with tag-set </span><span class="si">{0}</span><span class="s2"> could not be found in SavedModel&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tag_set</span><span class="p">))</span></div>
+      <span class="k">return</span> <span class="n">meta_graph_def</span></div>
+  <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;MetaGraphDef associated with tag-set </span><span class="si">{0}</span><span class="s2"> could not be found in SavedModel&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tag_set</span><span class="p">))</span>
+
 
 <div class="viewcode-block" id="yield_batch"><a class="viewcode-back" href="../../tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.yield_batch">[docs]</a><span class="k">def</span> <span class="nf">yield_batch</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">num_tensors</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Generator that yields batches of a DataFrame iterator.</span>
@@ -594,7 +667,7 @@
 <span class="sd">  Returns:</span>
 <span class="sd">    An array of ``num_tensors`` arrays, each of length `batch_size`</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="n">tensors</span> <span class="o">=</span> <span class="p">[</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_tensors</span><span class="p">)</span> <span class="p">]</span>
+  <span class="n">tensors</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_tensors</span><span class="p">)]</span>
   <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">iterable</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
       <span class="k">break</span>
@@ -603,9 +676,9 @@
       <span class="n">tensors</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tensors</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="n">batch_size</span><span class="p">:</span>
       <span class="k">yield</span> <span class="n">tensors</span>
-      <span class="n">tensors</span> <span class="o">=</span> <span class="p">[</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_tensors</span><span class="p">)</span> <span class="p">]</span>
-  <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tensors</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-      <span class="k">yield</span> <span class="n">tensors</span></div>
+      <span class="n">tensors</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_tensors</span><span class="p">)]</span>
+  <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tensors</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span></div>
+      <span class="k">yield</span> <span class="n">tensors</span>
 </pre></div>
 
           </div>
@@ -615,12 +688,14 @@
         <div class="sphinxsidebarwrapper">
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -636,13 +711,13 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.2.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.3.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Yahoo Inc.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.7.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.1.
     </div>
   </body>
 </html>

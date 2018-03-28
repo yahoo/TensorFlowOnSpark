@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>tensorflowonspark.TFCluster module &#8212; TensorFlowOnSpark 1.2.1 documentation</title>
+    <title>tensorflowonspark.TFCluster module &#8212; TensorFlowOnSpark 1.3.0 documentation</title>
     <link rel="stylesheet" href="_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" src="_static/documentation_options.js"></script>
@@ -33,7 +33,7 @@
         <li class="right" >
           <a href="tensorflowonspark.html" title="tensorflowonspark package"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">TensorFlowOnSpark 1.2.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TensorFlowOnSpark 1.3.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="tensorflowonspark.html" accesskey="U">tensorflowonspark package</a> &#187;</li> 
       </ul>
     </div>  
@@ -43,8 +43,228 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="tensorflowonspark-tfcluster-module">
-<h1>tensorflowonspark.TFCluster module<a class="headerlink" href="#tensorflowonspark-tfcluster-module" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-tensorflowonspark.TFCluster">
+<span id="tensorflowonspark-tfcluster-module"></span><h1>tensorflowonspark.TFCluster module<a class="headerlink" href="#module-tensorflowonspark.TFCluster" title="Permalink to this headline">¶</a></h1>
+<p>This module provides a high-level API to manage the TensorFlowOnSpark cluster.</p>
+<p>There are three main phases of operation:</p>
+<ol class="arabic simple">
+<li><strong>Reservation/Startup</strong> - reserves a port for the TensorFlow process on each executor, starts a multiprocessing.Manager to
+listen for data/control messages, and then launches the Tensorflow main function on the executors.</li>
+<li><strong>Data feeding</strong> - <em>For InputMode.SPARK only</em>. Sends RDD data to the TensorFlow nodes via each executor’s multiprocessing.Manager.  PS
+nodes will tie up their executors, so they won’t receive any subsequent data feeding tasks.</li>
+<li><strong>Shutdown</strong> - sends a shutdown control message to the multiprocessing.Managers of the PS nodes and pushes end-of-feed markers into the data
+queues of the worker nodes.</li>
+</ol>
+<dl class="class">
+<dt id="tensorflowonspark.TFCluster.InputMode">
+<em class="property">class </em><code class="descname">InputMode</code><a class="reference internal" href="_modules/tensorflowonspark/TFCluster.html#InputMode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.TFCluster.InputMode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Enum for the input modes of data feeding.</p>
+<dl class="attribute">
+<dt id="tensorflowonspark.TFCluster.InputMode.SPARK">
+<code class="descname">SPARK</code><em class="property"> = 1</em><a class="headerlink" href="#tensorflowonspark.TFCluster.InputMode.SPARK" title="Permalink to this definition">¶</a></dt>
+<dd><p>Spark is responsible for feeding data to the TensorFlow application via an RDD.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tensorflowonspark.TFCluster.InputMode.TENSORFLOW">
+<code class="descname">TENSORFLOW</code><em class="property"> = 0</em><a class="headerlink" href="#tensorflowonspark.TFCluster.InputMode.TENSORFLOW" title="Permalink to this definition">¶</a></dt>
+<dd><p>TensorFlow application is responsible for reading any data.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="tensorflowonspark.TFCluster.TFCluster">
+<em class="property">class </em><code class="descname">TFCluster</code><a class="reference internal" href="_modules/tensorflowonspark/TFCluster.html#TFCluster"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="attribute">
+<dt id="tensorflowonspark.TFCluster.TFCluster.cluster_id">
+<code class="descname">cluster_id</code><em class="property"> = None</em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.cluster_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unique ID for this cluster, used to invalidate state for new clusters.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tensorflowonspark.TFCluster.TFCluster.cluster_info">
+<code class="descname">cluster_info</code><em class="property"> = None</em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.cluster_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cluster node reservations</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tensorflowonspark.TFCluster.TFCluster.cluster_meta">
+<code class="descname">cluster_meta</code><em class="property"> = None</em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.cluster_meta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cluster metadata dictionary, e.g. cluster_id, defaultFS, reservation.Server address, etc.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tensorflowonspark.TFCluster.TFCluster.defaultFS">
+<code class="descname">defaultFS</code><em class="property"> = None</em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.defaultFS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Default FileSystem string, e.g. <code class="docutils literal notranslate"><span class="pre">file://</span></code> or <code class="docutils literal notranslate"><span class="pre">hdfs://&lt;namenode&gt;/</span></code></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorflowonspark.TFCluster.TFCluster.inference">
+<code class="descname">inference</code><span class="sig-paren">(</span><em>dataRDD</em>, <em>qname='input'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFCluster.html#TFCluster.inference"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.inference" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>For InputMode.SPARK only</em>: Feeds Spark RDD partitions into the TensorFlow worker nodes and returns an RDD of results</p>
+<p>It is the responsibility of the TensorFlow “main” function to interpret the rows of the RDD and provide valid data for the output RDD.</p>
+<p>This will use the distributed TensorFlow cluster for inferencing, so the TensorFlow “main” function should be capable of inferencing.
+Per Spark design, the output RDD will be lazily-executed only when a Spark action is invoked on the RDD.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><table class="first last docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">dataRDD:</th><td class="field-body">input data as a Spark RDD</td>
+</tr>
+<tr class="field-even field"><th class="field-name">qname:</th><td class="field-body"><em>INTERNAL_USE</em></td>
+</tr>
+</tbody>
+</table>
+</dd>
+<dt>Returns:</dt>
+<dd>A Spark RDD representing the output of the TensorFlow inferencing</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tensorflowonspark.TFCluster.TFCluster.input_mode">
+<code class="descname">input_mode</code><em class="property"> = None</em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.input_mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>TFCluster.InputMode for this cluster</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tensorflowonspark.TFCluster.TFCluster.nodeRDD">
+<code class="descname">nodeRDD</code><em class="property"> = None</em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.nodeRDD" title="Permalink to this definition">¶</a></dt>
+<dd><p>RDD representing the nodes of the cluster, i.e. <code class="docutils literal notranslate"><span class="pre">sc.parallelize(range(num_executors),</span> <span class="pre">num_executors)</span></code></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tensorflowonspark.TFCluster.TFCluster.num_executors">
+<code class="descname">num_executors</code><em class="property"> = None</em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.num_executors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of executors in the Spark job (and therefore, the number of nodes in the TensorFlow cluster).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tensorflowonspark.TFCluster.TFCluster.queues">
+<code class="descname">queues</code><em class="property"> = None</em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.queues" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>INTERNAL_USE</em></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tensorflowonspark.TFCluster.TFCluster.sc">
+<code class="descname">sc</code><em class="property"> = None</em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.sc" title="Permalink to this definition">¶</a></dt>
+<dd><p>SparkContext</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tensorflowonspark.TFCluster.TFCluster.server">
+<code class="descname">server</code><em class="property"> = None</em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.server" title="Permalink to this definition">¶</a></dt>
+<dd><p>reservation.Server for this cluster</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorflowonspark.TFCluster.TFCluster.shutdown">
+<code class="descname">shutdown</code><span class="sig-paren">(</span><em>ssc=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFCluster.html#TFCluster.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.shutdown" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stops the distributed TensorFlow cluster.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><table class="first last docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">ssc:</th><td class="field-body"><em>For Streaming applications only</em>. Spark StreamingContext</td>
+</tr>
+</tbody>
+</table>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorflowonspark.TFCluster.TFCluster.tensorboard_url">
+<code class="descname">tensorboard_url</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFCluster.html#TFCluster.tensorboard_url"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.tensorboard_url" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utility function to get the Tensorboard URL</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorflowonspark.TFCluster.TFCluster.train">
+<code class="descname">train</code><span class="sig-paren">(</span><em>dataRDD</em>, <em>num_epochs=0</em>, <em>qname='input'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFCluster.html#TFCluster.train"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.train" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>For InputMode.SPARK only</em>.  Feeds Spark RDD partitions into the TensorFlow worker nodes</p>
+<p>It is the responsibility of the TensorFlow “main” function to interpret the rows of the RDD.</p>
+<p>Since epochs are implemented via <code class="docutils literal notranslate"><span class="pre">RDD.union()</span></code> and the entire RDD must generally be processed in full, it is recommended
+to set <code class="docutils literal notranslate"><span class="pre">num_epochs</span></code> to closely match your training termination condition (e.g. steps or accuracy).  See <code class="docutils literal notranslate"><span class="pre">TFNode.DataFeed</span></code>
+for more details.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><table class="first last docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">dataRDD:</th><td class="field-body">input data as a Spark RDD.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">num_epochs:</th><td class="field-body">number of times to repeat the dataset during training.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">qname:</th><td class="field-body"><em>INTERNAL USE</em>.</td>
+</tr>
+</tbody>
+</table>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tensorflowonspark.TFCluster.TFCluster.working_dir">
+<code class="descname">working_dir</code><em class="property"> = None</em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.working_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Current working directory</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorflowonspark.TFCluster.run">
+<code class="descname">run</code><span class="sig-paren">(</span><em>sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mode=0, log_dir=None, driver_ps_nodes=False, master_node=None, reservation_timeout=600, queues=['input', 'output', 'error']</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFCluster.html#run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.TFCluster.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Starts the TensorFlowOnSpark cluster and Runs the TensorFlow “main” function on the Spark executors</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><table class="first last docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">sc:</th><td class="field-body">SparkContext</td>
+</tr>
+<tr class="field-even field"><th class="field-name">map_fun:</th><td class="field-body">user-supplied TensorFlow “main” function</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">tf_args:</th><td class="field-body"><code class="docutils literal notranslate"><span class="pre">argparse</span></code> args, or command-line <code class="docutils literal notranslate"><span class="pre">ARGV</span></code>.  These will be passed to the <code class="docutils literal notranslate"><span class="pre">map_fun</span></code>.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">num_executors:</th><td class="field-body">number of Spark executors.  This should match your Spark job’s <code class="docutils literal notranslate"><span class="pre">--num_executors</span></code>.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">num_ps:</th><td class="field-body">number of Spark executors which are reserved for TensorFlow PS nodes.  All other executors will be used as TensorFlow worker nodes.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">tensorboard:</th><td class="field-body">boolean indicating if the chief worker should spawn a Tensorboard server.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">input_mode:</th><td class="field-body">TFCluster.InputMode</td>
+</tr>
+<tr class="field-even field"><th class="field-name">log_dir:</th><td class="field-body">directory to save tensorboard event logs.  If None, defaults to a fixed path on local filesystem.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">driver_ps_nodes:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body">run the PS nodes on the driver locally instead of on the spark executors; this help maximizing computing resources (esp. GPU). You will need to set cluster_size = num_executors + num_ps</td>
+</tr>
+<tr class="field-even field"><th class="field-name">master_node:</th><td class="field-body">name of the “master” or “chief” node in the cluster_template, used for <cite>tf.estimator</cite> applications.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">reservation_timeout:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body">number of seconds after which cluster reservation times out (600 sec default)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">queues:</th><td class="field-body"><em>INTERNAL_USE</em></td>
+</tr>
+</tbody>
+</table>
+</dd>
+<dt>Returns:</dt>
+<dd>A TFCluster object representing the started cluster.</dd>
+</dl>
+</dd></dl>
+
 </div>
 
 
@@ -97,7 +317,7 @@
         <li class="right" >
           <a href="tensorflowonspark.html" title="tensorflowonspark package"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">TensorFlowOnSpark 1.2.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TensorFlowOnSpark 1.3.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="tensorflowonspark.html" >tensorflowonspark package</a> &#187;</li> 
       </ul>
     </div>
