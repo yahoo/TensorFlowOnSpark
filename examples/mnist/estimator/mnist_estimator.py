@@ -179,8 +179,10 @@ if __name__ == "__main__":
   parser.add_argument("--output", help="HDFS path to save test/inference output", default="predictions")
   parser.add_argument("--num_ps", help="number of PS nodes in cluster", type=int, default=1)
   parser.add_argument("--steps", help="maximum number of steps", type=int, default=1000)
+  parser.add_argument("--tensorboard", help="launch tensorboard process", action="store_true")
+
   args = parser.parse_args()
   print("args:", args)
 
-  cluster = TFCluster.run(sc, main, args, args.cluster_size, args.num_ps, tensorboard=False, input_mode=TFCluster.InputMode.TENSORFLOW, log_dir=args.model, master_node='master')
+  cluster = TFCluster.run(sc, main, args, args.cluster_size, args.num_ps, tensorboard=args.tensorboard, input_mode=TFCluster.InputMode.TENSORFLOW, log_dir=args.model, master_node='master')
   cluster.shutdown()
