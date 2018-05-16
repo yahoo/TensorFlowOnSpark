@@ -5,6 +5,7 @@ import unittest
 
 from tensorflowonspark import dfutil
 
+
 class DFUtilTest(test.SparkTest):
   @classmethod
   def setUpClass(cls):

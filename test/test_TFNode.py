@@ -3,6 +3,7 @@ import os
 import unittest
 from tensorflowonspark import TFManager, TFNode
 
+
 class TFNodeTest(unittest.TestCase):
   def test_hdfs_path(self):
     """Normalization of absolution & relative string paths depending on filesystem"""
