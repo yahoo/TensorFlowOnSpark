@@ -19,7 +19,7 @@
         <scala.version>2.11.8</scala.version>
         <scala-test.version>3.0.3</scala-test.version>
         <scopt.version>3.7.0</scopt.version>
-        <tensorflow.version>1.4.0</tensorflow.version>
+        <tensorflow.version>1.8.0</tensorflow.version>
     </properties>
     <dependencies>
         <dependency>

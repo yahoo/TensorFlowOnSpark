@@ -10,6 +10,7 @@ from __future__ import print_function
 from multiprocessing.managers import BaseManager
 from multiprocessing import JoinableQueue
 
+
 class TFManager(BaseManager):
   """Python multiprocessing.Manager for distributed, multi-process communication."""
   pass
@@ -20,17 +21,21 @@ mgr = None        # TFManager
 qdict = {}        # dictionary of queues
 kdict = {}        # dictionary of key-values
 
+
 def _get(key):
   return kdict[key]
 
+
 def _set(key, value):
   kdict[key] = value
+
 
 def _get_queue(qname):
   try:
     return qdict[qname]
   except KeyError:
     return None
+
 
 def start(authkey, queues, mode='local'):
   """Create a new multiprocess.Manager (or return existing one).
@@ -53,11 +58,12 @@ def start(authkey, queues, mode='local'):
   TFManager.register('get', callable=lambda key: _get(key))
   TFManager.register('set', callable=lambda key, value: _set(key, value))
   if mode == 'remote':
-    mgr = TFManager(address=('',0), authkey=authkey)
+    mgr = TFManager(address=('', 0), authkey=authkey)
   else:
     mgr = TFManager(authkey=authkey)
   mgr.start()
   return mgr
+
 
 def connect(address, authkey):
   """Connect to a multiprocess.Manager.
@@ -75,4 +81,3 @@ def connect(address, authkey):
   m = TFManager(address, authkey=authkey)
   m.connect()
   return m
-

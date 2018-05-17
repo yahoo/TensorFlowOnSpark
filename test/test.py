@@ -4,6 +4,7 @@ import unittest
 from pyspark import SparkConf, SparkContext
 from pyspark.sql import SparkSession
 
+
 class SparkTest(unittest.TestCase):
   """Base class for unittests using Spark.  Sets up and tears down a cluster per test class"""
 

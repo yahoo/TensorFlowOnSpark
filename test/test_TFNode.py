@@ -3,6 +3,7 @@ import os
 import unittest
 from tensorflowonspark import TFManager, TFNode
 
+
 class TFNodeTest(unittest.TestCase):
   def test_hdfs_path(self):
     """Normalization of absolution & relative string paths depending on filesystem"""
@@ -25,7 +26,7 @@ class TFNodeTest(unittest.TestCase):
 
   def test_datafeed(self):
     """TFNode.DataFeed basic operations"""
-    mgr = TFManager.start('abc', ['input', 'output'], 'local')
+    mgr = TFManager.start('abc'.encode('utf-8'), ['input', 'output'], 'local')
 
     # insert 10 numbers followed by an end-of-feed marker
     q = mgr.get_queue('input')
