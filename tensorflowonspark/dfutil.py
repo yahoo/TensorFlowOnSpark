@@ -109,7 +109,10 @@ def toTFExample(dtypes):
       elif dtype in int64_dtypes:
         feature = (name, tf.train.Feature(int64_list=tf.train.Int64List(value=[row[name]])))
       elif dtype in bytes_dtypes:
-        feature = (name, tf.train.Feature(bytes_list=tf.train.BytesList(value=[str(row[name])])))
+        if dtype == 'binary':
+          feature = (name, tf.train.Feature(bytes_list=tf.train.BytesList(value=[bytes(row[name])])))
+        else:
+          feature = (name, tf.train.Feature(bytes_list=tf.train.BytesList(value=[str(row[name]).encode('utf-8')])))
       elif dtype in float_list_dtypes:
         feature = (name, tf.train.Feature(float_list=tf.train.FloatList(value=row[name])))
       elif dtype in int64_list_dtypes:
@@ -181,16 +184,15 @@ def fromTFExample(iter, binary_features=[]):
   """
   # convert from protobuf-like dict to DataFrame-friendly dict
   def _get_value(k, v):
-    # special handling for binary features
-    if k in binary_features:
-      return bytearray(v.bytes_list.value[0])
-
     if v.int64_list.value:
       result = v.int64_list.value
     elif v.float_list.value:
       result = v.float_list.value
-    else:
-      result = v.bytes_list.value
+    else:  # string or bytearray
+      if k in binary_features:
+        return bytearray(v.bytes_list.value[0])
+      else:
+        return v.bytes_list.value[0].decode('utf-8')
 
     if len(result) > 1:         # represent multi-item tensors as python lists
       return list(result)

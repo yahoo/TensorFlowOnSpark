@@ -391,7 +391,7 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
         assert local_args.tfrecord_dir, "Please specify --tfrecord_dir to export DataFrame to TFRecord."
         if self.getInputMapping():
           # if input mapping provided, filter only required columns before exporting
-          dataset = dataset.select(self.getInputMapping().keys())
+          dataset = dataset.select(list(self.getInputMapping()))
         logging.info("Exporting DataFrame {} as TFRecord to: {}".format(dataset.dtypes, local_args.tfrecord_dir))
         dfutil.saveAsTFRecords(dataset, local_args.tfrecord_dir)
         logging.info("Done saving")
@@ -401,7 +401,7 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
                             local_args.tensorboard, local_args.input_mode, driver_ps_nodes=local_args.driver_ps_nodes)
     if local_args.input_mode == TFCluster.InputMode.SPARK:
       # feed data, using a deterministic order for input columns (lexicographic by key)
-      input_cols = sorted(self.getInputMapping().keys())
+      input_cols = sorted(self.getInputMapping())
       cluster.train(dataset.select(input_cols).rdd, local_args.epochs)
     cluster.shutdown()
 

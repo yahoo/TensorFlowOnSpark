@@ -2,6 +2,7 @@ import numpy as np
 import os
 import shutil
 import test
+import time
 import unittest
 
 from tensorflowonspark import TFCluster, dfutil
@@ -323,6 +324,9 @@ class PipelineTest(test.SparkTest):
               ckpt_name = args.model_dir + "/model.ckpt"
               print("Saving checkpoint to: {}".format(ckpt_name))
               saver.save(sess, ckpt_name)
+
+          # wait for rest of cluster to connect
+          time.sleep(30)
         sv.stop()
 
     def _tf_export(args):
