@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>tensorflowonspark.pipeline &#8212; TensorFlowOnSpark 1.3.0 documentation</title>
+    <title>tensorflowonspark.pipeline &#8212; TensorFlowOnSpark 1.3.1 documentation</title>
     <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" src="../../_static/documentation_options.js"></script>
@@ -25,7 +25,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.3.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.3.1 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
       </ul>
     </div>  
@@ -429,7 +429,7 @@
         <span class="k">assert</span> <span class="n">local_args</span><span class="o">.</span><span class="n">tfrecord_dir</span><span class="p">,</span> <span class="s2">&quot;Please specify --tfrecord_dir to export DataFrame to TFRecord.&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getInputMapping</span><span class="p">():</span>
           <span class="c1"># if input mapping provided, filter only required columns before exporting</span>
-          <span class="n">dataset</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getInputMapping</span><span class="p">()</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+          <span class="n">dataset</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getInputMapping</span><span class="p">()))</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Exporting DataFrame </span><span class="si">{}</span><span class="s2"> as TFRecord to: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">dtypes</span><span class="p">,</span> <span class="n">local_args</span><span class="o">.</span><span class="n">tfrecord_dir</span><span class="p">))</span>
         <span class="n">dfutil</span><span class="o">.</span><span class="n">saveAsTFRecords</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">local_args</span><span class="o">.</span><span class="n">tfrecord_dir</span><span class="p">)</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Done saving&quot;</span><span class="p">)</span>
@@ -439,7 +439,7 @@
                             <span class="n">local_args</span><span class="o">.</span><span class="n">tensorboard</span><span class="p">,</span> <span class="n">local_args</span><span class="o">.</span><span class="n">input_mode</span><span class="p">,</span> <span class="n">driver_ps_nodes</span><span class="o">=</span><span class="n">local_args</span><span class="o">.</span><span class="n">driver_ps_nodes</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">local_args</span><span class="o">.</span><span class="n">input_mode</span> <span class="o">==</span> <span class="n">TFCluster</span><span class="o">.</span><span class="n">InputMode</span><span class="o">.</span><span class="n">SPARK</span><span class="p">:</span>
       <span class="c1"># feed data, using a deterministic order for input columns (lexicographic by key)</span>
-      <span class="n">input_cols</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getInputMapping</span><span class="p">()</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+      <span class="n">input_cols</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getInputMapping</span><span class="p">())</span>
       <span class="n">cluster</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">input_cols</span><span class="p">)</span><span class="o">.</span><span class="n">rdd</span><span class="p">,</span> <span class="n">local_args</span><span class="o">.</span><span class="n">epochs</span><span class="p">)</span>
     <span class="n">cluster</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
 
@@ -711,12 +711,12 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.3.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">TensorFlowOnSpark 1.3.1 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2017, Yahoo Inc.
+        &#169; Copyright 2018, Yahoo Inc.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.1.
     </div>
   </body>
