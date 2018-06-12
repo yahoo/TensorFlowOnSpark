@@ -7,3 +7,6 @@ docs/.doctrees
 *.log
 *.jar
 .DS_Store
+target
+test-data
+dependency-reduced-pom.xml

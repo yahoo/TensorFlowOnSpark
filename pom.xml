@@ -57,8 +57,8 @@
         </dependency>
         <dependency>
             <groupId>org.tensorflow</groupId>
-            <artifactId>tensorflow-hadoop</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <artifactId>hadoop</artifactId>
+            <version>${tensorflow.version}</version>
         </dependency>
         <dependency>
             <groupId>org.scalatest</groupId>
