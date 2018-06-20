@@ -15,9 +15,15 @@
         <maven.compiler.target>1.8</maven.compiler.target>
 
         <hadoop_version>2.7.2</hadoop_version>
+        <json4s-native.version>3.5.3</json4s-native.version>
+        <maven-shade-plugin.version>2.1</maven-shade-plugin.version>
+        <maven-surefire-plugin.version>2.20.1</maven-surefire-plugin.version>
         <spark.version>2.1.0</spark.version>
         <scala.version>2.11.8</scala.version>
-        <scala-test.version>3.0.3</scala-test.version>
+        <scala-maven-plugin.version>3.2.1</scala-maven-plugin.version>
+        <scala-parser-combinators.version>1.1.0</scala-parser-combinators.version>
+        <scalatest.version>3.0.3</scalatest.version>
+        <scalatest-maven-plugin.version>1.0</scalatest-maven-plugin.version>
         <scopt.version>3.7.0</scopt.version>
         <tensorflow.version>1.8.0</tensorflow.version>
     </properties>
@@ -48,7 +54,7 @@
         <dependency>
             <groupId>org.scala-lang.modules</groupId>
             <artifactId>scala-parser-combinators_2.11</artifactId>
-            <version>1.1.0</version>
+            <version>${scala-parser-combinators.version}</version>
         </dependency>
         <dependency>
             <groupId>org.tensorflow</groupId>
@@ -63,7 +69,7 @@
         <dependency>
             <groupId>org.scalatest</groupId>
             <artifactId>scalatest_2.11</artifactId>
-            <version>${scala-test.version}</version>
+            <version>${scalatest.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -74,7 +80,7 @@
         <dependency>
             <groupId>org.json4s</groupId>
             <artifactId>json4s-native_2.11</artifactId>
-            <version>3.5.3</version>
+            <version>${json4s-native.version}</version>
         </dependency>
     </dependencies>
 
@@ -83,7 +89,7 @@
             <plugin>
                 <groupId>net.alchim31.maven</groupId>
                 <artifactId>scala-maven-plugin</artifactId>
-                <version>3.2.1</version>
+                <version>${scala-maven-plugin.version}</version>
                 <executions>
                     <execution>
                         <goals>
@@ -98,18 +104,18 @@
             </plugin>
             <!-- disable surefire -->
             <plugin>
-              <groupId>org.apache.maven.plugins</groupId>
-              <artifactId>maven-surefire-plugin</artifactId>
-              <version>2.20.1</version>
-              <configuration>
-                <skipTests>true</skipTests>
-              </configuration>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-surefire-plugin.version}</version>
+                <configuration>
+                    <skipTests>true</skipTests>
+                </configuration>
             </plugin>
             <!-- enable scalatest -->
             <plugin>
                 <groupId>org.scalatest</groupId>
                 <artifactId>scalatest-maven-plugin</artifactId>
-                <version>1.0</version>
+                <version>${scalatest-maven-plugin.version}</version>
                 <configuration>
                     <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                     <junitxml>.</junitxml>
@@ -126,7 +132,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>2.1</version>
+                <version>${maven-shade-plugin.version}</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
