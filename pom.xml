@@ -26,6 +26,7 @@
         <scalatest-maven-plugin.version>1.0</scalatest-maven-plugin.version>
         <scopt.version>3.7.0</scopt.version>
         <tensorflow.version>1.8.0</tensorflow.version>
+        <tensorflow-hadoop.version>1.0-SNAPSHOT</tensorflow-hadoop.version>
     </properties>
     <dependencies>
         <dependency>
@@ -64,7 +65,7 @@
         <dependency>
             <groupId>org.tensorflow</groupId>
             <artifactId>hadoop</artifactId>
-            <version>${tensorflow.version}</version>
+            <version>${tensorflow-hadoop.version}</version>
         </dependency>
         <dependency>
             <groupId>org.scalatest</groupId>
