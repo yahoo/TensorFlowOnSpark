@@ -85,9 +85,7 @@ class TFCluster(object):
       # TODO: calculate via dataRDD.count() / batch_size / max_steps
       if num_epochs == 0:
         num_epochs = 10
-      rdds = []
-      for i in range(num_epochs):
-        rdds.append(dataRDD)
+      rdds = [dataRDD] * num_epochs
       unionRDD = self.sc.union(rdds)
       unionRDD.foreachPartition(TFSparkNode.train(self.cluster_info, self.cluster_meta, qname))
 
@@ -122,40 +120,31 @@ class TFCluster(object):
     # identify ps/workers
     ps_list, worker_list = [], []
     for node in self.cluster_info:
-      if node['job_name'] == 'ps':
-        ps_list.append(node)
-      else:
-        worker_list.append(node)
+      (ps_list if node['job_name'] == 'ps' else worker_list).append(node)
 
     if ssc is not None:
       # Spark Streaming
-      done = False
-      while not done:
-        done = ssc.awaitTerminationOrTimeout(1)
-        if not done and self.server.done:
+      while not ssc.awaitTerminationOrTimeout(1):
+        if self.server.done:
           logging.info("Server done, stopping StreamingContext")
           ssc.stop(stopSparkContext=False, stopGraceFully=True)
-        done = done or self.server.done
-    else:
+          break
+    elif self.input_mode == InputMode.TENSORFLOW:
       # in TENSORFLOW mode, there is no "data feeding" job, only a "start" job, so we must wait for the TensorFlow workers
       # to complete all tasks, while accounting for any PS tasks which run indefinitely.
-      if self.input_mode == InputMode.TENSORFLOW:
-        count = 0
-        done = False
-        while not done:
-          st = self.sc.statusTracker()
-          jobs = st.getActiveJobsIds()
-          if len(jobs) > 0:
-            stages = st.getActiveStageIds()
-            for i in stages:
-              si = st.getStageInfo(i)
-              if si.numActiveTasks == len(ps_list):
-                # if we only have PS tasks left, check that we see this condition a couple times
-                count += 1
-                done = (count >= 3)
-                time.sleep(5)
-          else:
-            done = True
+      count = 0
+      while count < 3:
+        st = self.sc.statusTracker()
+        jobs = st.getActiveJobsIds()
+        if len(jobs) == 0:
+          break
+        stages = st.getActiveStageIds()
+        for i in stages:
+          si = st.getStageInfo(i)
+          if si.numActiveTasks == len(ps_list):
+            # if we only have PS tasks left, check that we see this condition a couple times
+            count += 1
+            time.sleep(5)
 
       # shutdown queues and managers for "worker" executors.
       # note: in SPARK mode, this job will immediately queue up behind the "data feeding" job.
@@ -183,8 +172,7 @@ class TFCluster(object):
       q.join()
 
     # wait for all jobs to finish
-    done = False
-    while not done:
+    while True:
       time.sleep(5)
       st = self.sc.statusTracker()
       jobs = st.getActiveJobsIds()
@@ -222,7 +210,7 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
     A TFCluster object representing the started cluster.
   """
   logging.info("Reserving TFSparkNodes {0}".format("w/ TensorBoard" if tensorboard else ""))
-  assert num_ps < num_executors
+  assert(num_ps < num_executors)
 
   if driver_ps_nodes and input_mode != InputMode.TENSORFLOW:
     raise Exception('running PS nodes on driver locally is only supported in InputMode.TENSORFLOW')
