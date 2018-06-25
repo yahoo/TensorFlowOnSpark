@@ -193,11 +193,10 @@ class TFCluster(object):
 
   def tensorboard_url(self):
     """Utility function to get the Tensorboard URL"""
-    tb_url = None
     for node in self.cluster_info:
       if node['tb_port'] != 0:
-        tb_url = "http://{0}:{1}".format(node['host'], node['tb_port'])
-    return tb_url
+        return "http://{0}:{1}".format(node['host'], node['tb_port'])
+    return None
 
 
 def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mode=InputMode.TENSORFLOW,
