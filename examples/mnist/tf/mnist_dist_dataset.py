@@ -64,7 +64,7 @@ def map_fun(args, ctx):
       cluster=cluster)):
 
       # Dataset for input data
-      image_dir = TFNode.hdfs_path(ctx, args.images)
+      image_dir = TFNode.hdfs_path(ctx, args.images_labels)
       file_pattern = os.path.join(image_dir, 'part-*')
       files = tf.gfile.Glob(file_pattern)
 

@@ -42,6 +42,7 @@ parser.add_argument("--protocol", help="Tensorflow network protocol (grpc|rdma)"
 parser.add_argument("--readers", help="number of reader/enqueue threads", type=int, default=1)
 parser.add_argument("--steps", help="maximum number of steps", type=int, default=1000)
 parser.add_argument("--tensorboard", help="launch tensorboard process", action="store_true")
+parser.add_argument("--shuffle_size", help="size of shuffle buffer", type=int, default=1000)
 
 # Spark input/output
 parser.add_argument("--format", help="example format: (csv|tfr)", choices=["csv", "tfr"], default="csv")

@@ -27,8 +27,7 @@ parser.add_argument("--driver_ps_nodes", help="""run tensorflow PS node on drive
     You will need to set cluster_size = num_executors + num_ps""", default=False)
 parser.add_argument("--epochs", help="number of epochs", type=int, default=1)
 parser.add_argument("--format", help="example format: (csv2|tfr)", choices=["csv2", "tfr"], default="tfr")
-parser.add_argument("--images", help="HDFS path to MNIST images in parallelized format")
-parser.add_argument("--labels", help="HDFS path to MNIST labels in parallelized format")
+parser.add_argument("--images_labels", help="HDFS path to MNIST image_label files in parallelized format")
 parser.add_argument("--mode", help="train|inference", default="train")
 parser.add_argument("--model", help="HDFS path to save/load model during train/test", default="mnist_model")
 parser.add_argument("--num_ps", help="number of ps nodes", default=1)
@@ -41,10 +40,8 @@ parser.add_argument("--tensorboard", help="launch tensorboard process", action="
 args = parser.parse_args()
 print("args:", args)
 
-
 print("{0} ===== Start".format(datetime.now().isoformat()))
 cluster = TFCluster.run(sc, mnist_dist_dataset.map_fun, args, args.cluster_size, args.num_ps, args.tensorboard,
                         TFCluster.InputMode.TENSORFLOW, driver_ps_nodes=args.driver_ps_nodes)
 cluster.shutdown()
-
 print("{0} ===== Stop".format(datetime.now().isoformat()))
