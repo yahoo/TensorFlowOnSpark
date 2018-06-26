@@ -8,7 +8,15 @@ this example demonstrates how to implement distribution using TensorflowOnSpark(
 
 ## How to run
 
-this example in running under cdh-hadoop, however, it does not need extra dependencies. it is confirmed that it could be run under native hadoop environment well, the native hadoop installed in test cluster is hadoop-2.7.2[hadoop2.7.2 tutorial](https://hadoop.apache.org/docs/r2.7.2/),
+this example in running under cdh-hadoop, variable  $HADOOP_HOME is configured in the run script
+
+```shell
+export HADOOP_HOME=/opt/cloudera/parcels/CDH-5.11.0-1.cdh5.11.0.p0.34
+```
+
+
+
+however, it is confirmed that it could be run under native hadoop environment well, the native hadoop installed in test cluster is hadoop-2.7.2 [hadoop2.7.2 tutorial](https://hadoop.apache.org/docs/r2.7.2/),
 
 
 
@@ -22,7 +30,7 @@ export LIB_HADOOP="/usr/local/hadoop-2.7.2/lib/native"
 
 
 
-the default field delimiter is "\t" in the train and evaluation log.
+the default field delimiter is "\t" in the train and evaluation log, then run with this
 
 ```shell
 	nohup sh x.sh &
