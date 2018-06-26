@@ -8,15 +8,33 @@ this example demonstrates how to implement distribution using TensorflowOnSpark(
 
 ## How to run
 
+this example in running under cdh-hadoop, however, it does not need extra dependencies. it is confirmed that it could be run under native hadoop environment well, the native hadoop installed in test cluster is hadoop-2.7.2[hadoop2.7.2 tutorial](https://hadoop.apache.org/docs/r2.7.2/),
+
+
+
+change a bit to configure the export variables in the run.sh.
+
+```shell
+export HADOOP_HOME="/usr/local/hadoop-2.7.2/"
+export LIB_HDFS="/usr/local/hadoop-2.7.2/lib/native"
+export LIB_HADOOP="/usr/local/hadoop-2.7.2/lib/native"
+```
+
+
+
 the default field delimiter is "\t" in the train and evaluation log.
 
->  nohup sh run.sh &
+```shell
+	nohup sh x.sh &
+```
+
+
 
 while finish the spark job, try to obtain logs `yarn logs -applicationId myappid`
 
 there will be some similar output as following
 
-![tfos job](https://github.com/crafet/TensorFlowOnSpark/blob/master/examples/wide_deep/success.jpg)
+![tfos job](./success.jpg)
 
 
 
