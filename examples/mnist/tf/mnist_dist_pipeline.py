@@ -22,12 +22,22 @@ IMAGE_PIXELS = 28
 
 
 def map_fun(args, ctx):
+  num_workers = args.cluster_size if args.driver_ps_nodes else args.cluster_size - args.num_ps
   worker_num = ctx.worker_num
   job_name = ctx.job_name
   task_index = ctx.task_index
 
   # Get TF cluster and server instances
   cluster, server = TFNode.start_cluster_server(ctx, 1, args.protocol == 'rdma')
+
+  def _parse_tfr(example_proto):
+    feature_def = {"label": tf.FixedLenFeature(10, tf.int64),
+                   "image": tf.FixedLenFeature(IMAGE_PIXELS * IMAGE_PIXELS, tf.int64)}
+    features = tf.parse_single_example(example_proto, feature_def)
+    norm = tf.constant(255, dtype=tf.float32, shape=(784,))
+    image = tf.div(tf.to_float(features['image']), norm)
+    label = tf.to_float(features['label'])
+    return (image, label)
 
   if job_name == "ps":
     server.join()
@@ -49,10 +59,16 @@ def map_fun(args, ctx):
       sm_b = tf.Variable(tf.zeros([10]), name="sm_b")
       tf.summary.histogram("softmax_weights", sm_w)
 
-      # Placeholders or QueueRunner/Readers for input data
-      num_epochs = None if args.epochs == 0 else args.epochs
+      # read from saved tf records
       images = TFNode.hdfs_path(ctx, args.tfrecord_dir)
-      x, y_ = read_tfr_examples(images, 100, num_epochs)
+      tf_record_pattern = os.path.join(images, 'part-*')
+      tfr_files = tf.gfile.Glob(tf_record_pattern)
+      ds = tf.data.TFRecordDataset(tfr_files)
+      parse_fn = _parse_tfr
+      ds = ds.shard(num_workers, task_index).repeat(args.epochs).shuffle(args.shuffle_size)
+      ds = ds.map(parse_fn).batch(args.batch_size)
+      iterator = ds.make_initializable_iterator()
+      x, y_ = iterator.get_next()
 
       x_img = tf.reshape(x, [-1, IMAGE_PIXELS, IMAGE_PIXELS, 1])
       tf.summary.image("x_img", x_img)
@@ -98,6 +114,7 @@ def map_fun(args, ctx):
     # a checkpoint, and closing when done or an error occurs.
     with sv.managed_session(server.target) as sess:
       print("{0} session ready".format(datetime.now().isoformat()))
+      sess.run(iterator.initializer)
 
       # Loop until the supervisor shuts down or 1000000 steps have completed.
       step = 0
@@ -168,70 +185,3 @@ def export_fun(args):
                               tf.saved_model.tag_constants.SERVING,
                               signatures)
     logging.info("Exported saved_model")
-
-
-def read_csv_examples(image_dir, label_dir, batch_size=100, num_readers=1, num_epochs=None, task_index=None, num_workers=None):
-  logging.info("num_epochs: {0}".format(num_epochs))
-  # Setup queue of csv image filenames
-  tf_record_pattern = os.path.join(image_dir, 'part-*')
-  images = tf.gfile.Glob(tf_record_pattern)
-  logging.info("images: {0}".format(images))
-  image_queue = tf.train.string_input_producer(images, shuffle=False, capacity=1000, num_epochs=num_epochs, name="image_queue")
-
-  # Setup queue of csv label filenames
-  tf_record_pattern = os.path.join(label_dir, 'part-*')
-  labels = tf.gfile.Glob(tf_record_pattern)
-  logging.info("labels: {0}".format(labels))
-  label_queue = tf.train.string_input_producer(labels, shuffle=False, capacity=1000, num_epochs=num_epochs, name="label_queue")
-
-  # Setup reader for image queue
-  img_reader = tf.TextLineReader(name="img_reader")
-  _, img_csv = img_reader.read(image_queue)
-  image_defaults = [[1.0] for col in range(784)]
-  img = tf.stack(tf.decode_csv(img_csv, image_defaults))
-  # Normalize values to [0,1]
-  norm = tf.constant(255, dtype=tf.float32, shape=(784,))
-  image = tf.div(img, norm)
-  logging.info("image: {0}".format(image))
-
-  # Setup reader for label queue
-  label_reader = tf.TextLineReader(name="label_reader")
-  _, label_csv = label_reader.read(label_queue)
-  label_defaults = [[1.0] for col in range(10)]
-  label = tf.stack(tf.decode_csv(label_csv, label_defaults))
-  logging.info("label: {0}".format(label))
-
-  # Return a batch of examples
-  return tf.train.batch([image, label], batch_size, num_threads=num_readers, name="batch_csv")
-
-
-def read_tfr_examples(path, batch_size=100, num_epochs=None, num_readers=1, task_index=None, num_workers=None):
-  logging.info("num_epochs: {0}".format(num_epochs))
-
-  # Setup queue of TFRecord filenames
-  tf_record_pattern = os.path.join(path, 'part-*')
-  files = tf.gfile.Glob(tf_record_pattern)
-  queue_name = "file_queue"
-
-  # split input files across workers, if specified
-  if task_index is not None and num_workers is not None:
-    num_files = len(files)
-    files = files[task_index:num_files:num_workers]
-    queue_name = "file_queue_{0}".format(task_index)
-
-  logging.info("files: {0}".format(files))
-  file_queue = tf.train.string_input_producer(files, shuffle=False, capacity=1000, num_epochs=num_epochs, name=queue_name)
-
-  # Setup reader for examples
-  reader = tf.TFRecordReader(name="reader")
-  _, serialized = reader.read(file_queue)
-  feature_def = {'label': tf.FixedLenFeature([10], tf.int64), 'image': tf.FixedLenFeature([784], tf.int64)}
-  features = tf.parse_single_example(serialized, feature_def)
-  norm = tf.constant(255, dtype=tf.float32, shape=(784,))
-  image = tf.div(tf.to_float(features['image']), norm)
-  logging.info("image: {0}".format(image))
-  label = tf.to_float(features['label'])
-  logging.info("label: {0}".format(label))
-
-  # Return a batch of examples
-  return tf.train.batch([image, label], batch_size, num_threads=num_readers, name="batch")
