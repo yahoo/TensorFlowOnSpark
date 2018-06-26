@@ -34,7 +34,7 @@ while finish the spark job, try to obtain logs `yarn logs -applicationId myappid
 
 there will be some similar output as following
 
-![tfos job](./success.jpg)
+![tfos job](log.jpg)
 
 
 
