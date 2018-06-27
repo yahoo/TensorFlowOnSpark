@@ -1,6 +1,6 @@
 # wide&deep model with TensorflowOnSpark
 
-wide deep model [wide and deep model ](https://www.tensorflow.org/tutorials/wide_and_deep) is considered as one of the state-of-art model in recommendation system. the tutorial above links only could be run locally.
+wide deep model [wide and deep model](https://www.tensorflow.org/tutorials/wide_and_deep) is considered as one of the state-of-art model in recommendation system. the tutorial above links only could be run locally.
 
 this example demonstrates how to implement distribution using TensorflowOnSpark(tfos).
 

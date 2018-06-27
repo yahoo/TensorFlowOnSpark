@@ -64,9 +64,8 @@ def map_fun(args, ctx):
       tf_record_pattern = os.path.join(images, 'part-*')
       tfr_files = tf.gfile.Glob(tf_record_pattern)
       ds = tf.data.TFRecordDataset(tfr_files)
-      parse_fn = _parse_tfr
       ds = ds.shard(num_workers, task_index).repeat(args.epochs).shuffle(args.shuffle_size)
-      ds = ds.map(parse_fn).batch(args.batch_size)
+      ds = ds.map(_parse_tfr).batch(args.batch_size)
       iterator = ds.make_initializable_iterator()
       x, y_ = iterator.get_next()
 
