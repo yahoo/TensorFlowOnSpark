@@ -59,12 +59,16 @@ def map_fun(args, ctx):
       sm_b = tf.Variable(tf.zeros([10]), name="sm_b")
       tf.summary.histogram("softmax_weights", sm_w)
 
-      # read from saved tf records
+      # Read from saved tf records
       images = TFNode.hdfs_path(ctx, args.tfrecord_dir)
       tf_record_pattern = os.path.join(images, 'part-*')
       tfr_files = tf.gfile.Glob(tf_record_pattern)
+      # Divide the data for each worker
+      if task_index is not None and num_workers is not None:
+        num_files = len(tfr_files)
+        tfr_files = tfr_files[task_index:num_files:num_workers]
       ds = tf.data.TFRecordDataset(tfr_files)
-      ds = ds.shard(num_workers, task_index).repeat(args.epochs).shuffle(args.shuffle_size)
+      ds = ds.repeat(args.epochs).shuffle(args.shuffle_size)
       ds = ds.map(_parse_tfr).batch(args.batch_size)
       iterator = ds.make_initializable_iterator()
       x, y_ = iterator.get_next()

@@ -68,6 +68,11 @@ def map_fun(args, ctx):
       file_pattern = os.path.join(image_dir, 'part-*')
       files = tf.gfile.Glob(file_pattern)
 
+      # Divide the data for each worker
+      if task_index is not None and num_workers is not None:
+        num_files = len(files)
+        files = files[task_index:num_files:num_workers]
+
       if args.format == 'csv2':
         ds = tf.data.TextLineDataset(files)
         parse_fn = _parse_csv
@@ -75,7 +80,7 @@ def map_fun(args, ctx):
         ds = tf.data.TFRecordDataset(files)
         parse_fn = _parse_tfr
 
-      ds = ds.shard(num_workers, task_index).repeat(args.epochs).shuffle(args.shuffle_size)
+      ds = ds.repeat(args.epochs).shuffle(args.shuffle_size)
       ds = ds.map(parse_fn).batch(args.batch_size)
       iterator = ds.make_initializable_iterator()
       x, y_ = iterator.get_next()
