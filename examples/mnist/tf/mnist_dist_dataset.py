@@ -66,21 +66,15 @@ def map_fun(args, ctx):
       # Dataset for input data
       image_dir = TFNode.hdfs_path(ctx, args.images_labels)
       file_pattern = os.path.join(image_dir, 'part-*')
-      files = tf.gfile.Glob(file_pattern)
 
-      # Divide the data for each worker
-      if task_index is not None and num_workers is not None:
-        num_files = len(files)
-        files = files[task_index:num_files:num_workers]
-
+      ds = tf.data.Dataset.list_files(file_pattern)
+      ds = ds.shard(num_workers, task_index).repeat(args.epochs).shuffle(args.shuffle_size)
       if args.format == 'csv2':
-        ds = tf.data.TextLineDataset(files)
+        ds = ds.interleave(tf.data.TextLineDataset, cycle_length=args.readers, block_length=1)
         parse_fn = _parse_csv
       else:  # args.format == 'tfr'
-        ds = tf.data.TFRecordDataset(files)
+        ds = ds.interleave(tf.data.TFRecordDataset, cycle_length=args.readers, block_length=1)
         parse_fn = _parse_tfr
-
-      ds = ds.repeat(args.epochs).shuffle(args.shuffle_size)
       ds = ds.map(parse_fn).batch(args.batch_size)
       iterator = ds.make_initializable_iterator()
       x, y_ = iterator.get_next()
@@ -164,7 +158,6 @@ def map_fun(args, ctx):
         # See `tf.train.SyncReplicasOptimizer` for additional details on how to
         # perform *synchronous* training.
 
-        # using QueueRunners/Readers
         if args.mode == "train":
           if (step % 100 == 0):
             print("{0} step: {1} accuracy: {2}".format(datetime.now().isoformat(), step, sess.run(accuracy)))

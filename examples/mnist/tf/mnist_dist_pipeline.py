@@ -62,13 +62,9 @@ def map_fun(args, ctx):
       # Read from saved tf records
       images = TFNode.hdfs_path(ctx, args.tfrecord_dir)
       tf_record_pattern = os.path.join(images, 'part-*')
-      tfr_files = tf.gfile.Glob(tf_record_pattern)
-      # Divide the data for each worker
-      if task_index is not None and num_workers is not None:
-        num_files = len(tfr_files)
-        tfr_files = tfr_files[task_index:num_files:num_workers]
-      ds = tf.data.TFRecordDataset(tfr_files)
-      ds = ds.repeat(args.epochs).shuffle(args.shuffle_size)
+      ds = tf.data.Dataset.list_files(tf_record_pattern)
+      ds = ds.shard(num_workers, task_index).repeat(args.epochs).shuffle(args.shuffle_size)
+      ds = ds.interleave(tf.data.TFRecordDataset, cycle_length=args.readers, block_length=1)
       ds = ds.map(_parse_tfr).batch(args.batch_size)
       iterator = ds.make_initializable_iterator()
       x, y_ = iterator.get_next()
@@ -126,7 +122,6 @@ def map_fun(args, ctx):
         # See `tf.train.SyncReplicasOptimizer` for additional details on how to
         # perform *synchronous* training.
 
-        # using QueueRunners/Readers
         if (step % 100 == 0):
           print("{0} step: {1} accuracy: {2}".format(datetime.now().isoformat(), step, sess.run(accuracy)))
         _, summary, step = sess.run([train_op, summary_op, global_step])
