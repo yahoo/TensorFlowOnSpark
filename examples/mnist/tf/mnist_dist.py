@@ -41,14 +41,14 @@ def map_fun(args, ctx):
   def read_csv_examples(image_dir, label_dir, batch_size=100, num_epochs=None, task_index=None, num_workers=None):
     print_log(worker_num, "num_epochs: {0}".format(num_epochs))
     # Setup queue of csv image filenames
-    tf_record_pattern = os.path.join(image_dir, 'part-*')
-    images = tf.gfile.Glob(tf_record_pattern)
+    csv_file_pattern = os.path.join(image_dir, 'part-*')
+    images = tf.gfile.Glob(csv_file_pattern)
     print_log(worker_num, "images: {0}".format(images))
     image_queue = tf.train.string_input_producer(images, shuffle=False, capacity=1000, num_epochs=num_epochs, name="image_queue")
 
     # Setup queue of csv label filenames
-    tf_record_pattern = os.path.join(label_dir, 'part-*')
-    labels = tf.gfile.Glob(tf_record_pattern)
+    csv_file_pattern = os.path.join(label_dir, 'part-*')
+    labels = tf.gfile.Glob(csv_file_pattern)
     print_log(worker_num, "labels: {0}".format(labels))
     label_queue = tf.train.string_input_producer(labels, shuffle=False, capacity=1000, num_epochs=num_epochs, name="label_queue")
 

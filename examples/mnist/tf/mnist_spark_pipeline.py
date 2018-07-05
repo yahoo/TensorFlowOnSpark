@@ -39,7 +39,7 @@ parser.add_argument("--num_ps", help="number of PS nodes in cluster", type=int, 
 parser.add_argument("-p", "--driver_ps_nodes", help="""run tensorflow PS node on driver locally.
     You will need to set cluster_size = num_executors + num_ps""", default=False)
 parser.add_argument("--protocol", help="Tensorflow network protocol (grpc|rdma)", default="grpc")
-parser.add_argument("--readers", help="number of reader/enqueue threads", type=int, default=1)
+parser.add_argument("--readers", help="number of reader/enqueue threads per worker", type=int, default=10)
 parser.add_argument("--steps", help="maximum number of steps", type=int, default=1000)
 parser.add_argument("--tensorboard", help="launch tensorboard process", action="store_true")
 parser.add_argument("--shuffle_size", help="size of shuffle buffer", type=int, default=1000)

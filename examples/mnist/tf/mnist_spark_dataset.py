@@ -33,7 +33,7 @@ parser.add_argument("--model", help="HDFS path to save/load model during train/t
 parser.add_argument("--num_ps", help="number of ps nodes", default=1)
 parser.add_argument("--output", help="HDFS path to save test/inference output", default="predictions")
 parser.add_argument("--rdma", help="use rdma connection", default=False)
-parser.add_argument("--readers", help="number of reader/enqueue threads", type=int, default=1)
+parser.add_argument("--readers", help="number of reader/enqueue threads per worker", type=int, default=10)
 parser.add_argument("--shuffle_size", help="size of shuffle buffer", type=int, default=1000)
 parser.add_argument("--steps", help="maximum number of steps", type=int, default=1000)
 parser.add_argument("--tensorboard", help="launch tensorboard process", action="store_true")

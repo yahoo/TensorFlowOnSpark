@@ -59,12 +59,12 @@ def map_fun(args, ctx):
       sm_b = tf.Variable(tf.zeros([10]), name="sm_b")
       tf.summary.histogram("softmax_weights", sm_w)
 
-      # read from saved tf records
+      # Read from saved tf records
       images = TFNode.hdfs_path(ctx, args.tfrecord_dir)
       tf_record_pattern = os.path.join(images, 'part-*')
-      tfr_files = tf.gfile.Glob(tf_record_pattern)
-      ds = tf.data.TFRecordDataset(tfr_files)
+      ds = tf.data.Dataset.list_files(tf_record_pattern)
       ds = ds.shard(num_workers, task_index).repeat(args.epochs).shuffle(args.shuffle_size)
+      ds = ds.interleave(tf.data.TFRecordDataset, cycle_length=args.readers, block_length=1)
       ds = ds.map(_parse_tfr).batch(args.batch_size)
       iterator = ds.make_initializable_iterator()
       x, y_ = iterator.get_next()
@@ -122,7 +122,6 @@ def map_fun(args, ctx):
         # See `tf.train.SyncReplicasOptimizer` for additional details on how to
         # perform *synchronous* training.
 
-        # using QueueRunners/Readers
         if (step % 100 == 0):
           print("{0} step: {1} accuracy: {2}".format(datetime.now().isoformat(), step, sess.run(accuracy)))
         _, summary, step = sess.run([train_op, summary_op, global_step])
