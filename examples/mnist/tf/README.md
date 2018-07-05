@@ -66,7 +66,7 @@ TensorFlowOnSpark/examples/mnist/tf/mnist_spark.py \
 # to use infiniband, add `--rdma`
 ```
 
-## Running distributed MNIST training and inference utilizing Spark ML Pipeline
+### _using Spark ML Pipeline_
 ```bash
 # for CPU mode:
 # export QUEUE=default
