@@ -9,16 +9,40 @@ from __future__ import division
 from __future__ import nested_scopes
 from __future__ import print_function
 
+from datetime import datetime
+import tensorflow as tf
+from tensorflowonspark import TFNode
+
 
 def print_log(worker_num, arg):
   print("{0}: {1}".format(worker_num, arg))
 
 
+class ExportHook(tf.train.SessionRunHook):
+  def __init__(self, export_dir, input_tensor, output_tensor):
+    self.export_dir = export_dir
+    self.input_tensor = input_tensor
+    self.output_tensor = output_tensor
+
+  def end(self, session):
+    print("{} ======= Exporting to: {}".format(datetime.now().isoformat(), self.export_dir))
+    signatures = {
+      tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: {
+        'inputs': {'image': self.input_tensor},
+        'outputs': {'prediction': self.output_tensor},
+        'method_name': tf.saved_model.signature_constants.PREDICT_METHOD_NAME
+      }
+    }
+    TFNode.export_saved_model(session,
+                              self.export_dir,
+                              tf.saved_model.tag_constants.SERVING,
+                              signatures)
+    print("{} ======= Done exporting".format(datetime.now().isoformat()))
+
+
 def map_fun(args, ctx):
-  from datetime import datetime
   import math
   import numpy
-  import tensorflow as tf
   import time
 
   worker_num = ctx.worker_num
@@ -105,7 +129,6 @@ def map_fun(args, ctx):
 
     logdir = ctx.absolute_path(args.model)
     print("tensorflow model path: {0}".format(logdir))
-    hooks = [tf.train.StopAtStepHook(last_step=100000)]
 
     if job_name == "worker" and task_index == 0:
       summary_writer = tf.summary.FileWriter(logdir, graph=tf.get_default_graph())
@@ -115,11 +138,11 @@ def map_fun(args, ctx):
     with tf.train.MonitoredTrainingSession(master=server.target,
                                              is_chief=(task_index == 0),
                                              checkpoint_dir=logdir,
-                                             hooks=hooks) as mon_sess:
-
+                                             hooks=[tf.train.StopAtStepHook(last_step=args.steps)],
+                                             chief_only_hooks=[ExportHook(ctx.absolute_path(args.export_dir), x, prediction)]) as mon_sess:
       step = 0
       tf_feed = ctx.get_data_feed(args.mode == "train")
-      while not mon_sess.should_stop() and not tf_feed.should_stop() and step < args.steps:
+      while not mon_sess.should_stop() and not tf_feed.should_stop():
         # Run a training step asynchronously
         # See `tf.train.SyncReplicasOptimizer` for additional details on how to
         # perform *synchronous* training.

@@ -25,6 +25,7 @@ num_ps = 1
 parser = argparse.ArgumentParser()
 parser.add_argument("--batch_size", help="number of records per batch", type=int, default=100)
 parser.add_argument("--epochs", help="number of epochs", type=int, default=1)
+parser.add_argument("--export_dir", help="HDFS path to export saved_model", default="mnist_export")
 parser.add_argument("--format", help="example format: (csv|pickle|tfr)", choices=["csv", "pickle", "tfr"], default="csv")
 parser.add_argument("--images", help="HDFS path to MNIST images in parallelized format")
 parser.add_argument("--labels", help="HDFS path to MNIST labels in parallelized format")
@@ -71,6 +72,7 @@ if args.mode == "train":
 else:
   labelRDD = cluster.inference(dataRDD)
   labelRDD.saveAsTextFile(args.output)
-cluster.shutdown()
+
+cluster.shutdown(grace_secs=30)
 
 print("{0} ===== Stop".format(datetime.now().isoformat()))
