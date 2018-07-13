@@ -109,11 +109,12 @@ class TFCluster(object):
     assert(qname in self.queues)
     return dataRDD.mapPartitions(TFSparkNode.inference(self.cluster_info, qname))
 
-  def shutdown(self, ssc=None):
+  def shutdown(self, ssc=None, grace_secs=0):
     """Stops the distributed TensorFlow cluster.
 
     Args:
       :ssc: *For Streaming applications only*. Spark StreamingContext
+      :grace_secs: Grace period to wait before terminating the Spark application, e.g. to allow the chief worker to perform any final/cleanup duties like exporting or evaluating the model.
     """
     logging.info("Stopping TensorFlow nodes")
 
@@ -146,12 +147,13 @@ class TFCluster(object):
             count += 1
             time.sleep(5)
 
-      # shutdown queues and managers for "worker" executors.
-      # note: in SPARK mode, this job will immediately queue up behind the "data feeding" job.
-      # in TENSORFLOW mode, this will only run after all workers have finished.
-      workers = len(worker_list)
-      workerRDD = self.sc.parallelize(range(workers), workers)
-      workerRDD.foreachPartition(TFSparkNode.shutdown(self.cluster_info, self.queues))
+    # shutdown queues and managers for "worker" executors.
+    # note: in SPARK mode, this job will immediately queue up behind the "data feeding" job.
+    # in TENSORFLOW mode, this will only run after all workers have finished.
+    workers = len(worker_list)
+    workerRDD = self.sc.parallelize(range(workers), workers)
+    workerRDD.foreachPartition(TFSparkNode.shutdown(self.cluster_info, self.queues))
+    time.sleep(grace_secs)
 
     # exit Spark application w/ err status if TF job had any errors
     if 'error' in tf_status:
