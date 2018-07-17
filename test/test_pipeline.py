@@ -34,6 +34,7 @@ class PipelineTest(test.SparkTest):
     super(PipelineTest, cls).tearDownClass()
 
   def setUp(self):
+    super(PipelineTest, self).setUp()
     # remove any prior test artifacts
     shutil.rmtree(self.model_dir, ignore_errors=True)
     shutil.rmtree(self.export_dir, ignore_errors=True)

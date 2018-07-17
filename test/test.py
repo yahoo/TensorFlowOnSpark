@@ -18,7 +18,7 @@ class SparkTest(unittest.TestCase):
     cls.num_workers = int(num_workers)
 
     spark_jars = os.getenv('SPARK_CLASSPATH')
-    assert spark_jars and 'tensorflow-hadoop' in spark_jars, "Please add path to tensorflow-hadoop-*.jar to SPARK_CLASSPATH."
+    assert spark_jars, "Please add path to tensorflow/ecosystem/hadoop jar to SPARK_CLASSPATH."
 
     cls.conf = SparkConf().set('spark.jars', spark_jars)
     cls.sc = SparkContext(master, cls.__name__, conf=cls.conf)
@@ -28,6 +28,11 @@ class SparkTest(unittest.TestCase):
   def tearDownClass(cls):
     cls.spark.stop()
     cls.sc.stop()
+
+  def setUp(self):
+    print("\n===========================================================")
+    print(self.id())
+    print("===========================================================\n")
 
 
 class SimpleTest(SparkTest):
