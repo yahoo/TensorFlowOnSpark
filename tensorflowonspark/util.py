@@ -9,12 +9,23 @@ from __future__ import print_function
 
 import os
 import socket
+import errno
+from socket import error as socket_error
 
 def get_ip_address():
   """Simple utility to get host IP address."""
-  s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-  s.connect(("8.8.8.8", 80))
-  return s.getsockname()[0]
+  try:
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    ip_address =  s.getsockname()[0]
+  except socket_error as sockerr:
+    if sockerr.errno != errno.ENETUNREACH:
+      raise sockerr
+    ip_address = socket.gethostbyname(socket.getfqdn())
+  finally:
+    s.close()
+   
+  return ip_address
 
 
 def find_in_path(path, file):
