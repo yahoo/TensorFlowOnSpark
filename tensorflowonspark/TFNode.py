@@ -32,14 +32,25 @@ def hdfs_path(ctx, path):
   Returns:
     An absolute path prefixed with the correct filesystem scheme.
   """
-  if path.startswith("hdfs://") or path.startswith("viewfs://") or path.startswith("file://"):
+  #  All Hadoop-Compatible File System Schemes (as of Hadoop 3.0.x):
+  HADOOP_SCHEMES = ['adl://',
+                    'hdfs://',
+                    'oss://',
+                    's3://',
+                    's3a://',
+                    's3n://',
+                    'swift://',
+                    'viewfs://',
+                    'wasb://']
+  if (any(path.startswith(scheme) for scheme in HADOOP_SCHEMES)
+      or path.startswith('file://')):
     # absolute path w/ scheme, just return as-is
     return path
   elif path.startswith("/"):
     # absolute path w/o scheme, just prepend w/ defaultFS
     return ctx.defaultFS + path
   else:
-    # relative path, prepend defaultSF + standard working dir
+    # relative path, prepend defaultFS + standard working dir
     if ctx.defaultFS.startswith("hdfs://") or ctx.defaultFS.startswith("viewfs://"):
       return "{0}/user/{1}/{2}".format(ctx.defaultFS, getpass.getuser(), path)
     elif ctx.defaultFS.startswith("file://"):
