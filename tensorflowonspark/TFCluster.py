@@ -145,7 +145,7 @@ class TFCluster(object):
           if si.numActiveTasks == len(ps_list):
             # if we only have PS tasks left, check that we see this condition a couple times
             count += 1
-            time.sleep(5)
+        time.sleep(5)
 
     # shutdown queues and managers for "worker" executors.
     # note: in SPARK mode, this job will immediately queue up behind the "data feeding" job.
