@@ -4,7 +4,6 @@ import os
 import shutil
 import test
 import time
-
 import unittest
 
 from tensorflowonspark import TFCluster, dfutil
@@ -168,7 +167,7 @@ class PipelineTest(test.SparkTest):
     # and add some extra columns
     df = trainDF.withColumn('extra1', trainDF.col1)
     df = df.withColumn('extra2', trainDF.col2)
-    self.assertEquals(len(df.columns), 4)
+    self.assertEqual(len(df.columns), 4)
 
     # train model
     args = {}
@@ -186,7 +185,7 @@ class PipelineTest(test.SparkTest):
     self.assertTrue(os.path.isdir(self.tfrecord_dir))
 
     df_tmp = dfutil.loadTFRecords(self.sc, self.tfrecord_dir)
-    self.assertEquals(df_tmp.columns, ['col1', 'col2'])
+    self.assertEqual(df_tmp.columns, ['col1', 'col2'])
 
   def test_tf_checkpoint_with_export_fn(self):
     """InputMode.TENSORFLOW TFEstimator w/ a separate saved_model export function to add placeholders for InputMode.SPARK TFModel inferencing"""
@@ -284,11 +283,10 @@ class PipelineTest(test.SparkTest):
     def _tf_train(args, ctx):
       """Basic linear regression in a distributed TF cluster using InputMode.TENSORFLOW"""
       import tensorflow as tf
-      from tensorflowonspark import TFNode
 
       tf.reset_default_graph()                          # reset graph in case we're re-using a Spark python worker
 
-      cluster, server = TFNode.start_cluster_server(ctx)
+      cluster, server = ctx.start_cluster_server()
 
       def _get_examples(batch_size):
         """Generate test data (mocking a queue_runner of file inputs)"""
@@ -320,9 +318,14 @@ class PipelineTest(test.SparkTest):
             if (step % 100 == 0):
               print("step: {}, weights: {}".format(step, weights))
 
-          # allow time for other nodes to connect
-          if ctx.task_index == 0:
-            time.sleep(40)
+        # synchronize completion (via files) to allow time for all other nodes to complete
+        done_dir = "{}/done".format(args.model_dir)
+        tf.gfile.MakeDirs(done_dir)
+        with tf.gfile.GFile("{}/{}".format(done_dir, ctx.task_index),'w') as f:
+          f.write("done!")
+
+        while len(tf.gfile.ListDirectory(done_dir)) < len(ctx.cluster_spec['worker']):
+          time.sleep(1)
 
     def _tf_export(args):
       """Creates an inference graph w/ placeholder and loads weights from checkpoint"""
