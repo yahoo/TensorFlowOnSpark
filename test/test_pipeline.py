@@ -324,8 +324,13 @@ class PipelineTest(test.SparkTest):
         with tf.gfile.GFile("{}/{}".format(done_dir, ctx.task_index),'w') as f:
           f.write("done!")
 
-        while len(tf.gfile.ListDirectory(done_dir)) < len(ctx.cluster_spec['worker']):
-          time.sleep(1)
+        for _ in range(60):
+          if len(tf.gfile.ListDirectory(done_dir)) < len(ctx.cluster_spec['worker']):
+            time.sleep(1)
+          else:
+            break
+        else:
+          raise Exception("timeout while waiting for other nodes")
 
     def _tf_export(args):
       """Creates an inference graph w/ placeholder and loads weights from checkpoint"""
