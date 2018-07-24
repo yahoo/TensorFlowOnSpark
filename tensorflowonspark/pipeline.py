@@ -403,7 +403,7 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
       # feed data, using a deterministic order for input columns (lexicographic by key)
       input_cols = sorted(self.getInputMapping())
       cluster.train(dataset.select(input_cols).rdd, local_args.epochs)
-    cluster.shutdown()
+    cluster.shutdown(grace_secs=30)
 
     # Run export function, if provided
     if self.export_fn:

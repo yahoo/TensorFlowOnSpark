@@ -19,6 +19,7 @@ class DFUtilTest(test.SparkTest):
     super(DFUtilTest, cls).tearDownClass()
 
   def setUp(self):
+    super(DFUtilTest, self).setUp()
     # remove any prior test artifacts
     shutil.rmtree(self.tfrecord_dir, ignore_errors=True)
 

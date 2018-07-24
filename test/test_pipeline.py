@@ -1,3 +1,4 @@
+from datetime import datetime
 import numpy as np
 import os
 import shutil
@@ -34,6 +35,7 @@ class PipelineTest(test.SparkTest):
     super(PipelineTest, cls).tearDownClass()
 
   def setUp(self):
+    super(PipelineTest, self).setUp()
     # remove any prior test artifacts
     shutil.rmtree(self.model_dir, ignore_errors=True)
     shutil.rmtree(self.export_dir, ignore_errors=True)
@@ -118,10 +120,11 @@ class PipelineTest(test.SparkTest):
     # create a Spark DataFrame of training examples (features, labels)
     trainDF = self.spark.createDataFrame(self.train_examples, ['col1', 'col2'])
 
-    # train model
+    # train and export model
     args = {}
     estimator = TFEstimator(self.get_function('spark/train'), args) \
                   .setInputMapping({'col1': 'x', 'col2': 'y_'}) \
+                  .setModelDir(self.model_dir) \
                   .setExportDir(self.export_dir) \
                   .setClusterSize(self.num_workers) \
                   .setNumPS(1) \
@@ -164,7 +167,7 @@ class PipelineTest(test.SparkTest):
     # and add some extra columns
     df = trainDF.withColumn('extra1', trainDF.col1)
     df = df.withColumn('extra2', trainDF.col2)
-    self.assertEquals(len(df.columns), 4)
+    self.assertEqual(len(df.columns), 4)
 
     # train model
     args = {}
@@ -182,7 +185,7 @@ class PipelineTest(test.SparkTest):
     self.assertTrue(os.path.isdir(self.tfrecord_dir))
 
     df_tmp = dfutil.loadTFRecords(self.sc, self.tfrecord_dir)
-    self.assertEquals(df_tmp.columns, ['col1', 'col2'])
+    self.assertEqual(df_tmp.columns, ['col1', 'col2'])
 
   def test_tf_checkpoint_with_export_fn(self):
     """InputMode.TENSORFLOW TFEstimator w/ a separate saved_model export function to add placeholders for InputMode.SPARK TFModel inferencing"""
@@ -225,6 +228,27 @@ class PipelineTest(test.SparkTest):
       import tensorflow as tf
       from tensorflowonspark import TFNode
 
+      class ExportHook(tf.train.SessionRunHook):
+        def __init__(self, export_dir, input_tensor, output_tensor):
+          self.export_dir = export_dir
+          self.input_tensor = input_tensor
+          self.output_tensor = output_tensor
+
+        def end(self, session):
+          print("{} ======= Exporting to: {}".format(datetime.now().isoformat(), self.export_dir))
+          signatures = {
+            "test_key": {
+              'inputs': {'features': self.input_tensor},
+              'outputs': {'prediction': self.output_tensor},
+              'method_name': tf.saved_model.signature_constants.PREDICT_METHOD_NAME
+            }
+          }
+          TFNode.export_saved_model(session,
+                                    self.export_dir,
+                                    "test_tag",
+                                    signatures)
+          print("{} ======= Done exporting".format(datetime.now().isoformat()))
+
       tf.reset_default_graph()                          # reset graph in case we're re-using a Spark python worker
 
       cluster, server = TFNode.start_cluster_server(ctx)
@@ -239,51 +263,30 @@ class PipelineTest(test.SparkTest):
           w = tf.Variable(tf.truncated_normal([2, 1]), name='w')
           y = tf.matmul(x, w, name='y')
           y2 = tf.square(y, name="y2")                      # extra/optional output for testing multiple output tensors
+          global_step = tf.train.get_or_create_global_step()
           cost = tf.reduce_mean(tf.square(y_ - y), name='cost')
-          optimizer = tf.train.GradientDescentOptimizer(0.5).minimize(cost)
-          init_op = tf.global_variables_initializer()
-          saver = tf.train.Saver()
+          optimizer = tf.train.GradientDescentOptimizer(0.5).minimize(cost, global_step)
 
-        sv = tf.train.Supervisor(is_chief=(ctx.task_index == 0),
-                                 init_op=init_op)
-        with sv.managed_session(server.target) as sess:
+        chief_hooks = [ExportHook(ctx.absolute_path(args.export_dir), x, y)] if args.export_dir else []
+        with tf.train.MonitoredTrainingSession(master=server.target,
+                                               is_chief=(ctx.task_index == 0),
+                                               checkpoint_dir=args.model_dir,
+                                               chief_only_hooks=chief_hooks) as sess:
           tf_feed = TFNode.DataFeed(ctx.mgr, input_mapping=args.input_mapping)
-          while not sv.should_stop() and not tf_feed.should_stop():
+          while not sess.should_stop() and not tf_feed.should_stop():
             batch = tf_feed.next_batch(10)
             if args.input_mapping:
               if len(batch['x']) > 0:
                 feed = {x: batch['x'], y_: batch['y_']}
               sess.run(optimizer, feed_dict=feed)
 
-          if sv.is_chief:
-            if args.model_dir:
-              # manually save checkpoint
-              ckpt_name = args.model_dir + "/model.ckpt"
-              print("Saving checkpoint to: {}".format(ckpt_name))
-              saver.save(sess, ckpt_name)
-            elif args.export_dir:
-              # export a saved_model
-              signatures = {
-                'test_key': {
-                  'inputs': {'features': x},
-                  'outputs': {'prediction': y},
-                  'method_name': 'test'
-                }
-              }
-              TFNode.export_saved_model(sess, export_dir=args.export_dir, tag_set='test_tag', signatures=signatures)
-            else:
-              print("WARNING: model state not saved.")
-
-        sv.stop()
-
     def _tf_train(args, ctx):
       """Basic linear regression in a distributed TF cluster using InputMode.TENSORFLOW"""
       import tensorflow as tf
-      from tensorflowonspark import TFNode
 
       tf.reset_default_graph()                          # reset graph in case we're re-using a Spark python worker
 
-      cluster, server = TFNode.start_cluster_server(ctx)
+      cluster, server = ctx.start_cluster_server()
 
       def _get_examples(batch_size):
         """Generate test data (mocking a queue_runner of file inputs)"""
@@ -301,33 +304,33 @@ class PipelineTest(test.SparkTest):
           x, y_ = _get_examples(10)                          # no input placeholders, TF code reads (or in this case "generates") input
           w = tf.Variable(tf.truncated_normal([2, 1]), name='w')
           y = tf.matmul(x, w, name='y')
-          global_step = tf.Variable(0)
+          global_step = tf.train.get_or_create_global_step()
 
           cost = tf.reduce_mean(tf.square(y_ - y), name='cost')
           optimizer = tf.train.GradientDescentOptimizer(0.5).minimize(cost, global_step)
 
-          init_op = tf.global_variables_initializer()
-          saver = tf.train.Saver()
-
-        sv = tf.train.Supervisor(is_chief=(ctx.task_index == 0),
-                                 init_op=init_op)
-        step = 0
-        with sv.managed_session(server.target) as sess:
-          while not sv.should_stop() and step < args.steps:
+        with tf.train.MonitoredTrainingSession(master=server.target,
+                                               is_chief=(ctx.task_index == 0),
+                                               checkpoint_dir=args.model_dir) as sess:
+          step = 0
+          while not sess.should_stop() and step < args.steps:
             opt, weights, step = sess.run([optimizer, w, global_step])
             if (step % 100 == 0):
               print("step: {}, weights: {}".format(step, weights))
 
-          if sv.is_chief:
-            if args.model_dir:
-              # manually save checkpoint
-              ckpt_name = args.model_dir + "/model.ckpt"
-              print("Saving checkpoint to: {}".format(ckpt_name))
-              saver.save(sess, ckpt_name)
+        # synchronize completion (via files) to allow time for all other nodes to complete
+        done_dir = "{}/done".format(args.model_dir)
+        tf.gfile.MakeDirs(done_dir)
+        with tf.gfile.GFile("{}/{}".format(done_dir, ctx.task_index),'w') as f:
+          f.write("done!")
 
-          # wait for rest of cluster to connect
-          time.sleep(30)
-        sv.stop()
+        for _ in range(60):
+          if len(tf.gfile.ListDirectory(done_dir)) < len(ctx.cluster_spec['worker']):
+            time.sleep(1)
+          else:
+            break
+        else:
+          raise Exception("timeout while waiting for other nodes")
 
     def _tf_export(args):
       """Creates an inference graph w/ placeholder and loads weights from checkpoint"""
