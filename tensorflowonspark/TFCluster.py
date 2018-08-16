@@ -72,9 +72,9 @@ class TFCluster(object):
       :qname: *INTERNAL USE*.
     """
     logging.info("Feeding training data")
-    assert(self.input_mode == InputMode.SPARK)
-    assert(qname in self.queues)
-    assert(num_epochs >= 0)
+    assert self.input_mode == InputMode.SPARK, "TFCluster.train() requires InputMode.SPARK"
+    assert qname in self.queues, "Unknown queue: {}".format(qname)
+    assert num_epochs >= 0, "num_epochs cannot be negative"
 
     if isinstance(dataRDD, DStream):
       # Spark Streaming
@@ -105,8 +105,8 @@ class TFCluster(object):
       A Spark RDD representing the output of the TensorFlow inferencing
     """
     logging.info("Feeding inference data")
-    assert(self.input_mode == InputMode.SPARK)
-    assert(qname in self.queues)
+    assert self.input_mode == InputMode.SPARK, "TFCluster.inference() requires InputMode.SPARK"
+    assert qname in self.queues, "Unknown queue: {}".format(qname)
     return dataRDD.mapPartitions(TFSparkNode.inference(self.cluster_info, qname))
 
   def shutdown(self, ssc=None, grace_secs=0):
@@ -211,7 +211,7 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
     A TFCluster object representing the started cluster.
   """
   logging.info("Reserving TFSparkNodes {0}".format("w/ TensorBoard" if tensorboard else ""))
-  assert(num_ps < num_executors)
+  assert num_ps < num_executors, "num_ps cannot be greater than num_executors (i.e. num_executors == num_ps + num_workers)"
 
   if driver_ps_nodes and input_mode != InputMode.TENSORFLOW:
     raise Exception('running PS nodes on driver locally is only supported in InputMode.TENSORFLOW')
