@@ -356,12 +356,13 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
   return _mapfn
 
 
-def train(cluster_info, cluster_meta, qname='input'):
+def train(cluster_info, cluster_meta, feed_timeout=600, qname='input'):
   """Feeds Spark partitions into the shared multiprocessing.Queue.
 
   Args:
     :cluster_info: node reservation information for the cluster (e.g. host, executor_id, pid, ports, etc)
     :cluster_meta: dictionary of cluster metadata (e.g. cluster_id, reservation.Server address, etc)
+    :feed_timeout: number of seconds after which data feeding times out (600 sec default)
     :qname: *INTERNAL_USE*
 
   Returns:
@@ -396,13 +397,17 @@ def train(cluster_info, cluster_meta, qname='input'):
       # wait for consumers to finish processing all items in queue before "finishing" this iterator
       joinThr = Thread(target=queue.join)
       joinThr.start()
+      timeout = feed_timeout
       while (joinThr.isAlive()):
         if (not equeue.empty()):
           e_str = equeue.get()
           equeue.task_done()
           raise Exception("exception in worker:\n" + e_str)
         time.sleep(1)
-#      queue.join()
+        timeout -= 1
+        if timeout <= 0:
+          raise Exception("Timeout while feeding partition")
+
       logging.info("Processed {0} items in partition".format(count))
 
     # check if TF is terminating feed after this partition
@@ -422,11 +427,12 @@ def train(cluster_info, cluster_meta, qname='input'):
   return _train
 
 
-def inference(cluster_info, qname='input'):
+def inference(cluster_info, feed_timeout=600, qname='input'):
   """Feeds Spark partitions into the shared multiprocessing.Queue and returns inference results.
 
   Args:
     :cluster_info: node reservation information for the cluster (e.g. host, executor_id, pid, ports, etc)
+    :feed_timeout: number of seconds after which data feeding times out (600 sec default)
     :qname: *INTERNAL_USE*
 
   Returns:
@@ -458,12 +464,16 @@ def inference(cluster_info, qname='input'):
     # wait for consumers to finish processing all items in queue before "finishing" this iterator
     joinThr = Thread(target=queue_in.join)
     joinThr.start()
+    timeout = feed_timeout
     while (joinThr.isAlive()):
       if (not equeue.empty()):
         e_str = equeue.get()
         equeue.task_done()
         raise Exception("exception in worker:\n" + e_str)
       time.sleep(1)
+      timeout -= 1
+      if timeout <= 0:
+        raise Exception("Timeout while feeding partition")
 
     logging.info("Processed {0} items in partition".format(count))
 
