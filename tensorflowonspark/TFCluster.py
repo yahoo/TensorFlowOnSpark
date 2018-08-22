@@ -57,7 +57,7 @@ class TFCluster(object):
   queues = None                 #: *INTERNAL_USE*
   server = None                 #: reservation.Server for this cluster
 
-  def train(self, dataRDD, num_epochs=0, qname='input'):
+  def train(self, dataRDD, num_epochs=0, feed_timeout=600, qname='input'):
     """*For InputMode.SPARK only*.  Feeds Spark RDD partitions into the TensorFlow worker nodes
 
     It is the responsibility of the TensorFlow "main" function to interpret the rows of the RDD.
@@ -69,6 +69,7 @@ class TFCluster(object):
     Args:
       :dataRDD: input data as a Spark RDD.
       :num_epochs: number of times to repeat the dataset during training.
+      :feed_timeout: number of seconds after which data feeding times out (600 sec default)
       :qname: *INTERNAL USE*.
     """
     logging.info("Feeding training data")
@@ -78,7 +79,7 @@ class TFCluster(object):
 
     if isinstance(dataRDD, DStream):
       # Spark Streaming
-      dataRDD.foreachRDD(lambda rdd: rdd.foreachPartition(TFSparkNode.train(self.cluster_info, self.cluster_meta, qname)))
+      dataRDD.foreachRDD(lambda rdd: rdd.foreachPartition(TFSparkNode.train(self.cluster_info, self.cluster_meta, feed_timeout=feed_timeout, qname=qname)))
     else:
       # Spark RDD
       # if num_epochs unspecified, pick an arbitrarily "large" number for now
@@ -87,9 +88,9 @@ class TFCluster(object):
         num_epochs = 10
       rdds = [dataRDD] * num_epochs
       unionRDD = self.sc.union(rdds)
-      unionRDD.foreachPartition(TFSparkNode.train(self.cluster_info, self.cluster_meta, qname))
+      unionRDD.foreachPartition(TFSparkNode.train(self.cluster_info, self.cluster_meta, feed_timeout=feed_timeout, qname=qname))
 
-  def inference(self, dataRDD, qname='input'):
+  def inference(self, dataRDD, feed_timeout=600, qname='input'):
     """*For InputMode.SPARK only*: Feeds Spark RDD partitions into the TensorFlow worker nodes and returns an RDD of results
 
     It is the responsibility of the TensorFlow "main" function to interpret the rows of the RDD and provide valid data for the output RDD.
@@ -99,6 +100,7 @@ class TFCluster(object):
 
     Args:
       :dataRDD: input data as a Spark RDD
+      :feed_timeout: number of seconds after which data feeding times out (600 sec default)
       :qname: *INTERNAL_USE*
 
     Returns:
@@ -107,7 +109,7 @@ class TFCluster(object):
     logging.info("Feeding inference data")
     assert self.input_mode == InputMode.SPARK, "TFCluster.inference() requires InputMode.SPARK"
     assert qname in self.queues, "Unknown queue: {}".format(qname)
-    return dataRDD.mapPartitions(TFSparkNode.inference(self.cluster_info, qname))
+    return dataRDD.mapPartitions(TFSparkNode.inference(self.cluster_info, feed_timeout=feed_timeout, qname=qname))
 
   def shutdown(self, ssc=None, grace_secs=0):
     """Stops the distributed TensorFlow cluster.
