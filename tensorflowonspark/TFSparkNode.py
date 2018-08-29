@@ -271,14 +271,17 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
       hosts.append("{0}:{1}".format(nhost, nport))
       spec[njob] = hosts
 
-    # update TF_CONFIG and reserve GPU for tf.estimator based code
-    # Note: this will execute but be ignored by non-tf.estimator code
-    tf_config = json.dumps({
-      'cluster': spec,
-      'task': {'type': job_name, 'index': task_index},
-      'environment': 'cloud'
-    })
-    os.environ['TF_CONFIG'] = tf_config
+    # update TF_CONFIG if cluster spec has a 'master' node (i.e. tf.estimator)
+    if 'master' in spec:
+      tf_config = json.dumps({
+        'cluster': spec,
+        'task': {'type': job_name, 'index': task_index},
+        'environment': 'cloud'
+      })
+      logging.info("export TF_CONFIG: {}".format(tf_config))
+      os.environ['TF_CONFIG'] = tf_config
+
+    # reserve GPU
     if tf.test.is_built_with_cuda():
       num_gpus = tf_args.num_gpus if 'num_gpus' in tf_args else 1
       gpus_to_use = gpu_info.get_gpus(num_gpus)
