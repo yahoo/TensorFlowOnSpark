@@ -3,6 +3,8 @@ Copyright 2017 Yahoo Inc.
 Licensed under the terms of the Apache 2.0 license.
 Please see LICENSE file in the project root for terms.
 -->
+[![Build Status](https://travis-ci.org/yahoo/TensorFlowOnSpark.svg?branch=master)](https://travis-ci.org/yahoo/TensorFlowOnSpark)
+
 # TensorFlowOnSpark
 
 ## What's TensorFlowOnSpark?
