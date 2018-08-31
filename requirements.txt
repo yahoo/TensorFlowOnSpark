@@ -1,1 +1,3 @@
+py4j
+pyspark
 tensorflow
