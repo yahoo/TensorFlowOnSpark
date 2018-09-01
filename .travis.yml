@@ -1,7 +1,20 @@
 language: python
 python:
-  - "2.7"
+  - 2.7
+cache: pip
+before_install:
+  - curl -LO http://www-us.apache.org/dist/spark/spark-2.3.1/spark-2.3.1-bin-hadoop2.7.tgz
+  - curl -LO http://central.maven.org/maven2/org/tensorflow/hadoop/1.10.0/hadoop-1.10.0.jar
+  - export SPARK_HOME=./spark
+  - mkdir $SPARK_HOME
+  - tar -xf spark-2.3.1-bin-hadoop2.7.tgz -C $SPARK_HOME --strip-components=1
+  - export PATH=$SPARK_HOME/bin:$PATH
+  - export SPARK_LOCAL_IP=127.0.0.1
+  - export SPARK_CLASSPATH=./lib/tensorflow-hadoop-1.0-SNAPSHOT.jar
+  - export PYTHONPATH=$(pwd)
 install:
   - pip install -r requirements.txt
 script:
-  - python -c 'import tensorflow as tf'
+  - test/run_tests.sh
+notifications:
+  email: false
