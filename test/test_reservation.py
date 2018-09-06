@@ -1,4 +1,5 @@
 import threading
+import time
 import unittest
 
 from tensorflowonspark.reservation import Reservations, Server, Client
@@ -44,6 +45,7 @@ class ReservationTest(unittest.TestCase):
 
     # request server stop
     c.request_stop()
+    time.sleep(1)
     self.assertEqual(s.done, True)
 
   def test_reservation_server_multi(self):
@@ -78,6 +80,7 @@ class ReservationTest(unittest.TestCase):
 
     # request server stop
     c.request_stop()
+    time.sleep(1)
     self.assertEqual(s.done, True)
 
 
