@@ -321,9 +321,10 @@ class PipelineTest(test.SparkTest):
         # synchronize completion (via files) to allow time for all other nodes to complete
         done_dir = "{}/done".format(args.model_dir)
         tf.gfile.MakeDirs(done_dir)
-        with tf.gfile.GFile("{}/{}".format(done_dir, ctx.task_index),'w') as f:
+        with tf.gfile.GFile("{}/{}".format(done_dir, ctx.task_index), 'w') as f:
           f.write("done!")
 
+        # wait up to 60s for other nodes to complete
         for _ in range(60):
           if len(tf.gfile.ListDirectory(done_dir)) < len(ctx.cluster_spec['worker']):
             time.sleep(1)
