@@ -1,3 +1,4 @@
 py4j
 pyspark
+sphinx
 tensorflow
