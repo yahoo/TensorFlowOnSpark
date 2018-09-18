@@ -15,16 +15,25 @@ before_install:
 install:
   - pip install -r requirements.txt
 script:
+  - sphinx-build -b html docs/source docs/build/html
   - test/run_tests.sh
 notifications:
   email: false
 deploy:
-  provider: pypi
-  user: leewyang
-  password:
-    secure: T2Q8VM6SgcMtJDO2kJbaELE/5ICR5mx8pkM6TyNAJZ2Mr3fLIy6iDfPKunBAYVljl+SDEWmuoPTWqJdqMyo47LBKPKtBHbGzATqGSRTLvxLOYNSXUX+uCpPtr7CMp1eP3xpZ3YbAJZvoEFlWnBQKeBtX/PjNCpmKdp7ir+46CvR/pR1tcM5cFnSgU+uCPAMUt8KTZIxeRo+oJtaE0DM2RxLJ9nGnaRNz9fdXxwhViNj/bMnDRUI0G6k+Iy4sO2669si8nhTDr+Oq66ONUcJtAQymNUM/hzBTCkrJvuIq1TqTlKkA39UrtD5/wCkCqPUbCLVuIfNwkYfW2C8AlXcbphBKN4PhwaoL5XECr3/AOsgNpnPWhCF1Z1uLi58FhIlSyp+5c/x2wVJLZi2IE+c996An7UO3t16ZFpFEgzS6m9PVbi6Qil6Tl4AhV5QLKb0Qn0hLe2l0WixzK9KLMHfkqX8h5ZGC7i0TvCNcU2uIFjY8we91GORZKZhwUVDKbPqiUZIKn64Qq8EwJIsk/S344OrUTzm7z0lFCqtPphg1duU42QOFmaYWi6hgsbtDxN6+CubLw23G3PtKjOpNt8hHnrjZsz9H1MKbSAoYQ4fo+Iwb3owTjXnSTBr94StW7qysggWH6xQimFDh/SKOE9MfroMGt5YTXfduTbqyeameYqE=
-  distributions: sdist bdist_wheel
-  on:
-    branch: master
-    python: 3.6
-    tags: true
+  - provider: pages
+    skip_cleanup: true
+    github_token: $GITHUB_TOKEN
+    local_dir: docs/build/html
+    on:
+      branch: master
+      python: 3.6
+      tags: true
+  - provider: pypi
+    user: leewyang
+    password:
+      secure: T2Q8VM6SgcMtJDO2kJbaELE/5ICR5mx8pkM6TyNAJZ2Mr3fLIy6iDfPKunBAYVljl+SDEWmuoPTWqJdqMyo47LBKPKtBHbGzATqGSRTLvxLOYNSXUX+uCpPtr7CMp1eP3xpZ3YbAJZvoEFlWnBQKeBtX/PjNCpmKdp7ir+46CvR/pR1tcM5cFnSgU+uCPAMUt8KTZIxeRo+oJtaE0DM2RxLJ9nGnaRNz9fdXxwhViNj/bMnDRUI0G6k+Iy4sO2669si8nhTDr+Oq66ONUcJtAQymNUM/hzBTCkrJvuIq1TqTlKkA39UrtD5/wCkCqPUbCLVuIfNwkYfW2C8AlXcbphBKN4PhwaoL5XECr3/AOsgNpnPWhCF1Z1uLi58FhIlSyp+5c/x2wVJLZi2IE+c996An7UO3t16ZFpFEgzS6m9PVbi6Qil6Tl4AhV5QLKb0Qn0hLe2l0WixzK9KLMHfkqX8h5ZGC7i0TvCNcU2uIFjY8we91GORZKZhwUVDKbPqiUZIKn64Qq8EwJIsk/S344OrUTzm7z0lFCqtPphg1duU42QOFmaYWi6hgsbtDxN6+CubLw23G3PtKjOpNt8hHnrjZsz9H1MKbSAoYQ4fo+Iwb3owTjXnSTBr94StW7qysggWH6xQimFDh/SKOE9MfroMGt5YTXfduTbqyeameYqE=
+    distributions: sdist bdist_wheel
+    on:
+      branch: master
+      python: 3.6
+      tags: true
