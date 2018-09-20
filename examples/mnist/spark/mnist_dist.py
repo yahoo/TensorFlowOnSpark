@@ -138,6 +138,7 @@ def map_fun(args, ctx):
     with tf.train.MonitoredTrainingSession(master=server.target,
                                              is_chief=(task_index == 0),
                                              checkpoint_dir=logdir,
+                                             save_checkpoint_secs=10,
                                              hooks=[tf.train.StopAtStepHook(last_step=args.steps)],
                                              chief_only_hooks=[ExportHook(ctx.absolute_path(args.export_dir), x, prediction)]) as mon_sess:
       step = 0
