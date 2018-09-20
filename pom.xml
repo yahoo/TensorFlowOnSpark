@@ -5,10 +5,17 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.yahoo.ml</groupId>
     <artifactId>tensorflowonspark</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0</version>
     <packaging>jar</packaging>
     <name>tensorflowonspark</name>
     <description>Spark Scala inferencing for TensorFlowOnSpark</description>
+
+    <distributionManagement>
+        <repository>
+            <id>bintray-tensorflowonspark-repo</id>
+            <url>https://api.bintray.com/maven/yahoo/maven/tensorflowonspark</url>
+        </repository>
+    </distributionManagement>
 
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
@@ -22,11 +29,11 @@
         <scala.version>2.11.8</scala.version>
         <scala-maven-plugin.version>3.2.1</scala-maven-plugin.version>
         <scala-parser-combinators.version>1.1.0</scala-parser-combinators.version>
-        <scalatest.version>3.0.3</scalatest.version>
+        <scalatest.version>3.0.5</scalatest.version>
         <scalatest-maven-plugin.version>1.0</scalatest-maven-plugin.version>
         <scopt.version>3.7.0</scopt.version>
-        <tensorflow.version>1.8.0</tensorflow.version>
-        <tensorflow-hadoop.version>1.0-SNAPSHOT</tensorflow-hadoop.version>
+        <tensorflow.version>1.9.0</tensorflow.version>
+        <tensorflow-hadoop.version>1.9.0</tensorflow-hadoop.version>
     </properties>
     <dependencies>
         <dependency>
@@ -66,6 +73,11 @@
             <groupId>org.tensorflow</groupId>
             <artifactId>hadoop</artifactId>
             <version>${tensorflow-hadoop.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>3.5.1</version>
         </dependency>
         <dependency>
             <groupId>org.scalatest</groupId>
