@@ -207,7 +207,9 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
       # search for tensorboard in python/bin, PATH, and PYTHONPATH
       pypath = sys.executable
       pydir = os.path.dirname(pypath)
-      search_path = os.pathsep.join([pydir, os.environ['PATH'], os.environ['PYTHONPATH']])
+      sys_path = os.pathsep.join(sys.path)
+      search_path = os.pathsep.join([pydir, sys_path, os.environ['PATH'], os.environ['PYTHONPATH']])
+
       tb_path = util.find_in_path(search_path, 'tensorboard')                             # executable in PATH
       if not tb_path:
         tb_path = util.find_in_path(search_path, 'tensorboard/main.py')                   # TF 1.3+
