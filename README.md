@@ -50,7 +50,7 @@ Please check TensorFlowOnSpark [wiki site](../../wiki) for detailed
 documentations such as getting started guides for [YARN
 cluster](../../wiki/GetStarted_YARN) and [AWS EC2
 cluster](../../wiki/GetStarted_EC2). A [Conversion
-Guide](../../wiki/Conversion) has been provided to help you convert
+Guide](../../wiki/Conversion-Guide) has been provided to help you convert
 your TensorFlow programs.
 
 ## Mailing List
