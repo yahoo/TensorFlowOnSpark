@@ -21,15 +21,10 @@ def map_fun(args, ctx):
   import tensorflow as tf
   import time
 
+  num_workers = len(ctx.cluster_spec['worker'])
   worker_num = ctx.worker_num
   job_name = ctx.job_name
   task_index = ctx.task_index
-  cluster_spec = ctx.cluster_spec
-  num_workers = len(cluster_spec['worker'])
-
-  # Delay PS nodes a bit, since workers seem to reserve GPUs more quickly/reliably (w/o conflict)
-  if job_name == "ps":
-    time.sleep((worker_num + 1) * 5)
 
   # Parameters
   IMAGE_PIXELS = 28
@@ -38,70 +33,26 @@ def map_fun(args, ctx):
   # Get TF cluster and server instances
   cluster, server = ctx.start_cluster_server(1, args.rdma)
 
-  def read_csv_examples(image_dir, label_dir, batch_size=100, num_epochs=None, task_index=None, num_workers=None):
-    print_log(worker_num, "num_epochs: {0}".format(num_epochs))
-    # Setup queue of csv image filenames
-    csv_file_pattern = os.path.join(image_dir, 'part-*')
-    images = tf.gfile.Glob(csv_file_pattern)
-    print_log(worker_num, "images: {0}".format(images))
-    image_queue = tf.train.string_input_producer(images, shuffle=False, capacity=1000, num_epochs=num_epochs, name="image_queue")
-
-    # Setup queue of csv label filenames
-    csv_file_pattern = os.path.join(label_dir, 'part-*')
-    labels = tf.gfile.Glob(csv_file_pattern)
-    print_log(worker_num, "labels: {0}".format(labels))
-    label_queue = tf.train.string_input_producer(labels, shuffle=False, capacity=1000, num_epochs=num_epochs, name="label_queue")
-
-    # Setup reader for image queue
-    img_reader = tf.TextLineReader(name="img_reader")
-    _, img_csv = img_reader.read(image_queue)
-    image_defaults = [[1.0] for col in range(784)]
-    img = tf.stack(tf.decode_csv(img_csv, image_defaults))
-    # Normalize values to [0,1]
+  def _parse_csv(ln):
+    splits = tf.string_split([ln], delimiter='|')
+    lbl = splits.values[0]
+    img = splits.values[1]
+    image_defaults = [[0.0] for col in range(IMAGE_PIXELS * IMAGE_PIXELS)]
+    image = tf.stack(tf.decode_csv(img, record_defaults=image_defaults))
     norm = tf.constant(255, dtype=tf.float32, shape=(784,))
-    image = tf.div(img, norm)
-    print_log(worker_num, "image: {0}".format(image))
+    normalized_image = tf.div(image, norm)
+    label_value = tf.string_to_number(lbl, tf.int32)
+    label = tf.one_hot(label_value, 10)
+    return (normalized_image, label)
 
-    # Setup reader for label queue
-    label_reader = tf.TextLineReader(name="label_reader")
-    _, label_csv = label_reader.read(label_queue)
-    label_defaults = [[1.0] for col in range(10)]
-    label = tf.stack(tf.decode_csv(label_csv, label_defaults))
-    print_log(worker_num, "label: {0}".format(label))
-
-    # Return a batch of examples
-    return tf.train.batch([image, label], batch_size, num_threads=args.readers, name="batch_csv")
-
-  def read_tfr_examples(path, batch_size=100, num_epochs=None, task_index=None, num_workers=None):
-    print_log(worker_num, "num_epochs: {0}".format(num_epochs))
-
-    # Setup queue of TFRecord filenames
-    tf_record_pattern = os.path.join(path, 'part-*')
-    files = tf.gfile.Glob(tf_record_pattern)
-    queue_name = "file_queue"
-
-    # split input files across workers, if specified
-    if task_index is not None and num_workers is not None:
-      num_files = len(files)
-      files = files[task_index:num_files:num_workers]
-      queue_name = "file_queue_{0}".format(task_index)
-
-    print_log(worker_num, "files: {0}".format(files))
-    file_queue = tf.train.string_input_producer(files, shuffle=False, capacity=1000, num_epochs=num_epochs, name=queue_name)
-
-    # Setup reader for examples
-    reader = tf.TFRecordReader(name="reader")
-    _, serialized = reader.read(file_queue)
-    feature_def = {'label': tf.FixedLenFeature([10], tf.int64), 'image': tf.FixedLenFeature([784], tf.int64)}
-    features = tf.parse_single_example(serialized, feature_def)
+  def _parse_tfr(example_proto):
+    feature_def = {"label": tf.FixedLenFeature(10, tf.int64),
+                   "image": tf.FixedLenFeature(IMAGE_PIXELS * IMAGE_PIXELS, tf.int64)}
+    features = tf.parse_single_example(example_proto, feature_def)
     norm = tf.constant(255, dtype=tf.float32, shape=(784,))
     image = tf.div(tf.to_float(features['image']), norm)
-    print_log(worker_num, "image: {0}".format(image))
     label = tf.to_float(features['label'])
-    print_log(worker_num, "label: {0}".format(label))
-
-    # Return a batch of examples
-    return tf.train.batch([image, label], batch_size, num_threads=args.readers, name="batch")
+    return (image, label)
 
   if job_name == "ps":
     server.join()
@@ -110,6 +61,22 @@ def map_fun(args, ctx):
     with tf.device(tf.train.replica_device_setter(
       worker_device="/job:worker/task:%d" % task_index,
       cluster=cluster)):
+
+      # Dataset for input data
+      image_dir = ctx.absolute_path(args.images_labels)
+      file_pattern = os.path.join(image_dir, 'part-*')
+
+      ds = tf.data.Dataset.list_files(file_pattern)
+      ds = ds.shard(num_workers, task_index).repeat(args.epochs).shuffle(args.shuffle_size)
+      if args.format == 'csv2':
+        ds = ds.interleave(tf.data.TextLineDataset, cycle_length=args.readers, block_length=1)
+        parse_fn = _parse_csv
+      else:  # args.format == 'tfr'
+        ds = ds.interleave(tf.data.TFRecordDataset, cycle_length=args.readers, block_length=1)
+        parse_fn = _parse_tfr
+      ds = ds.map(parse_fn).batch(args.batch_size)
+      iterator = ds.make_one_shot_iterator()
+      x, y_ = iterator.get_next()
 
       # Variables of the hidden layer
       hid_w = tf.Variable(tf.truncated_normal([IMAGE_PIXELS * IMAGE_PIXELS, hidden_units],
@@ -123,21 +90,6 @@ def map_fun(args, ctx):
       sm_b = tf.Variable(tf.zeros([10]), name="sm_b")
       tf.summary.histogram("softmax_weights", sm_w)
 
-      # Placeholders or QueueRunner/Readers for input data
-      num_epochs = 1 if args.mode == "inference" else None if args.epochs == 0 else args.epochs
-      index = task_index if args.mode == "inference" else None
-      workers = num_workers if args.mode == "inference" else None
-
-      if args.format == "csv":
-        images = ctx.absolute_path(args.images)
-        labels = ctx.absolute_path(args.labels)
-        x, y_ = read_csv_examples(images, labels, 100, num_epochs, index, workers)
-      elif args.format == "tfr":
-        images = ctx.absolute_path(args.images)
-        x, y_ = read_tfr_examples(images, 100, num_epochs, index, workers)
-      else:
-        raise("{0} format not supported for tf input mode".format(args.format))
-
       x_img = tf.reshape(x, [-1, IMAGE_PIXELS, IMAGE_PIXELS, 1])
       tf.summary.image("x_img", x_img)
 
@@ -146,7 +98,7 @@ def map_fun(args, ctx):
 
       y = tf.nn.softmax(tf.nn.xw_plus_b(hid, sm_w, sm_b))
 
-      global_step = tf.Variable(0)
+      global_step = tf.train.get_or_create_global_step()
 
       loss = -tf.reduce_sum(y_ * tf.log(tf.clip_by_value(y, 1e-10, 1.0)))
       tf.summary.scalar("loss", loss)
@@ -167,67 +119,62 @@ def map_fun(args, ctx):
     # Create a "supervisor", which oversees the training process and stores model state into HDFS
     logdir = ctx.absolute_path(args.model)
     print("tensorflow model path: {0}".format(logdir))
+    summary_writer = tf.summary.FileWriter("tensorboard_%d" % worker_num, graph=tf.get_default_graph())
 
-    if job_name == "worker" and task_index == 0:
-      summary_writer = tf.summary.FileWriter(logdir, graph=tf.get_default_graph())
-
-    if args.mode == "train":
-      sv = tf.train.Supervisor(is_chief=(task_index == 0),
-                               logdir=logdir,
-                               init_op=init_op,
-                               summary_op=None,
-                               summary_writer=None,
-                               saver=saver,
-                               global_step=global_step,
-                               stop_grace_secs=300,
-                               save_model_secs=10)
-    else:
-      sv = tf.train.Supervisor(is_chief=(task_index == 0),
-                               logdir=logdir,
-                               summary_op=None,
-                               saver=saver,
-                               global_step=global_step,
-                               stop_grace_secs=300,
-                               save_model_secs=0)
+    if args.mode == 'inference':
       output_dir = ctx.absolute_path(args.output)
-      output_file = tf.gfile.Open("{0}/part-{1:05d}".format(output_dir, worker_num), mode='w')
+      print("output_dir: {}".format(output_dir))
+      tf.gfile.MkDir(output_dir)
+      output_file = tf.gfile.Open("{}/part-{:05d}".format(output_dir, task_index), mode='w')
 
-    # The supervisor takes care of session initialization, restoring from
-    # a checkpoint, and closing when done or an error occurs.
-    with sv.managed_session(server.target) as sess:
-      print("{0} session ready".format(datetime.now().isoformat()))
+    with tf.train.MonitoredTrainingSession(master=server.target,
+                                           is_chief=(task_index == 0),
+                                           scaffold=tf.train.Scaffold(init_op=init_op, summary_op=summary_op, saver=saver),
+                                           checkpoint_dir=logdir,
+                                           hooks=[tf.train.StopAtStepHook(last_step=args.steps)]) as sess:
+      print("{} session ready".format(datetime.now().isoformat()))
 
-      # Loop until the supervisor shuts down or 1000000 steps have completed.
+      # Loop until the session shuts down
       step = 0
       count = 0
-      while not sv.should_stop() and step < args.steps:
+      while not sess.should_stop():
+
         # Run a training step asynchronously.
         # See `tf.train.SyncReplicasOptimizer` for additional details on how to
         # perform *synchronous* training.
 
-        # using QueueRunners/Readers
         if args.mode == "train":
           if (step % 100 == 0):
-            print("{0} step: {1} accuracy: {2}".format(datetime.now().isoformat(), step, sess.run(accuracy)))
+            print("{} step: {} accuracy: {}".format(datetime.now().isoformat(), step, sess.run(accuracy)))
           _, summary, step = sess.run([train_op, summary_op, global_step])
-          if sv.is_chief:
+          if task_index == 0:
             summary_writer.add_summary(summary, step)
         else:  # args.mode == "inference"
           labels, pred, acc = sess.run([label, prediction, accuracy])
           # print("label: {0}, pred: {1}".format(labels, pred))
-          print("acc: {0}".format(acc))
+          print("acc: {}".format(acc))
           for i in range(len(labels)):
             count += 1
-            output_file.write("{0} {1}\n".format(labels[i], pred[i]))
-          print("count: {0}".format(count))
+            output_file.write("{} {}\n".format(labels[i], pred[i]))
+          print("count: {}".format(count))
 
-    if args.mode == "inference":
+    if args.mode == 'inference':
       output_file.close()
-      # Delay chief worker from shutting down supervisor during inference, since it can load model, start session,
-      # run inference and request stop before the other workers even start/sync their sessions.
-      if task_index == 0:
-        time.sleep(60)
 
-    # Ask for all the services to stop.
-    print("{0} stopping supervisor".format(datetime.now().isoformat()))
-    sv.stop()
+    print("{} stopping MonitoredTrainingSession".format(datetime.now().isoformat()))
+
+    # WORKAROUND for https://github.com/tensorflow/tensorflow/issues/21745
+    # wait for all other nodes to complete (via done files)
+    done_dir = "{}/{}/done".format(ctx.absolute_path(args.model), args.mode)
+    print("Writing done file to: {}".format(done_dir))
+    tf.gfile.MakeDirs(done_dir)
+    with tf.gfile.GFile("{}/{}".format(done_dir, ctx.task_index), 'w') as done_file:
+      done_file.write("done")
+
+    for i in range(60):
+      if len(tf.gfile.ListDirectory(done_dir)) < len(ctx.cluster_spec['worker']):
+        print("{} Waiting for other nodes {}".format(datetime.now().isoformat(), i))
+        time.sleep(1)
+      else:
+        print("{} All nodes done".format(datetime.now().isoformat()))
+        break
