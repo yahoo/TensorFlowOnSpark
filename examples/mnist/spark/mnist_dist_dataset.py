@@ -6,7 +6,6 @@
 
 from __future__ import absolute_import
 from __future__ import division
-from __future__ import nested_scopes
 from __future__ import print_function
 
 
@@ -15,11 +14,11 @@ def print_log(worker_num, arg):
 
 
 def map_fun(args, ctx):
-  from tensorflowonspark import TFNode
   from datetime import datetime
   import math
   import numpy
   import tensorflow as tf
+  import time
 
   worker_num = ctx.worker_num
   job_name = ctx.job_name
@@ -30,24 +29,24 @@ def map_fun(args, ctx):
   hidden_units = 128
 
   # Get TF cluster and server instances
-  cluster, server = TFNode.start_cluster_server(ctx, 1, args.rdma)
+  cluster, server = ctx.start_cluster_server(1, args.rdma)
 
   # Create generator for Spark data feed
-  tf_feed = TFNode.DataFeed(ctx.mgr, args.mode == "train")
+  tf_feed = ctx.get_data_feed(args.mode == 'train')
 
   def rdd_generator():
     while not tf_feed.should_stop():
-      batch = tf_feed.next_batch(1)[0]
-      image = numpy.array(batch[0])
-      image = image.astype(numpy.float32) / 255.0
-      label = numpy.array(batch[1])
-      label = label.astype(numpy.int64)
+      batch = tf_feed.next_batch(1)
+      if len(batch) == 0:
+        return
+      row = batch[0]
+      image = numpy.array(row[0]).astype(numpy.float32) / 255.0
+      label = numpy.array(row[1]).astype(numpy.int64)
       yield (image, label)
 
   if job_name == "ps":
     server.join()
   elif job_name == "worker":
-
     # Assigns ops to the local worker by default.
     with tf.device(tf.train.replica_device_setter(
       worker_device="/job:worker/task:%d" % task_index,
@@ -70,10 +69,6 @@ def map_fun(args, ctx):
       sm_b = tf.Variable(tf.zeros([10]), name="sm_b")
       tf.summary.histogram("softmax_weights", sm_w)
 
-      # # Placeholders or QueueRunner/Readers for input data
-      # x = tf.placeholder(tf.float32, [None, IMAGE_PIXELS * IMAGE_PIXELS], name="x")
-      # y_ = tf.placeholder(tf.float32, [None, 10], name="y_")
-
       x_img = tf.reshape(x, [-1, IMAGE_PIXELS, IMAGE_PIXELS, 1])
       tf.summary.image("x_img", x_img)
 
@@ -82,11 +77,10 @@ def map_fun(args, ctx):
 
       y = tf.nn.softmax(tf.nn.xw_plus_b(hid, sm_w, sm_b))
 
-      global_step = tf.Variable(0)
+      global_step = tf.train.get_or_create_global_step()
 
       loss = -tf.reduce_sum(y_ * tf.log(tf.clip_by_value(y, 1e-10, 1.0)))
       tf.summary.scalar("loss", loss)
-
       train_op = tf.train.AdagradOptimizer(0.01).minimize(
           loss, global_step=global_step)
 
@@ -94,7 +88,6 @@ def map_fun(args, ctx):
       label = tf.argmax(y_, 1, name="label")
       prediction = tf.argmax(y, 1, name="prediction")
       correct_prediction = tf.equal(prediction, label)
-
       accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32), name="accuracy")
       tf.summary.scalar("acc", accuracy)
 
@@ -103,58 +96,50 @@ def map_fun(args, ctx):
       init_op = tf.global_variables_initializer()
 
     # Create a "supervisor", which oversees the training process and stores model state into HDFS
-    logdir = TFNode.hdfs_path(ctx, args.model)
+    logdir = ctx.absolute_path(args.model)
     print("tensorflow model path: {0}".format(logdir))
     summary_writer = tf.summary.FileWriter("tensorboard_%d" % worker_num, graph=tf.get_default_graph())
 
-    if args.mode == "train":
-      sv = tf.train.Supervisor(is_chief=(task_index == 0),
-                               logdir=logdir,
-                               init_op=init_op,
-                               summary_op=None,
-                               saver=saver,
-                               global_step=global_step,
-                               stop_grace_secs=300,
-                               save_model_secs=10)
-    else:
-      sv = tf.train.Supervisor(is_chief=(task_index == 0),
-                               logdir=logdir,
-                               summary_op=None,
-                               saver=saver,
-                               global_step=global_step,
-                               stop_grace_secs=300,
-                               save_model_secs=0)
+    with tf.train.MonitoredTrainingSession(master=server.target,
+                                           is_chief=(task_index == 0),
+                                           scaffold=tf.train.Scaffold(init_op=init_op, summary_op=summary_op, saver=saver),
+                                           checkpoint_dir=logdir,
+                                           hooks=[tf.train.StopAtStepHook(last_step=args.steps)]) as sess:
+      print("{} session ready".format(datetime.now().isoformat()))
 
-    # The supervisor takes care of session initialization, restoring from
-    # a checkpoint, and closing when done or an error occurs.
-    with sv.managed_session(server.target) as sess:
-      print("{0} session ready".format(datetime.now().isoformat()))
-
-      # Loop until the supervisor shuts down or 1000000 steps have completed.
+      # Loop until the session shuts down or feed has no more data
       step = 0
-      while not sv.should_stop() and not tf_feed.should_stop() and step < args.steps:
+      while not sess.should_stop() and not tf_feed.should_stop():
         # Run a training step asynchronously.
         # See `tf.train.SyncReplicasOptimizer` for additional details on how to
         # perform *synchronous* training.
 
         if args.mode == "train":
           _, summary, step = sess.run([train_op, summary_op, global_step])
-          # print accuracy and save model checkpoint to HDFS every 100 steps
           if (step % 100 == 0):
-            print("{0} step: {1} accuracy: {2}".format(datetime.now().isoformat(), step, sess.run(accuracy)))
-
-          if sv.is_chief:
+            print("{} step: {} accuracy: {}".format(datetime.now().isoformat(), step, sess.run(accuracy)))
+          if task_index == 0:
             summary_writer.add_summary(summary, step)
         else:  # args.mode == "inference"
           labels, preds, acc = sess.run([label, prediction, accuracy])
-
-          results = ["{0} Label: {1}, Prediction: {2}".format(datetime.now().isoformat(), l, p) for l, p in zip(labels, preds)]
+          results = ["{} Label: {}, Prediction: {}".format(datetime.now().isoformat(), l, p) for l, p in zip(labels, preds)]
           tf_feed.batch_results(results)
-          print("acc: {0}".format(acc))
+          print("acc: {}".format(acc))
 
-      if sv.should_stop() or step >= args.steps:
-        tf_feed.terminate()
+    print("{} stopping MonitoredTrainingSession".format(datetime.now().isoformat()))
 
-    # Ask for all the services to stop.
-    print("{0} stopping supervisor".format(datetime.now().isoformat()))
-    sv.stop()
+    # WORKAROUND FOR https://github.com/tensorflow/tensorflow/issues/21745
+    # wait for all other nodes to complete (via done files)
+    done_dir = "{}/{}/done".format(ctx.absolute_path(args.model), args.mode)
+    print("Writing done file to: {}".format(done_dir))
+    tf.gfile.MakeDirs(done_dir)
+    with tf.gfile.GFile("{}/{}".format(done_dir, ctx.task_index), 'w') as done_file:
+      done_file.write("done")
+
+    for i in range(60):
+      if len(tf.gfile.ListDirectory(done_dir)) < len(ctx.cluster_spec['worker']):
+        print("{} Waiting for other nodes {}".format(datetime.now().isoformat(), i))
+        time.sleep(1)
+      else:
+        print("{} All nodes done".format(datetime.now().isoformat()))
+        break
