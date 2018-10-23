@@ -13,7 +13,7 @@ import argparse
 from datetime import datetime
 
 from tensorflowonspark import TFCluster
-import mnist_dist_dataset
+import mnist_dist
 
 sc = SparkContext(conf=SparkConf().setAppName("mnist_tf"))
 executors = sc._conf.get("spark.executor.instances")
@@ -41,7 +41,7 @@ args = parser.parse_args()
 print("args:", args)
 
 print("{0} ===== Start".format(datetime.now().isoformat()))
-cluster = TFCluster.run(sc, mnist_dist_dataset.map_fun, args, args.cluster_size, args.num_ps, args.tensorboard,
+cluster = TFCluster.run(sc, mnist_dist.map_fun, args, args.cluster_size, args.num_ps, args.tensorboard,
                         TFCluster.InputMode.TENSORFLOW, driver_ps_nodes=args.driver_ps_nodes)
 cluster.shutdown()
 print("{0} ===== Stop".format(datetime.now().isoformat()))

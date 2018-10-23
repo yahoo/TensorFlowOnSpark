@@ -15,7 +15,7 @@ import tensorflow as tf
 from datetime import datetime
 
 from tensorflowonspark import TFCluster
-import mnist_dist_dataset
+import mnist_dist
 
 sc = SparkContext(conf=SparkConf().setAppName("mnist_spark"))
 executors = sc._conf.get("spark.executor.instances")
@@ -61,7 +61,7 @@ else:  # args.format == "csv":
   print("zipping images and labels")
   dataRDD = images.zip(labels)
 
-cluster = TFCluster.run(sc, mnist_dist_dataset.map_fun, args, args.cluster_size, num_ps, args.tensorboard, TFCluster.InputMode.SPARK)
+cluster = TFCluster.run(sc, mnist_dist.map_fun, args, args.cluster_size, num_ps, args.tensorboard, TFCluster.InputMode.SPARK)
 if args.mode == "train":
   cluster.train(dataRDD, args.epochs)
 else:
