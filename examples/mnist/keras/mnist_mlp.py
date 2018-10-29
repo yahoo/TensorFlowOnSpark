@@ -13,6 +13,7 @@ def main_fun(args, ctx):
   import tensorflow as tf
   from tensorflow.python import keras
   from tensorflow.python.keras import backend as K
+  from tensorflow.python.keras.datasets import mnist
   from tensorflow.python.keras.models import Sequential, load_model, save_model
   from tensorflow.python.keras.layers import Dense, Dropout
   from tensorflow.python.keras.optimizers import RMSprop
@@ -51,7 +52,6 @@ def main_fun(args, ctx):
 
       # the data, shuffled and split between train and test sets
       if args.input_mode == 'tf':
-        from tensorflow.python.keras.datasets import mnist
         (x_train, y_train), (x_test, y_test) = mnist.load_data()
         x_train = x_train.reshape(60000, 784)
         x_test = x_test.reshape(10000, 784)
@@ -64,6 +64,9 @@ def main_fun(args, ctx):
       else:  # args.mode == 'spark'
         x_train = tf.placeholder(tf.float32, [None, IMAGE_PIXELS * IMAGE_PIXELS], name="x_train")
         y_train = tf.placeholder(tf.float32, [None, 10], name="y_train")
+        (_, _), (x_test, y_test) = mnist.load_data()
+        x_test = x_test.reshape(10000, 784)
+        y_test = keras.utils.to_categorical(y_test, num_classes)
 
       model = Sequential()
       model.add(Dense(512, activation='relu', input_shape=(784,)))
@@ -109,6 +112,7 @@ def main_fun(args, ctx):
                             steps_per_epoch=args.steps_per_epoch,
                             epochs=args.epochs,
                             verbose=1,
+                            validation_data=(x_test, y_test),
                             callbacks=callbacks)
 
       if args.export_dir and ctx.job_name == 'worker' and ctx.task_index == 0:

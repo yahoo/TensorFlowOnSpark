@@ -65,7 +65,7 @@ In this mode, Spark will distribute the MNIST dataset (as CSV) across the worker
     --conf spark.task.cpus=${CORES_PER_WORKER} \
     --conf spark.executorEnv.JAVA_HOME="$JAVA_HOME" \
     ${TFoS_HOME}/examples/mnist/keras/mnist_mlp.py \
-    --cluster_size 3 \
+    --cluster_size ${SPARK_WORKER_INSTANCES} \
     --input_mode spark \
     --images ${TFoS_HOME}/mnist/csv/train/images \
     --labels ${TFoS_HOME}/mnist/csv/train/labels \
