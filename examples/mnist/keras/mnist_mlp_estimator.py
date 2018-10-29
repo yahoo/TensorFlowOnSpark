@@ -3,7 +3,6 @@ import tensorflow as tf
 from tensorflow.python import keras
 from tensorflow.python.keras.models import Sequential
 from tensorflow.python.keras.layers import Dense, Dropout
-from tensorflow.python.keras.optimizers import RMSprop
 from tensorflowonspark import TFNode
 
 
@@ -31,7 +30,7 @@ def main_fun(args, ctx):
   model.add(Dropout(0.2))
   model.add(Dense(10, activation='softmax'))
   model.compile(loss='categorical_crossentropy',
-                optimizer=RMSprop(),
+                optimizer=tf.train.RMSPropOptimizer(learning_rate=0.001),
                 metrics=['accuracy'])
   model.summary()
 
@@ -43,7 +42,7 @@ def main_fun(args, ctx):
     if args.input_mode == 'tf':
       # For InputMode.TENSORFLOW, just use data in memory
       train_input_fn = tf.estimator.inputs.numpy_input_fn(
-          x={"dense_1_input": x_train},
+          x={"dense_input": x_train},
           y=y_train,
           batch_size=128,
           num_epochs=None,
@@ -70,28 +69,17 @@ def main_fun(args, ctx):
 
     # eval_input_fn ALWAYS uses data loaded in memory, since InputMode.SPARK can only feed one RDD at a time
     eval_input_fn = tf.estimator.inputs.numpy_input_fn(
-        x={"dense_1_input": x_test},
+        x={"dense_input": x_test},
         y=y_test,
         num_epochs=args.epochs,
         shuffle=False)
 
-    # serving_input_receiver_fn ALWAYS expects serialized TFExamples in a placeholder.
-    def serving_input_receiver_fn():
-      """An input receiver that expects a serialized tf.Example."""
-      serialized_tf_example = tf.placeholder(dtype=tf.string,
-                                             shape=[args.batch_size],
-                                             name='input_example_tensor')
-      receiver_tensors = {'dense_1_input': serialized_tf_example}
-      feature_spec = {'dense_1_input': tf.FixedLenFeature(784, tf.string)}
-      features = tf.parse_example(serialized_tf_example, feature_spec)
-      return tf.estimator.export.ServingInputReceiver(features, receiver_tensors)
-
     # setup tf.estimator.train_and_evaluate() w/ FinalExporter
-    exporter = tf.estimator.FinalExporter("serving", serving_input_receiver_fn=serving_input_receiver_fn)
+    feature_spec = {'dense_input': tf.FixedLenFeature(784, tf.float32)}
+    exporter = tf.estimator.FinalExporter("serving", serving_input_receiver_fn=tf.estimator.export.build_parsing_serving_input_receiver_fn(feature_spec))
     train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn, max_steps=args.steps)
     eval_spec = tf.estimator.EvalSpec(input_fn=eval_input_fn, exporters=exporter)
     tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
-
   else:  # mode == 'inference'
     if args.input_mode == 'spark':
       tf_feed = TFNode.DataFeed(ctx.mgr)
@@ -137,7 +125,7 @@ if __name__ == '__main__':
   parser.add_argument("--input_mode", help="input mode (tf|spark)", default="tf")
   parser.add_argument("--labels", help="HDFS path to MNIST labels in parallelized CSV format")
   parser.add_argument("--model_dir", help="directory to write model checkpoints")
-  parser.add_argument("--mode", help="(train|inference")
+  parser.add_argument("--mode", help="(train|inference)", default="train")
   parser.add_argument("--output", help="HDFS path to save test/inference output", default="predictions")
   parser.add_argument("--num_ps", help="number of ps nodes", type=int, default=1)
   parser.add_argument("--steps", help="max number of steps to train", type=int, default=2000)

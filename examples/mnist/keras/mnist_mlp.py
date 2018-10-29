@@ -151,7 +151,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--cluster_size", help="number of nodes in the cluster", type=int, default=num_executors)
     parser.add_argument("--epochs", help="number of epochs of training data", type=int, default=20)
-    parser.add_argument("--export_dir", help="directory to export saved_mode")
+    parser.add_argument("--export_dir", help="directory to export saved_model")
     parser.add_argument("--images", help="HDFS path to MNIST images in parallelized CSV format")
     parser.add_argument("--input_mode", help="input mode (tf|spark)", default="tf")
     parser.add_argument("--labels", help="HDFS path to MNIST labels in parallelized CSV format")
