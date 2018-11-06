@@ -388,9 +388,7 @@ def train(cluster_info, cluster_meta, feed_timeout=600, qname='input'):
     terminating = state == "'terminating'"
     if terminating:
       logging.info("mgr is terminating, skipping partition")
-      count = 0
-      for item in iter:
-        count += 1
+      count = sum(1 for item in iter)
       logging.info("Skipped {0} items from partition".format(count))
     else:
       logging.info("Feeding partition {0} into {1} queue {2}".format(iter, qname, queue))
@@ -416,17 +414,19 @@ def train(cluster_info, cluster_meta, feed_timeout=600, qname='input'):
       logging.info("Processed {0} items in partition".format(count))
 
     # check if TF is terminating feed after this partition
-    state = str(mgr.get('state'))
-    terminating = state == "'terminating'"
-    if terminating:
-      try:
-        logging.info("TFSparkNode: requesting stop")
-        client = reservation.Client(cluster_meta['server_addr'])
-        client.request_stop()
-        client.close()
-      except Exception as e:
-        # ignore any errors while requesting stop
-        logging.debug("Error while requesting stop: {0}".format(e))
+    if not terminating:
+      state = str(mgr.get('state'))
+      terminating = state == "'terminating'"
+      if terminating:
+        try:
+          logging.info("TFSparkNode: requesting stop")
+          client = reservation.Client(cluster_meta['server_addr'])
+          client.request_stop()
+          client.close()
+        except Exception as e:
+          # ignore any errors while requesting stop
+          logging.debug("Error while requesting stop: {0}".format(e))
+
     return [terminating]
 
   return _train

@@ -34,6 +34,7 @@ def hdfs_path(ctx, path):
   """
   #  All Hadoop-Compatible File System Schemes (as of Hadoop 3.0.x):
   HADOOP_SCHEMES = ['adl://',
+                    'file://',
                     'hdfs://',
                     'oss://',
                     's3://',
@@ -42,8 +43,7 @@ def hdfs_path(ctx, path):
                     'swift://',
                     'viewfs://',
                     'wasb://']
-  if (any(path.startswith(scheme) for scheme in HADOOP_SCHEMES)
-      or path.startswith('file://')):
+  if (any(path.startswith(scheme) for scheme in HADOOP_SCHEMES)):
     # absolute path w/ scheme, just return as-is
     return path
   elif path.startswith("/"):
