@@ -9,6 +9,7 @@ from __future__ import nested_scopes
 from __future__ import print_function
 
 import logging
+import os
 import pickle
 import select
 import socket
@@ -19,6 +20,8 @@ import time
 
 from . import util
 
+TFOS_SERVER_PORT = "TFOS_SERVER_PORT"
+TFOS_SERVER_HOST = "TFOS_SERVER_HOST"
 BUFSIZE = 1024
 MAX_RETRIES = 3
 
@@ -146,13 +149,10 @@ class Server(MessageSocket):
     Returns:
       address of the Server as a tuple of (host, port)
     """
-    server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server_sock.bind(('', 0))
-    server_sock.listen(10)
+    server_sock = self.start_listening_socket()
 
     # hostname may not be resolvable but IP address probably will be
-    host = util.get_ip_address()
+    host = self.get_server_ip()
     port = server_sock.getsockname()[1]
     addr = (host, port)
     logging.info("listening for reservations at {0}".format(addr))
@@ -184,6 +184,18 @@ class Server(MessageSocket):
     t.start()
 
     return addr
+
+  def get_server_ip(self):
+    return os.getenv(TFOS_SERVER_HOST) if os.getenv(TFOS_SERVER_HOST) else util.get_ip_address()
+
+
+  def start_listening_socket(self):
+    port_number = int(os.getenv(TFOS_SERVER_PORT)) if  os.getenv(TFOS_SERVER_PORT) else 0
+    server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server_sock.bind(('', port_number))
+    server_sock.listen(10)
+    return server_sock
 
   def stop(self):
     """Stop the Server's socket listener."""
