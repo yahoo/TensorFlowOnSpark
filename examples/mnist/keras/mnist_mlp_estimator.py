@@ -104,6 +104,22 @@ def main_fun(args, ctx):
       for result in predictions:
         tf_feed.batch_results([result])
 
+  # WORKAROUND FOR https://github.com/tensorflow/tensorflow/issues/21745
+  # wait for all other nodes to complete (via done files)
+  done_dir = "{}/{}/done".format(ctx.absolute_path(args.model), args.mode)
+  print("Writing done file to: {}".format(done_dir))
+  tf.gfile.MakeDirs(done_dir)
+  with tf.gfile.GFile("{}/{}".format(done_dir, ctx.task_index), 'w') as done_file:
+    done_file.write("done")
+
+  for i in range(60):
+    if len(tf.gfile.ListDirectory(done_dir)) < len(ctx.cluster_spec['worker']):
+      print("{} Waiting for other nodes {}".format(datetime.now().isoformat(), i))
+      time.sleep(1)
+    else:
+      print("{} All nodes done".format(datetime.now().isoformat()))
+      break
+
 
 if __name__ == '__main__':
   import argparse

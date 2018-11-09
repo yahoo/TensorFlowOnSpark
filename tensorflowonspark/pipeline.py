@@ -23,7 +23,8 @@ from pyspark.ml.pipeline import Estimator, Model
 from pyspark.sql import Row, SparkSession
 
 import tensorflow as tf
-from tensorflow.contrib.saved_model.python.saved_model import reader, signature_def_utils
+
+from tensorflow.contrib.saved_model.python.saved_model import reader
 from tensorflow.python.saved_model import loader
 from . import TFCluster, gpu_info, dfutil
 
@@ -503,7 +504,7 @@ def _run_model(iterator, args, tf_args):
     assert args.export_dir, "Inferencing with signature_def_key requires --export_dir argument"
     logging.info("===== loading meta_graph_def for tag_set ({0}) from saved_model: {1}".format(args.tag_set, args.export_dir))
     meta_graph_def = get_meta_graph_def(args.export_dir, args.tag_set)
-    signature = signature_def_utils.get_signature_def_by_key(meta_graph_def, args.signature_def_key)
+    signature = meta_graph_def.signature_def[args.signature_def_key]
     logging.debug("signature: {}".format(signature))
     inputs_tensor_info = signature.inputs
     logging.debug("inputs_tensor_info: {0}".format(inputs_tensor_info))
