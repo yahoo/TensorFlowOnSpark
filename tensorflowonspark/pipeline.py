@@ -23,7 +23,6 @@ from pyspark.ml.pipeline import Estimator, Model
 from pyspark.sql import Row, SparkSession
 
 import tensorflow as tf
-
 from tensorflow.contrib.saved_model.python.saved_model import reader
 from tensorflow.python.saved_model import loader
 from . import TFCluster, gpu_info, dfutil
