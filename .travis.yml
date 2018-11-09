@@ -13,6 +13,7 @@ matrix:
     - export PYTHONPATH=$(pwd)
     install:
     - pip install -r requirements.txt
+    - pip install mock
     script:
     - test/run_tests.sh
   - language: python

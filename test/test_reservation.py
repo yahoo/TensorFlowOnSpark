@@ -1,9 +1,16 @@
+import os
+import sys
 import threading
 import time
 import unittest
 
+from tensorflowonspark import util
 from tensorflowonspark.reservation import Reservations, Server, Client
 
+if sys.version_info >= (3, 3):
+    from unittest import mock
+else:
+    import mock
 
 class ReservationTest(unittest.TestCase):
   def test_reservation_class(self):
@@ -47,6 +54,25 @@ class ReservationTest(unittest.TestCase):
     c.request_stop()
     time.sleep(1)
     self.assertEqual(s.done, True)
+
+  def test_reservation_enviroment_exists_get_server_ip_return_environment_value(self):
+      tfso_server = Server(5)
+      with mock.patch.dict(os.environ,{'TFOS_SERVER_HOST':'my_host_ip'}):
+        assert tfso_server.get_server_ip() == "my_host_ip"
+
+  def test_reservation_enviroment_not_exists_get_server_ip_return_actual_host_ip(self):
+    tfso_server = Server(5)
+    assert tfso_server.get_server_ip() == util.get_ip_address()
+
+  def test_reservation_enviroment_exists_start_listening_socket_return_socket_listening_to_environment_port_value(self):
+    tfso_server = Server(1)
+    with mock.patch.dict(os.environ, {'TFOS_SERVER_PORT': '9999'}):
+      assert tfso_server.start_listening_socket().getsockname()[1] == 9999
+
+  def test_reservation_enviroment_not_exists_start_listening_socket_return_socket(self):
+    tfso_server = Server(1)
+    print(tfso_server.start_listening_socket().getsockname()[1])
+    assert type(tfso_server.start_listening_socket().getsockname()[1]) == int
 
   def test_reservation_server_multi(self):
     """Test reservation server, expecting multiple reservations"""
