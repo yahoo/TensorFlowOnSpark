@@ -40,13 +40,14 @@ def _get_gpu():
   return gpu
 
 
-def get_gpus(num_gpu=1):
+def get_gpus(num_gpu=1, worker_index=-1):
   """Get list of free GPUs according to nvidia-smi.
 
   This will retry for ``MAX_RETRIES`` times until the requested number of GPUs are available.
 
   Args:
     :num_gpu: number of GPUs desired.
+    :worker_index: index "hint" for allocation of available GPUs.
 
   Returns:
     Comma-delimited string of GPU ids, or raises an Exception if the requested number of GPUs could not be found.
@@ -63,9 +64,6 @@ def get_gpus(num_gpu=1):
     return cols[5].split(')')[0], cols[1].split(':')[0]
   gpu_list = [parse_gpu(gpu) for gpu in gpus]
 
-  # randomize the search order to get a better distribution of GPUs
-  random.shuffle(gpu_list)
-
   free_gpus = []
   retries = 0
   while len(free_gpus) < num_gpu and retries < MAX_RETRIES:
@@ -77,19 +75,33 @@ def get_gpus(num_gpu=1):
         free_gpus.append(index)
 
     if len(free_gpus) < num_gpu:
-      # keep trying indefinitely
       logging.warn("Unable to find available GPUs: requested={0}, available={1}".format(num_gpu, len(free_gpus)))
       retries += 1
       time.sleep(30 * retries)
       free_gpus = []
 
-  # if still can't find GPUs, raise exception
+  logging.info("Available GPUs: {}".format(free_gpus))
+
+  # if still can't find available GPUs, raise exception
   if len(free_gpus) < num_gpu:
     smi_output = subprocess.check_output(["nvidia-smi", "--format=csv", "--query-compute-apps=gpu_uuid,pid,process_name,used_gpu_memory"]).decode()
     logging.info(": {0}".format(smi_output))
-    raise Exception("Unable to find free GPU:\n{0}".format(smi_output))
+    raise Exception("Unable to find {} free GPU(s)\n{}".format(num_gpu, smi_output))
 
-  return ','.join(free_gpus[:num_gpu])
+  # Get logical placement
+  num_available = len(free_gpus)
+  if worker_index == -1:
+    # use original random placement
+    random.shuffle(free_gpus)
+    proposed_gpus = free_gpus[:num_gpu]
+  else:
+    # ordered by worker index
+    if worker_index + num_gpu > num_available:
+      worker_index = worker_index % num_available
+    proposed_gpus = free_gpus[worker_index:(worker_index + num_gpu)]
+  logging.info("Proposed GPUs: {}".format(proposed_gpus))
+
+  return ','.join(str(x) for x in proposed_gpus)
 
 
 # Function to get the gpu information

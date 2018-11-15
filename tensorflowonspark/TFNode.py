@@ -82,6 +82,13 @@ def start_cluster_server(ctx, num_gpus=1, rdma=False):
   logging.info("{0}: Cluster spec: {1}".format(ctx.worker_num, cluster_spec))
 
   if tf.test.is_built_with_cuda() and num_gpus > 0:
+    # compute my index relative to other nodes placed on the same host (for GPU allocation)
+    my_addr = cluster_spec[ctx.job_name][ctx.task_index]
+    my_host = my_addr.split(':')[0]
+    flattened = [v for sublist in cluster_spec.values() for v in sublist]
+    local_peers = [p for p in flattened if p.startswith(my_host)]
+    my_index = local_peers.index(my_addr)
+
     # GPU
     gpu_initialized = False
     retries = 3
@@ -92,7 +99,7 @@ def start_cluster_server(ctx, num_gpus=1, rdma=False):
           num_gpus = 1
 
         # Find a free gpu(s) to use
-        gpus_to_use = gpu_info.get_gpus(num_gpus)
+        gpus_to_use = gpu_info.get_gpus(num_gpus, my_index)
         gpu_prompt = "GPU" if num_gpus == 1 else "GPUs"
         logging.info("{0}: Using {1}: {2}".format(ctx.worker_num, gpu_prompt, gpus_to_use))
 

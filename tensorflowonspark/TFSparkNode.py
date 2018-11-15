@@ -139,9 +139,10 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
     for i in iter:
       executor_id = i
 
-    # run quick check of GPU infrastructure if using tensorflow-gpu
+    # check that there are enough available GPUs (if using tensorflow-gpu) before committing reservation on this node
     if tf.test.is_built_with_cuda():
-      gpus_to_use = gpu_info.get_gpus(1)
+      num_gpus = tf_args.num_gpus if 'num_gpus' in tf_args else 1
+      gpus_to_use = gpu_info.get_gpus(num_gpus)
 
     # assign TF job/task based on provided cluster_spec template (or use default/null values)
     job_name = 'default'
@@ -261,7 +262,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
 
     # construct a TensorFlow clusterspec from cluster_info
     sorted_cluster_info = sorted(cluster_info, key=lambda k: k['executor_id'])
-    spec = {}
+    cluster_spec = {}
     last_executor_id = -1
     for node in sorted_cluster_info:
       if (node['executor_id'] == last_executor_id):
@@ -269,30 +270,37 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
       last_executor_id = node['executor_id']
       logging.info("node: {0}".format(node))
       (njob, nhost, nport) = (node['job_name'], node['host'], node['port'])
-      hosts = [] if njob not in spec else spec[njob]
+      hosts = [] if njob not in cluster_spec else cluster_spec[njob]
       hosts.append("{0}:{1}".format(nhost, nport))
-      spec[njob] = hosts
+      cluster_spec[njob] = hosts
 
     # update TF_CONFIG if cluster spec has a 'master' node (i.e. tf.estimator)
-    if 'master' in spec:
+    if 'master' in cluster_spec:
       tf_config = json.dumps({
-        'cluster': spec,
+        'cluster': cluster_spec,
         'task': {'type': job_name, 'index': task_index},
         'environment': 'cloud'
       })
       logging.info("export TF_CONFIG: {}".format(tf_config))
       os.environ['TF_CONFIG'] = tf_config
 
-    # reserve GPU
+    # reserve GPU(s) again, just before launching TF process (in case situation has changed)
     if tf.test.is_built_with_cuda():
+      # compute my index relative to other nodes on the same host (for GPU allocation)
+      my_addr = cluster_spec[job_name][task_index]
+      my_host = my_addr.split(':')[0]
+      flattened = [v for sublist in cluster_spec.values() for v in sublist]
+      local_peers = [p for p in flattened if p.startswith(my_host)]
+      my_index = local_peers.index(my_addr)
+
       num_gpus = tf_args.num_gpus if 'num_gpus' in tf_args else 1
-      gpus_to_use = gpu_info.get_gpus(num_gpus)
+      gpus_to_use = gpu_info.get_gpus(num_gpus, my_index)
       gpu_str = "GPUs" if num_gpus > 1 else "GPU"
       logging.debug("Requested {} {}, setting CUDA_VISIBLE_DEVICES={}".format(num_gpus, gpu_str, gpus_to_use))
       os.environ['CUDA_VISIBLE_DEVICES'] = gpus_to_use
 
     # create a context object to hold metadata for TF
-    ctx = TFNodeContext(executor_id, job_name, task_index, spec, cluster_meta['default_fs'], cluster_meta['working_dir'], TFSparkNode.mgr)
+    ctx = TFNodeContext(executor_id, job_name, task_index, cluster_spec, cluster_meta['default_fs'], cluster_meta['working_dir'], TFSparkNode.mgr)
 
     # release port reserved for TF as late as possible
     if tmp_sock is not None:
