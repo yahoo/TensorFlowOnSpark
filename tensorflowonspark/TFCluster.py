@@ -25,6 +25,7 @@ from __future__ import print_function
 import logging
 import os
 import random
+import signal
 import sys
 import threading
 import time
@@ -111,12 +112,16 @@ class TFCluster(object):
     assert qname in self.queues, "Unknown queue: {}".format(qname)
     return dataRDD.mapPartitions(TFSparkNode.inference(self.cluster_info, feed_timeout=feed_timeout, qname=qname))
 
-  def shutdown(self, ssc=None, grace_secs=0):
+  def shutdown(self, ssc=None, grace_secs=0, timeout=259200):
     """Stops the distributed TensorFlow cluster.
+
+    For InputMode.SPARK, this will be executed AFTER the `TFCluster.train()` or `TFCluster.inference()` method completes.
+    For InputMode.TENSORFLOW, this will be executed IMMEDIATELY after `TFCluster.run()` and will wait until the TF worker nodes complete.
 
     Args:
       :ssc: *For Streaming applications only*. Spark StreamingContext
-      :grace_secs: Grace period to wait before terminating the Spark application, e.g. to allow the chief worker to perform any final/cleanup duties like exporting or evaluating the model.
+      :grace_secs: Grace period to wait after all executors have completed their tasks before terminating the Spark application, e.g. to allow the chief worker to perform any final/cleanup duties like exporting or evaluating the model.  Default is 0.
+      :timeout: Time in seconds to wait for TF cluster to complete before terminating the Spark application.  This can be useful if the TF code hangs for any reason.  Default is 3 days.  Use -1 to disable timeout.
     """
     logging.info("Stopping TensorFlow nodes")
 
@@ -125,6 +130,18 @@ class TFCluster(object):
     for node in self.cluster_info:
       (ps_list if node['job_name'] == 'ps' else worker_list).append(node)
 
+    # setup execution timeout
+    if timeout > 0:
+      def timeout_handler(signum, frame):
+        logging.error("TensorFlow execution timed out, exiting Spark application with error status")
+        self.sc.cancelAllJobs()
+        self.sc.stop()
+        sys.exit(1)
+
+      signal.signal(signal.SIGALRM, timeout_handler)
+      signal.alarm(timeout)
+
+    # wait for Spark Streaming termination or TF app completion for InputMode.TENSORFLOW
     if ssc is not None:
       # Spark Streaming
       while not ssc.awaitTerminationOrTimeout(1):
