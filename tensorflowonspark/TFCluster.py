@@ -121,7 +121,7 @@ class TFCluster(object):
     Args:
       :ssc: *For Streaming applications only*. Spark StreamingContext
       :grace_secs: Grace period to wait after all executors have completed their tasks before terminating the Spark application, e.g. to allow the chief worker to perform any final/cleanup duties like exporting or evaluating the model.  Default is 0.
-      :timeout: Time in seconds to wait for TF cluster to complete before terminating the Spark application.  This can be useful if the TF code hangs for any reason.  Default is 3 days.
+      :timeout: Time in seconds to wait for TF cluster to complete before terminating the Spark application.  This can be useful if the TF code hangs for any reason.  Default is 3 days.  Use -1 to disable timeout.
     """
     logging.info("Stopping TensorFlow nodes")
 
@@ -131,14 +131,15 @@ class TFCluster(object):
       (ps_list if node['job_name'] == 'ps' else worker_list).append(node)
 
     # setup execution timeout
-    def timeout_handler(signum, frame):
-      logging.error("TensorFlow execution timed out, exiting Spark application with error status")
-      self.sc.cancelAllJobs()
-      self.sc.stop()
-      sys.exit(1)
+    if timeout > 0:
+      def timeout_handler(signum, frame):
+        logging.error("TensorFlow execution timed out, exiting Spark application with error status")
+        self.sc.cancelAllJobs()
+        self.sc.stop()
+        sys.exit(1)
 
-    signal.signal(signal.SIGALRM, timeout_handler)
-    signal.alarm(timeout)
+      signal.signal(signal.SIGALRM, timeout_handler)
+      signal.alarm(timeout)
 
     # wait for Spark Streaming termination or TF app completion for InputMode.TENSORFLOW
     if ssc is not None:
