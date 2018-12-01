@@ -25,7 +25,7 @@ from pyspark.sql import Row, SparkSession
 import tensorflow as tf
 from tensorflow.contrib.saved_model.python.saved_model import reader
 from tensorflow.python.saved_model import loader
-from . import TFCluster, gpu_info, dfutil
+from . import TFCluster, gpu_info, dfutil, util
 
 import argparse
 import copy
@@ -570,32 +570,15 @@ def single_node_env(args):
   Args:
     :args: command line arguments as either argparse args or argv list
   """
+  # setup ARGV for the TF process
   if isinstance(args, list):
       sys.argv = args
   elif args.argv:
       sys.argv = args.argv
 
-  # ensure expanded CLASSPATH w/o glob characters (required for Spark 2.1 + JNI)
-  if 'HADOOP_PREFIX' in os.environ and 'TFOS_CLASSPATH_UPDATED' not in os.environ:
-      classpath = os.environ['CLASSPATH']
-      hadoop_path = os.path.join(os.environ['HADOOP_PREFIX'], 'bin', 'hadoop')
-      hadoop_classpath = subprocess.check_output([hadoop_path, 'classpath', '--glob']).decode()
-      logging.debug("CLASSPATH: {0}".format(hadoop_classpath))
-      os.environ['CLASSPATH'] = classpath + os.pathsep + hadoop_classpath
-      os.environ['TFOS_CLASSPATH_UPDATED'] = '1'
-
-  # reserve GPU, if requested
-  if tf.test.is_built_with_cuda():
-    # GPU
-    num_gpus = args.num_gpus if 'num_gpus' in args else 1
-    gpus_to_use = gpu_info.get_gpus(num_gpus)
-    logging.info("Using gpu(s): {0}".format(gpus_to_use))
-    os.environ['CUDA_VISIBLE_DEVICES'] = gpus_to_use
-    # Note: if there is a GPU conflict (CUDA_ERROR_INVALID_DEVICE), the entire task will fail and retry.
-  else:
-    # CPU
-    logging.info("Using CPU")
-    os.environ['CUDA_VISIBLE_DEVICES'] = ''
+  # setup ENV for Hadoop-compatibility and/or GPU allocation
+  num_gpus = args.num_gpus if 'num_gpus' in args else 1
+  util.single_node_env(num_gpus)
 
 
 def get_meta_graph_def(saved_model_dir, tag_set):

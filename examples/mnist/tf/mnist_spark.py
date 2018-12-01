@@ -26,6 +26,7 @@ parser.add_argument("--cluster_size", help="number of nodes in the cluster (for 
 parser.add_argument("--driver_ps_nodes", help="""run tensorflow PS node on driver locally.
     You will need to set cluster_size = num_executors + num_ps""", default=False)
 parser.add_argument("--epochs", help="number of epochs", type=int, default=1)
+parser.add_argument("--export", help="HDFS path to export model", type=str, default="mnist_export")
 parser.add_argument("--format", help="example format: (csv2|tfr)", choices=["csv2", "tfr"], default="tfr")
 parser.add_argument("--images_labels", help="HDFS path to MNIST image_label files in parallelized format")
 parser.add_argument("--mode", help="train|inference", default="train")
