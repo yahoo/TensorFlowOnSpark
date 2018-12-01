@@ -16,6 +16,7 @@ def print_log(worker_num, arg):
 
 def map_fun(args, ctx):
   from datetime import datetime
+  from tensorflowonspark import TFNode
   import math
   import os
   import tensorflow as tf
@@ -54,6 +55,27 @@ def map_fun(args, ctx):
     label = tf.to_float(features['label'])
     return (image, label)
 
+  def build_model(graph, x):
+    with graph.as_default():
+      # Variables of the hidden layer
+      hid_w = tf.Variable(tf.truncated_normal([IMAGE_PIXELS * IMAGE_PIXELS, hidden_units],
+                          stddev=1.0 / IMAGE_PIXELS), name="hid_w")
+      hid_b = tf.Variable(tf.zeros([hidden_units]), name="hid_b")
+      tf.summary.histogram("hidden_weights", hid_w)
+
+      # Variables of the softmax layer
+      sm_w = tf.Variable(tf.truncated_normal([hidden_units, 10],
+                         stddev=1.0 / math.sqrt(hidden_units)), name="sm_w")
+      sm_b = tf.Variable(tf.zeros([10]), name="sm_b")
+      tf.summary.histogram("softmax_weights", sm_w)
+
+      hid_lin = tf.nn.xw_plus_b(x, hid_w, hid_b)
+      hid = tf.nn.relu(hid_lin)
+
+      y = tf.nn.softmax(tf.nn.xw_plus_b(hid, sm_w, sm_b))
+      prediction = tf.argmax(y, 1, name="prediction")
+      return y, prediction
+
   if job_name == "ps":
     server.join()
   elif job_name == "worker":
@@ -78,25 +100,12 @@ def map_fun(args, ctx):
       iterator = ds.make_one_shot_iterator()
       x, y_ = iterator.get_next()
 
-      # Variables of the hidden layer
-      hid_w = tf.Variable(tf.truncated_normal([IMAGE_PIXELS * IMAGE_PIXELS, hidden_units],
-                          stddev=1.0 / IMAGE_PIXELS), name="hid_w")
-      hid_b = tf.Variable(tf.zeros([hidden_units]), name="hid_b")
-      tf.summary.histogram("hidden_weights", hid_w)
+      # Build core model
+      y, prediction = build_model(tf.get_default_graph(), x)
 
-      # Variables of the softmax layer
-      sm_w = tf.Variable(tf.truncated_normal([hidden_units, 10],
-                         stddev=1.0 / math.sqrt(hidden_units)), name="sm_w")
-      sm_b = tf.Variable(tf.zeros([10]), name="sm_b")
-      tf.summary.histogram("softmax_weights", sm_w)
-
+      # Add training bits
       x_img = tf.reshape(x, [-1, IMAGE_PIXELS, IMAGE_PIXELS, 1])
       tf.summary.image("x_img", x_img)
-
-      hid_lin = tf.nn.xw_plus_b(x, hid_w, hid_b)
-      hid = tf.nn.relu(hid_lin)
-
-      y = tf.nn.softmax(tf.nn.xw_plus_b(hid, sm_w, sm_b))
 
       global_step = tf.train.get_or_create_global_step()
 
@@ -105,9 +114,7 @@ def map_fun(args, ctx):
       train_op = tf.train.AdagradOptimizer(0.01).minimize(
           loss, global_step=global_step)
 
-      # Test trained model
       label = tf.argmax(y_, 1, name="label")
-      prediction = tf.argmax(y, 1, name="prediction")
       correct_prediction = tf.equal(prediction, label)
       accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32), name="accuracy")
       tf.summary.scalar("acc", accuracy)
@@ -117,8 +124,10 @@ def map_fun(args, ctx):
       init_op = tf.global_variables_initializer()
 
     # Create a "supervisor", which oversees the training process and stores model state into HDFS
-    logdir = ctx.absolute_path(args.model)
-    print("tensorflow model path: {0}".format(logdir))
+    model_dir = ctx.absolute_path(args.model)
+    export_dir = ctx.absolute_path(args.export)
+    print("tensorflow model path: {0}".format(model_dir))
+    print("tensorflow export path: {0}".format(export_dir))
     summary_writer = tf.summary.FileWriter("tensorboard_%d" % worker_num, graph=tf.get_default_graph())
 
     if args.mode == 'inference':
@@ -130,7 +139,7 @@ def map_fun(args, ctx):
     with tf.train.MonitoredTrainingSession(master=server.target,
                                            is_chief=(task_index == 0),
                                            scaffold=tf.train.Scaffold(init_op=init_op, summary_op=summary_op, saver=saver),
-                                           checkpoint_dir=logdir,
+                                           checkpoint_dir=model_dir,
                                            hooks=[tf.train.StopAtStepHook(last_step=args.steps)]) as sess:
       print("{} session ready".format(datetime.now().isoformat()))
 
@@ -162,6 +171,41 @@ def map_fun(args, ctx):
       output_file.close()
 
     print("{} stopping MonitoredTrainingSession".format(datetime.now().isoformat()))
+
+    # export model (on chief worker only)
+    if args.mode == "train" and task_index == 0:
+      tf.reset_default_graph()
+
+      # add placeholders for input images (and optional labels)
+      x = tf.placeholder(tf.float32, [None, IMAGE_PIXELS * IMAGE_PIXELS], name='x')
+      y_ = tf.placeholder(tf.float32, [None, 10], name='y_')
+      label = tf.argmax(y_, 1, name="label")
+
+      # add core model
+      y, prediction = build_model(tf.get_default_graph(), x)
+
+      # restore from last checkpoint
+      saver = tf.train.Saver()
+      with tf.Session() as sess:
+        ckpt = tf.train.get_checkpoint_state(model_dir)
+        print("ckpt: {}".format(ckpt))
+        assert ckpt, "Invalid model checkpoint path: {}".format(model_dir)
+        saver.restore(sess, ckpt.model_checkpoint_path)
+
+        print("Exporting saved_model to: {}".format(export_dir))
+        # exported signatures defined in code
+        signatures = {
+          tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: {
+            'inputs': { 'image': x },
+            'outputs': { 'prediction': prediction },
+            'method_name': tf.saved_model.signature_constants.PREDICT_METHOD_NAME
+          }
+        }
+        TFNode.export_saved_model(sess,
+                                  export_dir,
+                                  tf.saved_model.tag_constants.SERVING,
+                                  signatures)
+        print("Exported saved_model")
 
     # WORKAROUND for https://github.com/tensorflow/tensorflow/issues/21745
     # wait for all other nodes to complete (via done files)

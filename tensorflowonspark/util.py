@@ -7,10 +7,32 @@ from __future__ import division
 from __future__ import nested_scopes
 from __future__ import print_function
 
+import logging
 import os
 import socket
 import errno
 from socket import error as socket_error
+
+def single_node_env(num_gpus=1):
+  """Setup environment variables for Hadoop compatibility and GPU allocation"""
+  import tensorflow as tf
+  # ensure expanded CLASSPATH w/o glob characters (required for Spark 2.1 + JNI)
+  if 'HADOOP_PREFIX' in os.environ and 'TFOS_CLASSPATH_UPDATED' not in os.environ:
+      classpath = os.environ['CLASSPATH']
+      hadoop_path = os.path.join(os.environ['HADOOP_PREFIX'], 'bin', 'hadoop')
+      hadoop_classpath = subprocess.check_output([hadoop_path, 'classpath', '--glob']).decode()
+      os.environ['CLASSPATH'] = classpath + os.pathsep + hadoop_classpath
+      os.environ['TFOS_CLASSPATH_UPDATED'] = '1'
+
+  # reserve GPU, if requested
+  if tf.test.is_built_with_cuda():
+    gpus_to_use = gpu_info.get_gpus(num_gpus)
+    logging.info("Using gpu(s): {0}".format(gpus_to_use))
+    os.environ['CUDA_VISIBLE_DEVICES'] = gpus_to_use
+  else:
+    # CPU
+    logging.info("Using CPU")
+    os.environ['CUDA_VISIBLE_DEVICES'] = ''
 
 def get_ip_address():
   """Simple utility to get host IP address."""
@@ -24,7 +46,7 @@ def get_ip_address():
     ip_address = socket.gethostbyname(socket.getfqdn())
   finally:
     s.close()
-   
+
   return ip_address
 
 
