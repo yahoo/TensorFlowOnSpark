@@ -10,8 +10,11 @@ from __future__ import print_function
 import logging
 import os
 import socket
+import subprocess
 import errno
 from socket import error as socket_error
+from . import gpu_info
+
 
 def single_node_env(num_gpus=1):
   """Setup environment variables for Hadoop compatibility and GPU allocation"""
@@ -34,12 +37,13 @@ def single_node_env(num_gpus=1):
     logging.info("Using CPU")
     os.environ['CUDA_VISIBLE_DEVICES'] = ''
 
+
 def get_ip_address():
   """Simple utility to get host IP address."""
   try:
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(("8.8.8.8", 80))
-    ip_address =  s.getsockname()[0]
+    ip_address = s.getsockname()[0]
   except socket_error as sockerr:
     if sockerr.errno != errno.ENETUNREACH:
       raise sockerr
