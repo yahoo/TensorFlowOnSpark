@@ -71,43 +71,58 @@ In this mode, Spark will distribute the MNIST dataset (as CSV) across the worker
     --model_dir ${TFoS_HOME}/mnist_model \
     --tensorboard
 
+#### Inference via saved_model_cli
+
+The training code will automatically export a TensorFlow SavedModel, which can be used with the `saved_model_cli` from the command line, as follows:
+
+    # path to the SavedModel export
+    export SAVED_MODEL=${TFoS_HOME}/mnist_model/export/serving/*
+
+    # use a CSV formatted test example
+    IMG=$(head -n 1 $TFoS_HOME/examples/mnist/csv/test/images/part-00000)
+
+    # introspect model
+    saved_model_cli show --dir $SAVED_MODEL --all
+
+    # inference via saved_model_cli
+    saved_model_cli run --dir $SAVED_MODEL --tag_set serve --signature_def serving_default --input_exp "dense_input=[[$IMG]]"
+
+#### Inference via TF-Serving
+
+For online inferencing use cases, you can serve the SavedModel via a TensorFlow Serving instance as follows.  Note that TF-Serving provides both GRPC and REST APIs, but we will only
+demonstrate the use of the REST API.  Also, [per the TensorFlow Serving instructions](https://www.tensorflow.org/serving/), we will run the serving instance inside a Docker container.
+
+    # Start the TF-Serving instance in a docker container
+    docker pull tensorflow/serving
+    docker run -t --rm -p 8501:8501 -v "${TFoS_HOME}/mnist_model/export/serving:/models/mnist" -e MODEL_NAME=mnist tensorflow/serving &
+
+    # GET model status
+    curl http://localhost:8501/v1/models/mnist
+
+    # GET model metadata
+    curl http://localhost:8501/v1/models/mnist/metadata
+
+    # POST example for inferencing
+    curl -v -d "{\"instances\": [ {\"dense_input\": [$IMG] } ]}" -X POST http://localhost:8501/v1/models/mnist:predict
+
+    # Stop the TF-Serving container
+    docker stop $(docker ps -q)
+
+#### Run Parallel Inferencing via Spark
+
+For batch inferencing use cases, you can use Spark to run multiple single-node TensorFlow instances in parallel (on the Spark executors).  Each executor/instance will operate independently on a shard of the dataset.  Note that this requires that the model fits in the memory of each executor.
+
+    # remove any old artifacts
+    rm -Rf ${TFoS_HOME}/predictions
+
+    # inference
+    ${SPARK_HOME}/bin/spark-submit \
+    --master $MASTER ${TFoS_HOME}/examples/mnist/keras/mnist_inference.py \
+    --cluster_size 3 \
+    --images_labels ${TFoS_HOME}/mnist/tfr/test \
+    --export ${TFoS_HOME}/mnist_model/export/serving/* \
+    --output ${TFoS_HOME}/predictions
 
 #### Shutdown the Spark Standalone cluster
 
     ${SPARK_HOME}/sbin/stop-slave.sh; ${SPARK_HOME}/sbin/stop-master.sh
-
-#### Inference via TF-Serving
-
-The training code will automatically export a TensorFlow SavedModel, which can be used with TensorFlow Serving as follows.
-
-Note: we use Docker to run the TF-Serving instance, per [recommendation](https://www.tensorflow.org/serving/).
-```
-# path to the SavedModel export
-export MODEL=${TFoS_HOME}/mnist_model/export/serving/*
-
-# use the CSV formatted data as a single example
-IMG=$(head -n 1 $TFoS_HOME/examples/mnist/csv/test/images/part-00000)
-
-# introspect model
-saved_model_cli show --dir $MODEL --all
-
-# inference via saved_model_cli
-saved_model_cli run --dir $MODEL --tag_set serve --signature_def serving_default --input_exp "dense_input=[[$IMG]]"
-# [[0. 0. 0. 0. 0. 0. 0. 1. 0. 0.]]
-
-# START the TF-Serving instance in a docker container
-docker pull tensorflow/serving
-docker run -t --rm -p 8501:8501 -v "${TFoS_HOME}/mnist_model/export/serving:/models/mnist" -e MODEL_NAME=mnist tensorflow/serving &
-
-# GET model status
-curl http://localhost:8501/v1/models/mnist
-
-# GET model metadata
-curl http://localhost:8501/v1/models/mnist/metadata
-
-# POST example for inferencing
-curl -v -d "{\"instances\": [ {\"dense_input\": [$IMG] } ]}" -X POST http://localhost:8501/v1/models/mnist:predict
-
-# STOP the TF-Serving container
-docker stop $(docker ps -q)
-```

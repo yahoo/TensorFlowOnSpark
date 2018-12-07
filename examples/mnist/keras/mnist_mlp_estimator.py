@@ -107,7 +107,7 @@ def main_fun(args, ctx):
 
   # WORKAROUND FOR https://github.com/tensorflow/tensorflow/issues/21745
   # wait for all other nodes to complete (via done files)
-  done_dir = "{}/{}/done".format(ctx.absolute_path(args.model_dir), args.mode)
+  done_dir = "{}/done".format(ctx.absolute_path(args.model_dir))
   print("Writing done file to: {}".format(done_dir))
   tf.gfile.MakeDirs(done_dir)
   with tf.gfile.GFile("{}/{}".format(done_dir, ctx.task_index), 'w') as done_file:
@@ -157,14 +157,6 @@ if __name__ == '__main__':
     images = sc.textFile(args.images).map(lambda ln: [float(x) for x in ln.split(',')])
     labels = sc.textFile(args.labels).map(lambda ln: [float(x) for x in ln.split(',')])
     dataRDD = images.zip(labels)
-    if args.mode == 'train':
-      cluster = TFCluster.run(sc, main_fun, args, args.cluster_size, args.num_ps, args.tensorboard, TFCluster.InputMode.SPARK, log_dir=args.model_dir, master_node='master')
-      cluster.train(dataRDD, args.epochs)
-      cluster.shutdown()
-    else:
-      # Note: using "parallel" inferencing, not "cluster"
-      # each node loads the model and runs independently of others
-      cluster = TFCluster.run(sc, main_fun, args, args.cluster_size, 0, args.tensorboard, TFCluster.InputMode.SPARK, log_dir=args.model_dir)
-      resultRDD = cluster.inference(dataRDD)
-      resultRDD.saveAsTextFile(args.output)
-      cluster.shutdown()
+    cluster = TFCluster.run(sc, main_fun, args, args.cluster_size, args.num_ps, args.tensorboard, TFCluster.InputMode.SPARK, log_dir=args.model_dir, master_node='master')
+    cluster.train(dataRDD, args.epochs)
+    cluster.shutdown()
