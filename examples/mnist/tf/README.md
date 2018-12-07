@@ -30,6 +30,7 @@ TensorFlowOnSpark/examples/mnist/tf/mnist_spark.py \
 # to use inference mode, change `--mode train` to `--mode inference` and add `--output predictions`
 # one item in csv2 format is `image | label`, to use input data in TFRecord format, change `--format csv` to `--format tfr`
 # to use infiniband, add `--rdma`
+```
 
 ### _using Spark ML Pipeline_
 ```bash
