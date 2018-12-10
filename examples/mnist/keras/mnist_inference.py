@@ -17,6 +17,7 @@ from __future__ import division
 from __future__ import print_function
 
 import argparse
+import numpy as np
 import tensorflow as tf
 
 IMAGE_PIXELS = 28
@@ -66,15 +67,14 @@ def inference(it, num_workers, args):
 
       # inference by feeding these images and labels into the input tensors
       # you can view the exported model signatures via:
-      #     saved_model_cli show --dir <saved_model> --all
+      #     saved_model_cli show --dir <export_dir> --all
 
       # note that we feed directly into the graph tensors (bypassing the exported signatures)
       # these tensors will be shown in the "name" field of the signature definitions
-      # also note that we can feed/fetch tensors that were not explicitly exported, e.g. `y_` and `label:0`
 
-      labels, preds = sess.run(['label:0', 'prediction:0'], feed_dict={'x:0': img, 'y_:0': lbl})
-      for i in range(len(labels)):
-        output_file.write("{} {}\n".format(labels[i], preds[i]))
+      outputs = sess.run(['dense_2/Softmax:0'], feed_dict={'Placeholder:0': img})
+      for p in outputs[0]:
+        output_file.write("{}\n".format(np.argmax(p)))
     except tf.errors.OutOfRangeError:
       break
 
