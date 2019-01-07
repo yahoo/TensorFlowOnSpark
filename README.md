@@ -55,7 +55,7 @@ TensorFlowOnSpark is provided as a pip package, which can be installed on single
 pip install tensorflowonspark
 ```
 
-For distributed clusters, please see our [wiki site](../../wiki) for detailed documentation for specific environments, such as our getting started guides for [single-node Spark Standalone](https://github.com/yahoo/TensorFlowOnSpark/wiki/GetStarted_Standalone), [YARN clusters](../../wiki/GetStarted_YARN) and [AWS EC2](../../wiki/GetStarted_EC2).
+For distributed clusters, please see our [wiki site](../../wiki) for detailed documentation for specific environments, such as our getting started guides for [single-node Spark Standalone](https://github.com/yahoo/TensorFlowOnSpark/wiki/GetStarted_Standalone), [YARN clusters](../../wiki/GetStarted_YARN) and [AWS EC2](../../wiki/GetStarted_EC2).  Note: the Windows operating system is not currently supported due to [this issue](https://github.com/yahoo/TensorFlowOnSpark/issues/36).
 
 ## Usage
 
