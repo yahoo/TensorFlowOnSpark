@@ -3,10 +3,10 @@ matrix:
   - language: python
     python: 2.7
     before_install:
-    - curl -LO http://www-us.apache.org/dist/spark/spark-2.3.1/spark-2.3.1-bin-hadoop2.7.tgz
+    - curl -LO http://www-us.apache.org/dist/spark/spark-2.3.2/spark-2.3.2-bin-hadoop2.7.tgz
     - export SPARK_HOME=./spark
     - mkdir $SPARK_HOME
-    - tar -xf spark-2.3.1-bin-hadoop2.7.tgz -C $SPARK_HOME --strip-components=1
+    - tar -xf spark-2.3.2-bin-hadoop2.7.tgz -C $SPARK_HOME --strip-components=1
     - export PATH=$SPARK_HOME/bin:$PATH
     - export SPARK_LOCAL_IP=127.0.0.1
     - export SPARK_CLASSPATH=./lib/tensorflow-hadoop-1.0-SNAPSHOT.jar
@@ -19,10 +19,10 @@ matrix:
   - language: python
     python: 3.6
     before_install:
-    - curl -LO http://www-us.apache.org/dist/spark/spark-2.3.1/spark-2.3.1-bin-hadoop2.7.tgz
+    - curl -LO http://www-us.apache.org/dist/spark/spark-2.3.2/spark-2.3.2-bin-hadoop2.7.tgz
     - export SPARK_HOME=./spark
     - mkdir $SPARK_HOME
-    - tar -xf spark-2.3.1-bin-hadoop2.7.tgz -C $SPARK_HOME --strip-components=1
+    - tar -xf spark-2.3.2-bin-hadoop2.7.tgz -C $SPARK_HOME --strip-components=1
     - export PATH=$SPARK_HOME/bin:$PATH
     - export SPARK_LOCAL_IP=127.0.0.1
     - export SPARK_CLASSPATH=./lib/tensorflow-hadoop-1.0-SNAPSHOT.jar
