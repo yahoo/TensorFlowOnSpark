@@ -96,9 +96,9 @@ def get_gpus(num_gpu=1, worker_index=-1):
     proposed_gpus = free_gpus[:num_gpu]
   else:
     # ordered by worker index
-    if worker_index + num_gpu > num_available:
-      worker_index = worker_index % num_available
-    proposed_gpus = free_gpus[worker_index:(worker_index + num_gpu)]
+    if worker_index * num_gpu + num_gpu > num_available:
+      worker_index = worker_index * num_gpu % num_available
+    proposed_gpus = free_gpus[worker_index * num_gpu:(worker_index * num_gpu + num_gpu)]
   logging.info("Proposed GPUs: {}".format(proposed_gpus))
 
   return ','.join(str(x) for x in proposed_gpus)
