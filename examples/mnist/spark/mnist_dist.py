@@ -100,11 +100,12 @@ def map_fun(args, ctx):
     print("tensorflow model path: {0}".format(logdir))
     summary_writer = tf.summary.FileWriter("tensorboard_%d" % worker_num, graph=tf.get_default_graph())
 
+    hooks = [tf.train.StopAtStepHook(last_step=args.steps)] if args.mode == "train" else []
     with tf.train.MonitoredTrainingSession(master=server.target,
                                            is_chief=(task_index == 0),
                                            scaffold=tf.train.Scaffold(init_op=init_op, summary_op=summary_op, saver=saver),
                                            checkpoint_dir=logdir,
-                                           hooks=[tf.train.StopAtStepHook(last_step=args.steps)]) as sess:
+                                           hooks=hooks) as sess:
       print("{} session ready".format(datetime.now().isoformat()))
 
       # Loop until the session shuts down or feed has no more data
