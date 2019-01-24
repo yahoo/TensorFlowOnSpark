@@ -1,79 +1,76 @@
-# wide&deep model with TensorflowOnSpark
+# Wide & Deep Model
 
-wide deep model [wide and deep model](https://www.tensorflow.org/tutorials/wide_and_deep) is considered as one of the state-of-art model in recommendation system. the tutorial above links only could be run locally.
+Original Source: https://github.com/tensorflow/models/tree/master/official/wide_deep
 
-this example demonstrates how to implement distribution using TensorflowOnSpark(tfos).
-
+In this example, we use TensorFlowOnSpark, along with the [tf.estimator.train_and_evaluate](https://www.tensorflow.org/api_docs/python/tf/estimator/train_and_evaluate) API, to convert a single-node TensorFlow application into a distributed one.
 
 
 ## How to run
 
-this example in running under cdh-hadoop, variable  $HADOOP_HOME is configured in the run script
+For simplicity, we'll use Spark Standalone on a single node.  If you haven't already done so, you should try the [Getting Started on Spark Standalone](https://github.com/yahoo/TensorFlowOnSpark/wiki/GetStarted_Standalone) instructions.
 
-```shell
-export HADOOP_HOME=/opt/cloudera/parcels/CDH-5.11.0-1.cdh5.11.0.p0.34
+#### Clone this repository (if not already done)
+
+```bash
+git clone https://github.com/yahoo/TensorFlowOnSpark.git
+cd TensorFlowOnSpark
+export TFoS_HOME=$(pwd)
 ```
 
+#### Clone the TensorFlow Models repository
 
-
-however, it is confirmed that it could be run under native hadoop environment well, the native hadoop installed in test cluster is hadoop-2.7.2 [hadoop2.7.2 tutorial](https://hadoop.apache.org/docs/r2.7.2/),
-
-
-
-change a bit to configure the export variables in the run.sh.
-
-```shell
-export HADOOP_HOME="/usr/local/hadoop-2.7.2/"
-export LIB_HDFS="/usr/local/hadoop-2.7.2/lib/native"
-export LIB_HADOOP="/usr/local/hadoop-2.7.2/lib/native"
+This example depends on code in the [TensorFlow Models](https://github.com/tensorflow/models) repository, so you will have to clone the repo:
+```bash
+git clone https://github.com/tensorflow/models.git
+cd models
+export TF_MODELS=$(pwd)
 ```
 
+#### Start Spark Standalone Cluster
 
+```bash
+export MASTER=spark://$(hostname):7077
+export SPARK_WORKER_INSTANCES=3
+export CORES_PER_WORKER=1
+export TOTAL_CORES=$((${CORES_PER_WORKER}*${SPARK_WORKER_INSTANCES}))
 
-the default field delimiter is "\t" in the train and evaluation log, then run with this
-
-```shell
-	nohup sh x.sh &
+${SPARK_HOME}/sbin/start-master.sh; ${SPARK_HOME}/sbin/start-slave.sh -c $CORES_PER_WORKER -m 3G ${MASTER}
 ```
 
+### Download the UCI Census Income Dataset
 
+```bash
+cd ${TFoS_HOME}/examples/wide_deep
 
-while finish the spark job, try to obtain logs `yarn logs -applicationId myappid`
-
-there will be some similar output as following
-
-```shell
-2018-06-25 21:08:27,516 INFO (MainThread-20224) loss = 65.8497, step = 1641531 (12.828 sec)
-2018-06-25 21:08:39,976 INFO (MainThread-20224) loss = 67.78998, step = 1652706 (12.460 sec)
-2018-06-25 21:08:52,890 INFO (MainThread-20224) loss = 90.358444, step = 1663924 (12.914 sec)
-2018-06-25 21:09:06,029 INFO (MainThread-20224) loss = 107.57178, step = 1675366 (13.139 sec)
-2018-06-25 21:09:19,541 INFO (MainThread-20224) loss = 100.06123, step = 1686721 (13.512 sec)
-2018-06-25 21:09:31,997 INFO (MainThread-20224) loss = 70.46988, step = 1697007 (12.456 sec)
-2018-06-25 21:09:44,647 INFO (MainThread-20224) loss = 87.51865, step = 1707784 (12.650 sec)
-2018-06-25 21:09:57,039 INFO (MainThread-20224) loss = 79.045105, step = 1718133 (12.391 sec)
-2018-06-25 21:10:09,348 INFO (MainThread-20224) loss = 77.59738, step = 1727763 (12.309 sec)
-2018-06-25 21:10:20,848 INFO (MainThread-20224) loss = 71.914154, step = 1736495 (11.500 sec)
-2018-06-25 21:10:32,106 INFO (MainThread-20224) loss = 99.22389, step = 1744589 (11.258 sec)
-2018-06-25 21:10:43,603 INFO (MainThread-20224) loss = 57.03349, step = 1753055 (11.497 sec)
-2018-06-25 21:10:54,831 INFO (MainThread-20224) loss = 103.64122, step = 1761227 (11.228 sec)
-2018-06-25 21:11:06,378 INFO (MainThread-20224) Loss for final step: 37.241173.
-2018-06-25 21:11:06,379 INFO (MainThread-20224) Finished TensorFlow worker:17 on cluster node 82
-18/06/25 21:11:06 INFO python.PythonRunner: Times: total = 2096696, boot = 374, init = 781, finish = 2095541
-18/06/25 21:11:06 INFO executor.Executor: Finished task 82.0 in stage 0.0 (TID 82). 1268 bytes result sent to driver
+python census_dataset.py
 ```
 
+### Run Distributed Wide & Deep
 
+```bash
+cd ${TFoS_HOME}/examples/wide_deep
 
-model metric like auc could by found in the log as below
-
-```shell
-2018-06-25 21:24:07,724 INFO (MainThread-13640) Saving dict for global step 2007583: accuracy = 0.9842578, accuracy_baseline = 0.9842578, auc = 0.80605215, auc_prec
-
-ision_recall = 0.055994354, average_loss = 0.070659064, global_step = 2007583, label/mean = 0.015742188, loss = 72.35488, precision = 0.0, prediction/mean = 0.01661
-
-2884, recall = 0.0
-
+# rm -Rf /tmp/census_model; \
+${SPARK_HOME}/bin/spark-submit \
+--master ${MASTER} \
+--py-files census_dataset.py,wide_deep_run_loop.py \
+--conf spark.cores.max=${TOTAL_CORES} \
+--conf spark.task.cpus=${CORES_PER_WORKER} \
+--conf spark.executorEnv.JAVA_HOME="$JAVA_HOME" \
+--conf spark.task.maxFailures=1 \
+--conf spark.stage.maxConsecutiveAttempts=1 \
+census_main.py \
+--cluster_size 3
 ```
 
+The TensorFlow logs for each node will be available in `stderr` link of each executor in the Spark UI.  For example, in the log of the `master` node, you should see something like the following:
+```
+I0124 09:33:27.728477 4486518208 tf_logging.py:115] Finished evaluation at 2019-01-24-17:33:27
+I0124 09:33:27.729230 4486518208 tf_logging.py:115] Saving dict for global step 1729: accuracy = 0.82875, accuracy_baseline = 0.76325, auc = 0.8827834, auc_precision_recall = 0.7127151, average_loss = 0.3687935, global_step = 1729, label/mean = 0.23675, loss = 14.7517395, precision = 0.7119741, prediction/mean = 0.261756, recall = 0.46462512
+```
 
+#### Shutdown Standalone Cluster
 
+```bash
+${SPARK_HOME}/sbin/stop-slave.sh; ${SPARK_HOME}/sbin/stop-master.sh
+```
