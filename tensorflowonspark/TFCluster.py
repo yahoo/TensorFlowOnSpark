@@ -126,9 +126,9 @@ class TFCluster(object):
     logging.info("Stopping TensorFlow nodes")
 
     # identify ps/workers
-    ps_list, worker_list = [], []
+    ps_list, worker_list, eval_list = [], [], []
     for node in self.cluster_info:
-      (ps_list if node['job_name'] == 'ps' else worker_list).append(node)
+      (ps_list if node['job_name'] == 'ps' else eval_list if node['job_name'] == 'evaluator' else worker_list ).append(node)
 
     # setup execution timeout
     if timeout > 0:
@@ -161,7 +161,7 @@ class TFCluster(object):
         stages = st.getActiveStageIds()
         for i in stages:
           si = st.getStageInfo(i)
-          if si.numActiveTasks == len(ps_list):
+          if si.numActiveTasks == len(ps_list) + len(eval_list):
             # if we only have PS tasks left, check that we see this condition a couple times
             count += 1
         time.sleep(5)
@@ -184,7 +184,7 @@ class TFCluster(object):
     logging.info("Shutting down cluster")
     # shutdown queues and managers for "PS" executors.
     # note: we have to connect/shutdown from the spark driver, because these executors are "busy" and won't accept any other tasks.
-    for node in ps_list:
+    for node in ps_list + eval_list:
       addr = node['addr']
       authkey = node['authkey']
       m = TFManager.connect(addr, authkey)
@@ -209,7 +209,8 @@ class TFCluster(object):
 
 
 def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mode=InputMode.TENSORFLOW,
-        log_dir=None, driver_ps_nodes=False, master_node=None, reservation_timeout=600, queues=['input', 'output', 'error']):
+        log_dir=None, driver_ps_nodes=False, master_node=None, reservation_timeout=600, queues=['input', 'output', 'error'],
+        eval_node=False):
   """Starts the TensorFlowOnSpark cluster and Runs the TensorFlow "main" function on the Spark executors
 
   Args:
@@ -225,6 +226,7 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
     :master_node: name of the "master" or "chief" node in the cluster_template, used for `tf.estimator` applications.
     :reservation_timeout: number of seconds after which cluster reservation times out (600 sec default)
     :queues: *INTERNAL_USE*
+    :eval_node: run evaluator node for distributed Tensorflow
 
   Returns:
     A TFCluster object representing the started cluster.
@@ -234,6 +236,15 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
 
   if driver_ps_nodes and input_mode != InputMode.TENSORFLOW:
     raise Exception('running PS nodes on driver locally is only supported in InputMode.TENSORFLOW')
+ 
+  if eval_node and input_mode != InputMode.TENSORFLOW:
+    raise Exception('running evaluator nodes is only supported in InputMode.TENSORFLOW')
+
+  num_eval = 0
+  if eval_node:
+    num_eval = 1
+    if num_ps + num_eval >= num_executors:
+        raise Exception('num_ps plus evaluator node cannot be greater than num_executors')
 
   # build a cluster_spec template using worker_nums
   cluster_template = {}
@@ -242,8 +253,10 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
     cluster_template['worker'] = range(num_ps, num_executors)
   else:
     cluster_template[master_node] = range(num_ps, num_ps + 1)
-    if num_executors > num_ps + 1:
-      cluster_template['worker'] = range(num_ps + 1, num_executors)
+    if eval_node:
+      cluster_template['evaluator'] = range(num_ps + 1, num_ps + num_eval + 1)
+    if num_executors > num_ps + num_eval + 1:
+      cluster_template['worker'] = range(num_ps + num_eval + 1, num_executors)
   logging.info("cluster_template: {}".format(cluster_template))
 
   # get default filesystem from spark

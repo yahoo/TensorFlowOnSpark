@@ -174,7 +174,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
     # use a random uuid as the authkey
     authkey = uuid.uuid4().bytes
     addr = None
-    if job_name == 'ps':
+    if job_name in ('ps', 'evaluator'):
       # PS nodes must be remotely accessible in order to shutdown from Spark driver.
       TFSparkNode.mgr = TFManager.start(authkey, ['control', 'error'], 'remote')
       addr = (host, TFSparkNode.mgr.address[1])
@@ -331,18 +331,18 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
         errq.put(traceback.format_exc())
         errq.join()
 
-    if job_name == 'ps' or background:
+    if job_name in ('ps', 'evaluator') or background:
       # invoke the TensorFlow main function in a background thread
       logging.info("Starting TensorFlow {0}:{1} as {2} on cluster node {3} on background process".format(
         job_name, task_index, job_name, executor_id))
 
       p = multiprocessing.Process(target=wrapper_fn_background, args=(tf_args, ctx))
-      if job_name == 'ps':
+      if job_name in ('ps','evaluator'):
         p.daemon = True
       p.start()
 
       # for ps nodes only, wait indefinitely in foreground thread for a "control" event (None == "stop")
-      if job_name == 'ps':
+      if job_name in ('ps', 'evaluator'):
         queue = TFSparkNode.mgr.get_queue('control')
         equeue = TFSparkNode.mgr.get_queue('error')
         done = False
@@ -352,11 +352,11 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
           if (not equeue.empty()):
             e_str = equeue.get()
             equeue.task_done()
-            raise Exception("exception in ps:\n" + e_str)
+            raise Exception("exception in " + job_name + ":\n" + e_str)
           msg = queue.get(block=True)
           logging.info("Got msg: {0}".format(msg))
           if msg is None:
-            logging.info("Terminating PS")
+            logging.info("Terminating {}".format(job_name))
             TFSparkNode.mgr.set('state', 'stopped')
             done = True
           queue.task_done()
