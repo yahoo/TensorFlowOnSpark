@@ -128,7 +128,7 @@ class TFCluster(object):
     # identify ps/workers
     ps_list, worker_list, eval_list = [], [], []
     for node in self.cluster_info:
-      (ps_list if node['job_name'] == 'ps' else eval_list if node['job_name'] == 'evaluator' else worker_list ).append(node)
+      (ps_list if node['job_name'] == 'ps' else eval_list if node['job_name'] == 'evaluator' else worker_list).append(node)
 
     # setup execution timeout
     if timeout > 0:
@@ -232,31 +232,38 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
     A TFCluster object representing the started cluster.
   """
   logging.info("Reserving TFSparkNodes {0}".format("w/ TensorBoard" if tensorboard else ""))
-  assert num_ps < num_executors, "num_ps cannot be greater than num_executors (i.e. num_executors == num_ps + num_workers)"
 
   if driver_ps_nodes and input_mode != InputMode.TENSORFLOW:
     raise Exception('running PS nodes on driver locally is only supported in InputMode.TENSORFLOW')
- 
+
   if eval_node and input_mode != InputMode.TENSORFLOW:
     raise Exception('running evaluator nodes is only supported in InputMode.TENSORFLOW')
 
-  num_eval = 0
-  if eval_node:
-    num_eval = 1
-    if num_ps + num_eval >= num_executors:
-        raise Exception('num_ps plus evaluator node cannot be greater than num_executors')
+  # compute size of TF cluster and validate against number of Spark executors
+  num_master = 1 if master_node else 0
+  num_eval = 1 if eval_node else 0
+  num_workers = max(num_executors - num_ps - num_eval - num_master, 0)
+  total_nodes = num_ps + num_master + num_eval + num_workers
 
-  # build a cluster_spec template using worker_nums
+  assert total_nodes == num_executors, "TensorFlow cluster requires {} nodes, but only {} executors available".format(total_nodes, num_executors)
+  assert num_master + num_workers > 0, "TensorFlow cluster requires at least one worker or master/chief node"
+
+  # create a cluster template for scheduling TF nodes onto executors
+  executors = list(range(num_executors))
   cluster_template = {}
-  cluster_template['ps'] = range(num_ps)
-  if master_node is None:
-    cluster_template['worker'] = range(num_ps, num_executors)
-  else:
-    cluster_template[master_node] = range(num_ps, num_ps + 1)
-    if eval_node:
-      cluster_template['evaluator'] = range(num_ps + 1, num_ps + num_eval + 1)
-    if num_executors > num_ps + num_eval + 1:
-      cluster_template['worker'] = range(num_ps + num_eval + 1, num_executors)
+
+  if num_ps > 0:
+    cluster_template['ps'] = executors[:num_ps]
+    del executors[:num_ps]
+  if master_node:
+    cluster_template[master_node] = executors[:1]
+    del executors[:1]
+  if eval_node:
+    cluster_template['evaluator'] = executors[:1]
+    del executors[:1]
+  if num_workers > 0:
+    cluster_template['worker'] = executors[:num_workers]
+
   logging.info("cluster_template: {}".format(cluster_template))
 
   # get default filesystem from spark
@@ -347,11 +354,14 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
   for node in cluster_info:
     node_id = (node['host'], node['executor_id'])
     if node_id in tb_nodes:
-      raise Exception("Duplicate cluster node id detected (host={0}, executor_id={1})".format(node_id[0], node_id[1]) +
-                      "Please ensure that:\n" +
-                      "1. Number of executors >= number of TensorFlow nodes\n" +
-                      "2. Number of tasks per executors is 1\n" +
-                      "3, TFCluster.shutdown() is successfully invoked when done.")
+      msg = '''
+Duplicate cluster node id detected (host={0}, executor_id={1})
+Please ensure that:
+1. Number of executors >= number of TensorFlow nodes
+2. Number of tasks per executors is 1
+3, TFCluster.shutdown() is successfully invoked when done.
+'''.strip()
+      raise Exception(msg.format(node_id[0], node_id[1]))
     else:
       tb_nodes.add(node_id)
 
