@@ -23,7 +23,9 @@ This example depends on code in the [TensorFlow Models](https://github.com/tenso
 ```bash
 git clone https://github.com/tensorflow/models.git
 cd models
+pip install -r official/requirements.txt
 export TF_MODELS=$(pwd)
+export PYTHONPATH=$PYTHONPATH:$(pwd)
 ```
 
 #### Start Spark Standalone Cluster
@@ -48,8 +50,6 @@ python census_dataset.py
 ### Run Distributed Wide & Deep
 
 ```bash
-cd ${TFoS_HOME}/examples/wide_deep
-
 # rm -Rf /tmp/census_model; \
 ${SPARK_HOME}/bin/spark-submit \
 --master ${MASTER} \
