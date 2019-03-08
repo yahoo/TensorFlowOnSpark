@@ -117,7 +117,7 @@ def map_fun(args, ctx):
 
         if args.mode == "train":
           _, summary, step = sess.run([train_op, summary_op, global_step])
-          if (step % 100 == 0):
+          if (step % 100 == 0) and (not sess.should_stop()):
             print("{} step: {} accuracy: {}".format(datetime.now().isoformat(), step, sess.run(accuracy)))
           if task_index == 0:
             summary_writer.add_summary(summary, step)
@@ -128,6 +128,9 @@ def map_fun(args, ctx):
           print("acc: {}".format(acc))
 
     print("{} stopping MonitoredTrainingSession".format(datetime.now().isoformat()))
+
+    if sess.should_stop() or step >= args.steps:
+      tf_feed.terminate()
 
     # WORKAROUND FOR https://github.com/tensorflow/tensorflow/issues/21745
     # wait for all other nodes to complete (via done files)
