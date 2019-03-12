@@ -1,5 +1,5 @@
 py4j
-pyspark==2.3.2
+pyspark==2.3.3
 scipy
 sphinx
 tensorflow
