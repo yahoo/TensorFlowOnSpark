@@ -13,7 +13,6 @@ setup(
   author='Yahoo, Inc.',
   url='https://github.com/yahoo/TensorFlowOnSpark',
   keywords=['tensorflowonspark', 'tensorflow', 'spark', 'machine learning', 'yahoo'],
-  install_requires=['tensorflow'],
   license='Apache 2.0',
   classifiers=[
     'Development Status :: 4 - Beta',
