@@ -32,8 +32,7 @@
         <scalatest.version>3.0.5</scalatest.version>
         <scalatest-maven-plugin.version>1.0</scalatest-maven-plugin.version>
         <scopt.version>3.7.0</scopt.version>
-        <tensorflow.version>1.9.0</tensorflow.version>
-        <tensorflow-hadoop.version>1.9.0</tensorflow-hadoop.version>
+        <tensorflow.version>1.13.1</tensorflow.version>
     </properties>
     <dependencies>
         <dependency>
@@ -71,8 +70,8 @@
         </dependency>
         <dependency>
             <groupId>org.tensorflow</groupId>
-            <artifactId>hadoop</artifactId>
-            <version>${tensorflow-hadoop.version}</version>
+            <artifactId>tensorflow-hadoop</artifactId>
+            <version>${tensorflow.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.protobuf</groupId>
