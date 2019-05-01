@@ -329,7 +329,6 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
         wrapper_fn(args, context)
       except Exception:
         errq.put(traceback.format_exc())
-        errq.join()
 
     if job_name in ('ps', 'evaluator') or background:
       # invoke the TensorFlow main function in a background thread
@@ -337,11 +336,11 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
         job_name, task_index, job_name, executor_id))
 
       p = multiprocessing.Process(target=wrapper_fn_background, args=(tf_args, ctx))
-      if job_name in ('ps','evaluator'):
+      if job_name in ('ps', 'evaluator'):
         p.daemon = True
       p.start()
 
-      # for ps nodes only, wait indefinitely in foreground thread for a "control" event (None == "stop")
+      # for ps and evaluator nodes, wait indefinitely in foreground thread for a "control" event (None == "stop")
       if job_name in ('ps', 'evaluator'):
         queue = TFSparkNode.mgr.get_queue('control')
         equeue = TFSparkNode.mgr.get_queue('error')
@@ -351,8 +350,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
             time.sleep(1)
           if (not equeue.empty()):
             e_str = equeue.get()
-            equeue.task_done()
-            raise Exception("exception in " + job_name + ":\n" + e_str)
+            raise Exception("Exception in " + job_name + ":\n" + e_str)
           msg = queue.get(block=True)
           logging.info("Got msg: {0}".format(msg))
           if msg is None:
@@ -412,8 +410,7 @@ def train(cluster_info, cluster_meta, feed_timeout=600, qname='input'):
       while (joinThr.isAlive()):
         if (not equeue.empty()):
           e_str = equeue.get()
-          equeue.task_done()
-          raise Exception("exception in worker:\n" + e_str)
+          raise Exception("Exception in worker:\n" + e_str)
         time.sleep(1)
         timeout -= 1
         if timeout <= 0:
@@ -481,8 +478,7 @@ def inference(cluster_info, feed_timeout=600, qname='input'):
     while (joinThr.isAlive()):
       if (not equeue.empty()):
         e_str = equeue.get()
-        equeue.task_done()
-        raise Exception("exception in worker:\n" + e_str)
+        raise Exception("Exception in worker:\n" + e_str)
       time.sleep(1)
       timeout -= 1
       if timeout <= 0:
@@ -505,7 +501,7 @@ def inference(cluster_info, feed_timeout=600, qname='input'):
   return _inference
 
 
-def shutdown(cluster_info, queues=['input']):
+def shutdown(cluster_info, grace_secs=0, queues=['input']):
   """Stops all TensorFlow nodes by feeding ``None`` into the multiprocessing.Queues.
 
   Args:
@@ -533,13 +529,27 @@ def shutdown(cluster_info, queues=['input']):
     # terminate any listening queues
     logging.info("Stopping all queues")
     for q in queues:
-      try:
-        queue = mgr.get_queue(q)
-        logging.info("Feeding None into {0} queue".format(q))
-        queue.put(None, block=True)
-      except (AttributeError, KeyError):
-        msg = "Queue '{}' not found on this node, check for exceptions on other nodes.".format(q)
-        raise Exception(msg)
+      if q != 'error':
+        try:
+          queue = mgr.get_queue(q)
+          logging.info("Feeding None into {0} queue".format(q))
+          queue.put(None, block=True)
+        except (AttributeError, KeyError):
+          msg = "Queue '{}' not found on this node, check for exceptions on other nodes.".format(q)
+          raise Exception(msg)
+
+    # wait for grace period (after terminating feed queues)
+    if grace_secs > 0:
+      logging.info("Waiting for {} second grace period".format(grace_secs))
+      time.sleep(grace_secs)
+
+    # then check for any late exceptions
+    equeue = mgr.get_queue('error')
+    if (not equeue.empty()):
+      # note: "peek" this queue, since otherwise Spark might retry this "failed" task, find no errors in queue, and finish the job with SUCCESS
+      e_str = equeue.get()
+      equeue.put(e_str)
+      raise Exception("Exception in worker:\n" + e_str)
 
     logging.info("Setting mgr.state to 'stopped'")
     mgr.set('state', 'stopped')

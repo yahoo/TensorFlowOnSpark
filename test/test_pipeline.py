@@ -198,7 +198,7 @@ class PipelineTest(test.SparkTest):
             tf_feed = ctx.get_data_feed(input_mapping=args.input_mapping)
             while not sess.should_stop() and not tf_feed.should_stop():
               batch = tf_feed.next_batch(args.batch_size)
-              if len(batch) > 0:
+              if len(batch['y_label']) > 0:
                 print("batch: {}".format(batch))
                 feed = {y_: batch['y_label'],
                         row_indices: batch['x_row_indices'],
@@ -206,7 +206,6 @@ class PipelineTest(test.SparkTest):
                         values: batch['x_values']}
                 _, pred, trained_weights = sess.run([optimizer, y, w], feed_dict=feed)
                 print("trained_weights: {}".format(trained_weights))
-            sess.close()
 
           # wait for MonitoredTrainingSession to save last checkpoint
           time.sleep(10)

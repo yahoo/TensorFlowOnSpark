@@ -1,5 +1,6 @@
 import unittest
 import test
+import time
 from tensorflowonspark import TFCluster, TFNode
 
 
@@ -54,6 +55,67 @@ class TFClusterTest(test.SparkTest):
     rdd_sum = rdd_out.sum()
     self.assertEqual(rdd_sum, sum([x * x for x in range(1000)]))
     cluster.shutdown()
+
+  def test_inputmode_spark_exception(self):
+    """Distributed TF cluster w/ InputMode.SPARK and exception during feeding"""
+    def _map_fun(args, ctx):
+      import tensorflow as tf
+      cluster, server = TFNode.start_cluster_server(ctx)
+      if ctx.job_name == "ps":
+        server.join()
+      elif ctx.job_name == "worker":
+        with tf.device(tf.train.replica_device_setter(
+          worker_device="/job:worker/task:%d" % ctx.task_index,
+          cluster=cluster)):
+          x = tf.placeholder(tf.int32, [None, 1])
+          sq = tf.square(x)
+          init_op = tf.global_variables_initializer()
+        with tf.train.MonitoredTrainingSession(is_chief=(ctx.task_index == 0)) as sess:
+          tf_feed = TFNode.DataFeed(ctx.mgr, False)
+          while not sess.should_stop() and not tf_feed.should_stop():
+            outputs = sess.run([sq], feed_dict={x: tf_feed.next_batch(10)})
+            tf_feed.batch_results(outputs[0])
+            raise Exception("FAKE exception during feeding")
+
+    input = [[x] for x in range(1000)]    # set up input as tensors of shape [1] to match placeholder
+    rdd = self.sc.parallelize(input, 10)
+    with self.assertRaises(Exception):
+      cluster = TFCluster.run(self.sc, _map_fun, tf_args={}, num_executors=self.num_workers, num_ps=0, input_mode=TFCluster.InputMode.SPARK)
+      cluster.inference(rdd, feed_timeout=1).count()
+      cluster.shutdown()
+
+  def test_inputmode_spark_late_exception(self):
+    """Distributed TF cluster w/ InputMode.SPARK and exception after feeding"""
+    def _map_fun(args, ctx):
+      import tensorflow as tf
+      cluster, server = TFNode.start_cluster_server(ctx)
+      if ctx.job_name == "ps":
+        server.join()
+      elif ctx.job_name == "worker":
+        with tf.device(tf.train.replica_device_setter(
+          worker_device="/job:worker/task:%d" % ctx.task_index,
+          cluster=cluster)):
+          x = tf.placeholder(tf.int32, [None, 1])
+          sq = tf.square(x)
+          init_op = tf.global_variables_initializer()
+        with tf.train.MonitoredTrainingSession(is_chief=(ctx.task_index == 0)) as sess:
+          tf_feed = TFNode.DataFeed(ctx.mgr, False)
+          while not sess.should_stop() and not tf_feed.should_stop():
+            batch = tf_feed.next_batch(10)
+            if len(batch) > 0:
+              outputs = sess.run([sq], feed_dict={x: batch})
+              tf_feed.batch_results(outputs[0])
+
+        # simulate post-feed actions that raise an exception
+        time.sleep(2)
+        raise Exception("FAKE exception after feeding")
+
+    input = [[x] for x in range(1000)]    # set up input as tensors of shape [1] to match placeholder
+    rdd = self.sc.parallelize(input, 10)
+    with self.assertRaises(Exception):
+      cluster = TFCluster.run(self.sc, _map_fun, tf_args={}, num_executors=self.num_workers, num_ps=0, input_mode=TFCluster.InputMode.SPARK)
+      cluster.inference(rdd).count()
+      cluster.shutdown(grace_secs=5)      # note: grace_secs must be larger than the time needed for post-feed actions
 
 
 if __name__ == '__main__':

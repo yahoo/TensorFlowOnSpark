@@ -171,8 +171,7 @@ class TFCluster(object):
     # in TENSORFLOW mode, this will only run after all workers have finished.
     workers = len(worker_list)
     workerRDD = self.sc.parallelize(range(workers), workers)
-    workerRDD.foreachPartition(TFSparkNode.shutdown(self.cluster_info, self.queues))
-    time.sleep(grace_secs)
+    workerRDD.foreachPartition(TFSparkNode.shutdown(self.cluster_info, grace_secs, self.queues))
 
     # exit Spark application w/ err status if TF job had any errors
     if 'error' in tf_status:
