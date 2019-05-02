@@ -1,5 +1,5 @@
-mmh3==2.5.1
-tensorflow=1.2.1
-numpy==1.13.1
-scipy==1.0.0
-scikit-learn==0.19.1
+mmh3
+tensorflow
+numpy
+scipy
+scikit-learn
