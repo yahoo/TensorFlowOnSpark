@@ -45,8 +45,10 @@ class TFClusterTest(test.SparkTest):
         with tf.train.MonitoredTrainingSession(is_chief=(ctx.task_index == 0)) as sess:
           tf_feed = TFNode.DataFeed(ctx.mgr, False)
           while not sess.should_stop() and not tf_feed.should_stop():
-            outputs = sess.run([sq], feed_dict={x: tf_feed.next_batch(10)})
-            tf_feed.batch_results(outputs[0])
+            batch = tf_feed.next_batch(10)
+            if len(batch) > 0:
+              outputs = sess.run([sq], feed_dict={x: batch})
+              tf_feed.batch_results(outputs[0])
 
     input = [[x] for x in range(1000)]    # set up input as tensors of shape [1] to match placeholder
     rdd = self.sc.parallelize(input, 10)
@@ -73,9 +75,11 @@ class TFClusterTest(test.SparkTest):
         with tf.train.MonitoredTrainingSession(is_chief=(ctx.task_index == 0)) as sess:
           tf_feed = TFNode.DataFeed(ctx.mgr, False)
           while not sess.should_stop() and not tf_feed.should_stop():
-            outputs = sess.run([sq], feed_dict={x: tf_feed.next_batch(10)})
-            tf_feed.batch_results(outputs[0])
-            raise Exception("FAKE exception during feeding")
+            batch = tf_feed.next_batch(10)
+            if len(batch) > 0:
+              outputs = sess.run([sq], feed_dict={x: batch})
+              tf_feed.batch_results(outputs[0])
+              raise Exception("FAKE exception during feeding")
 
     input = [[x] for x in range(1000)]    # set up input as tensors of shape [1] to match placeholder
     rdd = self.sc.parallelize(input, 10)
