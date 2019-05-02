@@ -110,15 +110,8 @@ TensorFlowOnSpark/examples/criteo/spark/criteo_spark.py \
 ## Tensorboard tracking:
 
 By connecting to the Web UI tracker of your application,
-you be able to retrieve the tensorboard URL in the stdout of the driver:
-
+you be able to retrieve the tensorboard URL in the stdout of the driver, e.g.:
 ```
  TensorBoard running at:       http://10.4.112.234:36911
 ```
-
-You can then track the training loss, and validation loss:
-
-
-![Alt Text](resources/data/TensorBoard-TFonSpark-Criteo-04.png)
- 
 
