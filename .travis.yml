@@ -31,6 +31,7 @@ matrix:
     - export PYTHONPATH=$(pwd)
     install:
     - pip install -r requirements.txt
+    - pip list
     script:
     - sphinx-build -b html docs/source docs/build/html
     - test/run_tests.sh
