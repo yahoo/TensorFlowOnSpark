@@ -2,11 +2,12 @@ matrix:
   include:
   - language: python
     python: 2.7
+    dist: trusty
     before_install:
-    - curl -LO http://www-us.apache.org/dist/spark/spark-2.4.2/spark-2.4.2-bin-hadoop2.7.tgz
+    - curl -LO http://www-us.apache.org/dist/spark/spark-2.4.3/spark-2.4.3-bin-hadoop2.7.tgz
     - export SPARK_HOME=./spark
     - mkdir $SPARK_HOME
-    - tar -xf spark-2.4.2-bin-hadoop2.7.tgz -C $SPARK_HOME --strip-components=1
+    - tar -xf spark-2.4.3-bin-hadoop2.7.tgz -C $SPARK_HOME --strip-components=1
     - export PATH=$SPARK_HOME/bin:$PATH
     - export SPARK_LOCAL_IP=127.0.0.1
     - export SPARK_CLASSPATH=./lib/tensorflow-hadoop-1.0-SNAPSHOT.jar
@@ -18,21 +19,24 @@ matrix:
     - test/run_tests.sh
   - language: python
     python: 3.6
+    dist: trusty
     before_install:
-    - curl -LO http://www-us.apache.org/dist/spark/spark-2.4.2/spark-2.4.2-bin-hadoop2.7.tgz
+    - curl -LO http://www-us.apache.org/dist/spark/spark-2.4.3/spark-2.4.3-bin-hadoop2.7.tgz
     - export SPARK_HOME=./spark
     - mkdir $SPARK_HOME
-    - tar -xf spark-2.4.2-bin-hadoop2.7.tgz -C $SPARK_HOME --strip-components=1
+    - tar -xf spark-2.4.3-bin-hadoop2.7.tgz -C $SPARK_HOME --strip-components=1
     - export PATH=$SPARK_HOME/bin:$PATH
     - export SPARK_LOCAL_IP=127.0.0.1
     - export SPARK_CLASSPATH=./lib/tensorflow-hadoop-1.0-SNAPSHOT.jar
     - export PYTHONPATH=$(pwd)
     install:
     - pip install -r requirements.txt
+    - pip list
     script:
     - sphinx-build -b html docs/source docs/build/html
     - test/run_tests.sh
   - language: java
+    dist: trusty
     jdk: oraclejdk8
 notifications:
   email: false
