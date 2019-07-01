@@ -540,7 +540,7 @@ def _run_model(iterator, args, tf_args):
   # get list of input/output tensors (by name)
   if args.signature_def_key:
     input_tensors = [inputs_tensor_info[t].name for t in input_tensor_names]
-    output_tensors = [outputs_tensor_info[output_tensor_names[0]].name]
+    output_tensors = [outputs_tensor_info[t].name for t in output_tensor_names]
   else:
     input_tensors = [t + ':0' for t in input_tensor_names]
     output_tensors = [t + ':0' for t in output_tensor_names]
