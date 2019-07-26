@@ -3,4 +3,4 @@ py4j
 pyspark
 scipy
 sphinx
-tensorflow
+tensorflow==2.0.0-beta1

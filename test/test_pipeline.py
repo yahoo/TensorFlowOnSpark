@@ -1,4 +1,3 @@
-from datetime import datetime
 import numpy as np
 import os
 import scipy
@@ -9,6 +8,8 @@ import unittest
 
 from tensorflowonspark import TFCluster, dfutil
 from tensorflowonspark.pipeline import HasBatchSize, HasSteps, Namespace, TFEstimator, TFParams
+from tensorflow.keras import Sequential
+from tensorflow.keras.layers import Dense
 
 
 class PipelineTest(test.SparkTest):
@@ -87,39 +88,11 @@ class PipelineTest(test.SparkTest):
     expected_args = Namespace({'a': 1, 'b': 2, 'batch_size': 10, 'steps': 100})
     self.assertEqual(combined_args, expected_args)
 
-  def test_spark_checkpoint(self):
-    """InputMode.SPARK TFEstimator w/ TFModel inferencing directly from model checkpoint"""
-
-    # create a Spark DataFrame of training examples (features, labels)
-    trainDF = self.spark.createDataFrame(self.train_examples, ['col1', 'col2'])
-
-    # train model
-    args = {}
-    estimator = TFEstimator(self.get_function('spark/train'), args) \
-                  .setInputMapping({'col1': 'x', 'col2': 'y_'}) \
-                  .setModelDir(self.model_dir) \
-                  .setClusterSize(self.num_workers) \
-                  .setNumPS(1) \
-                  .setBatchSize(10) \
-                  .setEpochs(2)
-    model = estimator.fit(trainDF)
-    self.assertTrue(os.path.isdir(self.model_dir))
-
-    # create a Spark DataFrame of test examples (features, labels)
-    testDF = self.spark.createDataFrame(self.test_examples, ['c1', 'c2'])
-
-    # test model from checkpoint, referencing tensors directly
-    model.setInputMapping({'c1': 'x'}) \
-        .setOutputMapping({'y': 'cout'})
-    preds = model.transform(testDF).head()                # take first/only result, e.g. [ Row(cout=[4.758000373840332])]
-    pred = preds.cout[0]                                  # unpack scalar from tensor
-    self.assertAlmostEqual(pred, np.sum(self.weights), 5)
-
   def test_spark_saved_model(self):
     """InputMode.SPARK TFEstimator w/ explicit saved_model export for TFModel inferencing"""
 
     # create a Spark DataFrame of training examples (features, labels)
-    trainDF = self.spark.createDataFrame(self.train_examples, ['col1', 'col2'])
+    trainDF = self.spark.createDataFrame(self.train_examples, ['col1', 'col2']).repartition(3)
 
     # train and export model
     args = {}
@@ -128,9 +101,9 @@ class PipelineTest(test.SparkTest):
                   .setModelDir(self.model_dir) \
                   .setExportDir(self.export_dir) \
                   .setClusterSize(self.num_workers) \
-                  .setNumPS(1) \
-                  .setBatchSize(10) \
-                  .setEpochs(2)
+                  .setNumPS(0) \
+                  .setBatchSize(1) \
+                  .setEpochs(1)
     model = estimator.fit(trainDF)
     self.assertTrue(os.path.isdir(self.export_dir))
 
@@ -138,101 +111,99 @@ class PipelineTest(test.SparkTest):
     testDF = self.spark.createDataFrame(self.test_examples, ['c1', 'c2'])
 
     # test saved_model using exported signature
-    model.setTagSet('test_tag') \
-          .setSignatureDefKey('test_key') \
-          .setInputMapping({'c1': 'features'}) \
-          .setOutputMapping({'prediction': 'cout'})
+    model.setTagSet('serve') \
+          .setSignatureDefKey('serving_default') \
+          .setInputMapping({'c1': 'dense_input'}) \
+          .setOutputMapping({'dense': 'cout'})
     preds = model.transform(testDF).head()                  # take first/only result
     pred = preds.cout[0]                                    # unpack scalar from tensor
     expected = np.sum(self.weights)
-    self.assertAlmostEqual(pred, expected, 5)
+    self.assertAlmostEqual(pred, expected, 3)
 
     # test saved_model using custom/direct mapping
-    model.setTagSet('test_tag') \
+    model.setTagSet('serve') \
           .setSignatureDefKey(None) \
-          .setInputMapping({'c1': 'x'}) \
-          .setOutputMapping({'y': 'cout1', 'y2': 'cout2'})
+          .setInputMapping({'c1': 'dense_input'}) \
+          .setOutputMapping({'dense/BiasAdd': 'cout'})
     preds = model.transform(testDF).head()                  # take first/only result
-    pred = preds.cout1[0]                                   # unpack pred scalar from tensor
-    squared_pred = preds.cout2[0]                           # unpack squared pred from tensor
+    pred = preds.cout[0]                                    # unpack pred scalar from tensor
+    self.assertAlmostEqual(pred, expected, 3)
 
-    self.assertAlmostEqual(pred, expected, 5)
-    self.assertAlmostEqual(squared_pred, expected * expected, 5)
-
-  def test_spark_sparse_tensor(self):
-    """InputMode.SPARK feeding sparse tensors"""
-    def sparse_train(args, ctx):
-        import tensorflow as tf
-
-        # reset graph in case we're re-using a Spark python worker (during tests)
-        tf.reset_default_graph()
-
-        cluster, server = ctx.start_cluster_server(ctx)
-        if ctx.job_name == "ps":
-          server.join()
-        elif ctx.job_name == "worker":
-          with tf.device(tf.train.replica_device_setter(
-            worker_device="/job:worker/task:%d" % ctx.task_index,
-            cluster=cluster)):
-            y_ = tf.placeholder(tf.float32, name='y_label')
-            label = tf.identity(y_, name='label')
-
-            row_indices = tf.placeholder(tf.int64, name='x_row_indices')
-            col_indices = tf.placeholder(tf.int64, name='x_col_indices')
-            values = tf.placeholder(tf.float32, name='x_values')
-            indices = tf.stack([row_indices[0], col_indices[0]], axis=1)
-            data = values[0]
-
-            x = tf.SparseTensor(indices=indices, values=data, dense_shape=[args.batch_size, 10])
-            w = tf.Variable(tf.truncated_normal([10, 1]), name='w')
-            y = tf.sparse_tensor_dense_matmul(x, w, name='y')
-
-            global_step = tf.train.get_or_create_global_step()
-            cost = tf.reduce_mean(tf.square(y_ - y), name='cost')
-            optimizer = tf.train.GradientDescentOptimizer(0.1).minimize(cost, global_step)
-
-          with tf.train.MonitoredTrainingSession(master=server.target,
-                                                 is_chief=(ctx.task_index == 0),
-                                                 checkpoint_dir=args.model_dir,
-                                                 save_checkpoint_steps=20) as sess:
-            tf_feed = ctx.get_data_feed(input_mapping=args.input_mapping)
-            while not sess.should_stop() and not tf_feed.should_stop():
-              batch = tf_feed.next_batch(args.batch_size)
-              if len(batch['y_label']) > 0:
-                print("batch: {}".format(batch))
-                feed = {y_: batch['y_label'],
-                        row_indices: batch['x_row_indices'],
-                        col_indices: batch['x_col_indices'],
-                        values: batch['x_values']}
-                _, pred, trained_weights = sess.run([optimizer, y, w], feed_dict=feed)
-                print("trained_weights: {}".format(trained_weights))
-
-          # wait for MonitoredTrainingSession to save last checkpoint
-          time.sleep(10)
-
-    args = {}
-    estimator = TFEstimator(sparse_train, args) \
-              .setInputMapping({'labels': 'y_label', 'row_indices': 'x_row_indices', 'col_indices': 'x_col_indices', 'values': 'x_values'}) \
-              .setInputMode(TFCluster.InputMode.SPARK) \
-              .setModelDir(self.model_dir) \
-              .setClusterSize(self.num_workers) \
-              .setNumPS(1) \
-              .setBatchSize(1)
-
-    model_weights = np.array([[1.0, 1.0, 1.0, 1.0, 1.0, -1.0, -1.0, -1.0, -1.0, -1.0]]).T
-    examples = [scipy.sparse.random(1, 10, density=0.5,) for i in range(200)]
-    rdd = self.sc.parallelize(examples).map(lambda e: ((e * model_weights).tolist()[0][0], e.row.tolist(), e.col.tolist(), e.data.tolist()))
-    df = rdd.toDF(["labels", "row_indices", "col_indices", "values"])
-    df.show(5)
-    model = estimator.fit(df)
-
-    model.setOutputMapping({'label': 'label', 'y/SparseTensorDenseMatMul': 'predictions'})
-    test_examples = [scipy.sparse.random(1, 10, density=0.5,) for i in range(50)]
-    test_rdd = self.sc.parallelize(test_examples).map(lambda e: ((e * model_weights).tolist()[0][0], e.row.tolist(), e.col.tolist(), e.data.tolist()))
-    test_df = test_rdd.toDF(["labels", "row_indices", "col_indices", "values"])
-    test_df.show(5)
-    preds = model.transform(test_df)
-    preds.show(5)
+#  def test_spark_sparse_tensor(self):
+#    """InputMode.SPARK feeding sparse tensors"""
+#    def sparse_train(args, ctx):
+#        import tensorflow as tf
+#
+#        # reset graph in case we're re-using a Spark python worker (during tests)
+#        tf.compat.v1.reset_default_graph()
+#
+#        cluster, server = ctx.start_cluster_server(ctx)
+#        if ctx.job_name == "ps":
+#          server.join()
+#        elif ctx.job_name == "worker":
+#          with tf.device(tf.compat.v1.train.replica_device_setter(
+#            worker_device="/job:worker/task:%d" % ctx.task_index,
+#            cluster=cluster)):
+#            y_ = tf.compat.v1.placeholder(tf.float32, name='y_label')
+#            label = tf.identity(y_, name='label')
+#
+#            row_indices = tf.compat.v1.placeholder(tf.int64, name='x_row_indices')
+#            col_indices = tf.compat.v1.placeholder(tf.int64, name='x_col_indices')
+#            values = tf.compat.v1.placeholder(tf.float32, name='x_values')
+#            indices = tf.stack([row_indices[0], col_indices[0]], axis=1)
+#            data = values[0]
+#
+#            x = tf.SparseTensor(indices=indices, values=data, dense_shape=[args.batch_size, 10])
+#            w = tf.Variable(tf.random.truncated_normal([10, 1]), name='w')
+#            y = tf.sparse.sparse_dense_matmul(x, w, name='y')
+#
+#            global_step = tf.compat.v1.train.get_or_create_global_step()
+#            cost = tf.reduce_mean(input_tensor=tf.square(y_ - y), name='cost')
+#            optimizer = tf.compat.v1.train.GradientDescentOptimizer(0.1).minimize(cost, global_step)
+#
+#          with tf.compat.v1.train.MonitoredTrainingSession(master=server.target,
+#                                                           is_chief=(ctx.task_index == 0),
+#                                                           checkpoint_dir=args.model_dir,
+#                                                           save_checkpoint_steps=20) as sess:
+#            tf_feed = ctx.get_data_feed(input_mapping=args.input_mapping)
+#            while not sess.should_stop() and not tf_feed.should_stop():
+#              batch = tf_feed.next_batch(args.batch_size)
+#              if len(batch) > 0:
+#                print("batch: {}".format(batch))
+#                feed = {y_: batch['y_label'],
+#                        row_indices: batch['x_row_indices'],
+#                        col_indices: batch['x_col_indices'],
+#                        values: batch['x_values']}
+#                _, pred, trained_weights = sess.run([optimizer, y, w], feed_dict=feed)
+#                print("trained_weights: {}".format(trained_weights))
+#            sess.close()
+#
+#          # wait for MonitoredTrainingSession to save last checkpoint
+#          time.sleep(10)
+#
+#    args = {}
+#    estimator = TFEstimator(sparse_train, args) \
+#              .setInputMapping({'labels': 'y_label', 'row_indices': 'x_row_indices', 'col_indices': 'x_col_indices', 'values': 'x_values'}) \
+#              .setInputMode(TFCluster.InputMode.SPARK) \
+#              .setModelDir(self.model_dir) \
+#              .setClusterSize(self.num_workers) \
+#              .setNumPS(1) \
+#              .setBatchSize(1)
+#
+#    model_weights = np.array([[1.0, 1.0, 1.0, 1.0, 1.0, -1.0, -1.0, -1.0, -1.0, -1.0]]).T
+#    examples = [scipy.sparse.random(1, 10, density=0.5,) for i in range(200)]
+#    rdd = self.sc.parallelize(examples).map(lambda e: ((e * model_weights).tolist()[0][0], e.row.tolist(), e.col.tolist(), e.data.tolist()))
+#    df = rdd.toDF(["labels", "row_indices", "col_indices", "values"])
+#    df.show(5)
+#    model = estimator.fit(df)
+#
+#    model.setOutputMapping({'label': 'label', 'y/SparseTensorDenseMatMul': 'predictions'})
+#    test_examples = [scipy.sparse.random(1, 10, density=0.5,) for i in range(50)]
+#    test_rdd = self.sc.parallelize(test_examples).map(lambda e: ((e * model_weights).tolist()[0][0], e.row.tolist(), e.col.tolist(), e.data.tolist()))
+#    test_df = test_rdd.toDF(["labels", "row_indices", "col_indices", "values"])
+#    test_df.show(5)
+#    preds = model.transform(test_df)
+#    preds.show(5)
 
   def test_tf_column_filter(self):
     """InputMode.TENSORFLOW TFEstimator saving temporary TFRecords, filtered by input_mapping columns"""
@@ -244,26 +215,29 @@ class PipelineTest(test.SparkTest):
     df = trainDF.withColumn('extra1', trainDF.col1)
     df = df.withColumn('extra2', trainDF.col2)
     self.assertEqual(len(df.columns), 4)
+    df.show()
 
-    # train model
+    # train model on selected columns
     args = {}
-    estimator = TFEstimator(self.get_function('tf/train'), args, export_fn=self.get_function('tf/export')) \
+    estimator = TFEstimator(self.get_function('tf/train'), args) \
                   .setInputMapping({'col1': 'x', 'col2': 'y_'}) \
                   .setInputMode(TFCluster.InputMode.TENSORFLOW) \
-                  .setModelDir(self.model_dir) \
                   .setExportDir(self.export_dir) \
                   .setTFRecordDir(self.tfrecord_dir) \
                   .setClusterSize(self.num_workers) \
                   .setNumPS(1) \
                   .setBatchSize(10)
     estimator.fit(df)
-    self.assertTrue(os.path.isdir(self.model_dir))
+    self.assertTrue(os.path.isdir(self.export_dir))
     self.assertTrue(os.path.isdir(self.tfrecord_dir))
 
+    # verify that temporarily-saved TFRecords have the columns we requested
     df_tmp = dfutil.loadTFRecords(self.sc, self.tfrecord_dir)
+    df_tmp.show()
+
     self.assertEqual(df_tmp.columns, ['col1', 'col2'])
 
-  def test_tf_checkpoint_with_export_fn(self):
+  def test_tf_saved_model(self):
     """InputMode.TENSORFLOW TFEstimator w/ a separate saved_model export function to add placeholders for InputMode.SPARK TFModel inferencing"""
 
     # create a Spark DataFrame of training examples (features, labels)
@@ -271,30 +245,28 @@ class PipelineTest(test.SparkTest):
 
     # train model
     args = {}
-    estimator = TFEstimator(self.get_function('tf/train'), args, export_fn=self.get_function('tf/export')) \
+    estimator = TFEstimator(self.get_function('tf/train'), args) \
                   .setInputMapping({'col1': 'x', 'col2': 'y_'}) \
                   .setInputMode(TFCluster.InputMode.TENSORFLOW) \
-                  .setModelDir(self.model_dir) \
                   .setExportDir(self.export_dir) \
                   .setTFRecordDir(self.tfrecord_dir) \
                   .setClusterSize(self.num_workers) \
                   .setNumPS(1) \
                   .setBatchSize(10)
     model = estimator.fit(trainDF)
-    self.assertTrue(os.path.isdir(self.model_dir))
     self.assertTrue(os.path.isdir(self.export_dir))
 
     # create a Spark DataFrame of test examples (features, labels)
     testDF = self.spark.createDataFrame(self.test_examples, ['c1', 'c2'])
 
-    # test model from checkpoint, referencing tensors directly
-    model.setTagSet('test_tag') \
-        .setInputMapping({'c1': 'x'}) \
-        .setOutputMapping({'y': 'cout1', 'y2': 'cout2'})
+    # test from saved_model
+    model.setTagSet('serve') \
+        .setSignatureDefKey('serving_default') \
+        .setInputMapping({'c1': 'dense_input'}) \
+        .setOutputMapping({'dense': 'cout'})
     preds = model.transform(testDF).head()                # take first/only result, e.g. [ Row(cout=[4.758000373840332])]
-    pred1, pred2 = preds.cout1[0], preds.cout2[0]
+    pred1 = preds.cout[0]
     self.assertAlmostEqual(pred1, np.sum(self.weights), 5)
-    self.assertAlmostEqual(pred2, np.sum(self.weights) ** 2, 5)
 
   def get_function(self, name):
     """Returns a TF map_function for tests (required to avoid serializing the parent module/class)"""
@@ -304,147 +276,58 @@ class PipelineTest(test.SparkTest):
       import tensorflow as tf
       from tensorflowonspark import TFNode
 
-      class ExportHook(tf.train.SessionRunHook):
-        def __init__(self, export_dir, input_tensor, output_tensor):
-          self.export_dir = export_dir
-          self.input_tensor = input_tensor
-          self.output_tensor = output_tensor
+      model = Sequential()
+      model.add(Dense(1, activation='linear', input_shape=(2,)))
+      model.compile(optimizer=tf.keras.optimizers.Adam(lr=0.2), loss='mse', metrics=['mse'])
+      model.summary()
 
-        def end(self, session):
-          print("{} ======= Exporting to: {}".format(datetime.now().isoformat(), self.export_dir))
-          signatures = {
-            "test_key": {
-              'inputs': {'features': self.input_tensor},
-              'outputs': {'prediction': self.output_tensor},
-              'method_name': tf.saved_model.signature_constants.PREDICT_METHOD_NAME
-            }
-          }
-          TFNode.export_saved_model(session,
-                                    self.export_dir,
-                                    "test_tag",
-                                    signatures)
-          print("{} ======= Done exporting".format(datetime.now().isoformat()))
+      tf_feed = TFNode.DataFeed(ctx.mgr, input_mapping=args.input_mapping)
+      while not tf_feed.should_stop():
+        batch = tf_feed.next_batch(args.batch_size)
+        if args.input_mapping:
+          if len(batch['x']) > 0:
+            model.fit(np.array(batch['x']), np.array(batch['y_']))
 
-      tf.reset_default_graph()                          # reset graph in case we're re-using a Spark python worker
+      if ctx.job_name == 'chief':
+        print("saving checkpoint to: {}".format(args.model_dir))
+        tf.saved_model.save(model, args.model_dir)
+        # model.save_weights(args.model_dir + "/model", overwrite=True, save_format='tf')
 
-      cluster, server = TFNode.start_cluster_server(ctx)
-      if ctx.job_name == "ps":
-        server.join()
-      elif ctx.job_name == "worker":
-        with tf.device(tf.train.replica_device_setter(
-          worker_device="/job:worker/task:%d" % ctx.task_index,
-          cluster=cluster)):
-          x = tf.placeholder(tf.float32, [None, 2], name='x')
-          y_ = tf.placeholder(tf.float32, [None, 1], name='y_')
-          w = tf.Variable(tf.truncated_normal([2, 1]), name='w')
-          y = tf.matmul(x, w, name='y')
-          y2 = tf.square(y, name="y2")                      # extra/optional output for testing multiple output tensors
-          global_step = tf.train.get_or_create_global_step()
-          cost = tf.reduce_mean(tf.square(y_ - y), name='cost')
-          optimizer = tf.train.GradientDescentOptimizer(0.5).minimize(cost, global_step)
-
-        chief_hooks = [ExportHook(ctx.absolute_path(args.export_dir), x, y)] if args.export_dir else []
-        with tf.train.MonitoredTrainingSession(master=server.target,
-                                               is_chief=(ctx.task_index == 0),
-                                               checkpoint_dir=args.model_dir,
-                                               chief_only_hooks=chief_hooks) as sess:
-          tf_feed = TFNode.DataFeed(ctx.mgr, input_mapping=args.input_mapping)
-          while not sess.should_stop() and not tf_feed.should_stop():
-            batch = tf_feed.next_batch(10)
-            if args.input_mapping:
-              if len(batch['x']) > 0:
-                feed = {x: batch['x'], y_: batch['y_']}
-              sess.run(optimizer, feed_dict=feed)
+        if args.export_dir:
+          print("exporting model to: {}".format(args.export_dir))
+          tf.keras.experimental.export_saved_model(model, args.export_dir)
 
     def _tf_train(args, ctx):
       """Basic linear regression in a distributed TF cluster using InputMode.TENSORFLOW"""
       import tensorflow as tf
 
-      tf.reset_default_graph()                          # reset graph in case we're re-using a Spark python worker
+      def _get_examples(num_rows, batch_size):
+        """Generate test data"""
+        for i in range(num_rows):
+          features = tf.random.uniform([batch_size, 2])     # (batch_size x 2)
+          weights = tf.constant([[3.14], [1.618]])          # (2, 1)
+          labels = tf.matmul(features, weights)
+          yield features, labels
 
-      cluster, server = ctx.start_cluster_server()
+      model = Sequential()
+      model.add(Dense(1, activation='linear', input_shape=(2,)))
+      model.compile(optimizer=tf.keras.optimizers.Adam(lr=0.2), loss='mse', metrics=['mse'])
+      model.summary()
 
-      def _get_examples(batch_size):
-        """Generate test data (mocking a queue_runner of file inputs)"""
-        features = tf.random_uniform([batch_size, 2])     # (batch_size x 2)
-        weights = tf.constant([[3.14], [1.618]])          # (2, 1)
-        labels = tf.matmul(features, weights)
-        return features, labels
+      model.fit_generator(_get_examples(1000, 10), steps_per_epoch=100, epochs=5)
 
-      if ctx.job_name == "ps":
-        server.join()
-      elif ctx.job_name == "worker":
-        with tf.device(tf.train.replica_device_setter(
-          worker_device="/job:worker/task:%d" % ctx.task_index,
-          cluster=cluster)):
-          x, y_ = _get_examples(10)                          # no input placeholders, TF code reads (or in this case "generates") input
-          w = tf.Variable(tf.truncated_normal([2, 1]), name='w')
-          y = tf.matmul(x, w, name='y')
-          global_step = tf.train.get_or_create_global_step()
-
-          cost = tf.reduce_mean(tf.square(y_ - y), name='cost')
-          optimizer = tf.train.GradientDescentOptimizer(0.5).minimize(cost, global_step)
-
-        with tf.train.MonitoredTrainingSession(master=server.target,
-                                               is_chief=(ctx.task_index == 0),
-                                               checkpoint_dir=args.model_dir) as sess:
-          step = 0
-          while not sess.should_stop() and step < args.steps:
-            opt, weights, step = sess.run([optimizer, w, global_step])
-            if (step % 100 == 0):
-              print("step: {}, weights: {}".format(step, weights))
-
-        # synchronize completion (via files) to allow time for all other nodes to complete
-        done_dir = "{}/done".format(args.model_dir)
-        tf.gfile.MakeDirs(done_dir)
-        with tf.gfile.GFile("{}/{}".format(done_dir, ctx.task_index), 'w') as f:
-          f.write("done!")
-
-        # wait up to 60s for other nodes to complete
-        for _ in range(60):
-          if len(tf.gfile.ListDirectory(done_dir)) < len(ctx.cluster_spec['worker']):
-            time.sleep(1)
-          else:
-            break
-        else:
-          raise Exception("timeout while waiting for other nodes")
-
-    def _tf_export(args):
-      """Creates an inference graph w/ placeholder and loads weights from checkpoint"""
-      import tensorflow as tf
-      from tensorflowonspark import TFNode
-
-      tf.reset_default_graph()                          # reset graph in case we're re-using a Spark python worker
-      x = tf.placeholder(tf.float32, [None, 2], name='x')
-      w = tf.Variable(tf.truncated_normal([2, 1]), name='w')
-      y = tf.matmul(x, w, name='y')
-      y2 = tf.square(y, name="y2")                      # extra/optional output for testing multiple output tensors
-      saver = tf.train.Saver()
-
-      with tf.Session() as sess:
-        # load graph from a checkpoint
-        ckpt = tf.train.get_checkpoint_state(args.model_dir)
-        assert ckpt and ckpt.model_checkpoint_path, "Invalid model checkpoint path: {}".format(args.model_dir)
-        saver.restore(sess, ckpt.model_checkpoint_path)
-
-        # exported signatures defined in code
-        signatures = {
-          'test_key': {
-            'inputs': {'features': x},
-            'outputs': {'prediction': y, 'pred2': y2},
-            'method_name': 'test'
-          }
-        }
-        TFNode.export_saved_model(sess, export_dir=args.export_dir, tag_set='test_tag', signatures=signatures)
+      # export saved_model
+      if ctx.job_name == 'chief' and args.export_dir:
+        print("model weights: {}".format(model.get_weights()))
+        print("exporting model to: {}".format(args.export_dir))
+        tf.keras.experimental.export_saved_model(model, args.export_dir)
 
     if name == 'spark/train':
       return _spark_train
     elif name == 'tf/train':
       return _tf_train
-    elif name == 'tf/export':
-      return _tf_export
     else:
-      raise "Unknown function name: {}".format(name)
+      raise Exception("Unknown function name: {}".format(name))
 
 
 if __name__ == '__main__':

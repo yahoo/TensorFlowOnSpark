@@ -23,15 +23,14 @@ from pyspark.ml.pipeline import Estimator, Model
 from pyspark.sql import Row, SparkSession
 
 import tensorflow as tf
-from tensorflow.contrib.saved_model.python.saved_model import reader
+# from tensorflow.contrib.saved_model.python.saved_model import reader
 from tensorflow.python.saved_model import loader
-from . import TFCluster, gpu_info, dfutil, util
+from tensorflow.python.tools import saved_model_utils
+from . import TFCluster, dfutil, util
 
 import argparse
 import copy
 import logging
-import os
-import subprocess
 import sys
 
 
@@ -110,6 +109,19 @@ class HasInputMode(Params):
 
   def getInputMode(self):
     return self.getOrDefault(self.input_mode)
+
+
+class HasMasterNode(Params):
+  master_node = Param(Params._dummy(), "master_node", "Job name of master/chief worker node", typeConverter=TypeConverters.toString)
+
+  def __init__(self):
+    super(HasMasterNode, self).__init__()
+
+  def setMasterNode(self, value):
+    return self._set(master_node=value)
+
+  def getMasterNode(self):
+    return self.getOrDefault(self.master_node)
 
 
 class HasModelDir(Params):
@@ -321,7 +333,7 @@ class TFParams(Params):
 
 
 class TFEstimator(Estimator, TFParams, HasInputMapping,
-                  HasClusterSize, HasNumPS, HasInputMode, HasProtocol, HasTensorboard, HasModelDir, HasExportDir, HasTFRecordDir,
+                  HasClusterSize, HasNumPS, HasInputMode, HasMasterNode, HasProtocol, HasTensorboard, HasModelDir, HasExportDir, HasTFRecordDir,
                   HasBatchSize, HasEpochs, HasReaders, HasSteps):
   """Spark ML Estimator which launches a TensorFlowOnSpark cluster for distributed training.
 
@@ -355,6 +367,7 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
                      num_ps=0,
                      driver_ps_nodes=False,
                      input_mode=TFCluster.InputMode.SPARK,
+                     master_node='chief',
                      protocol='grpc',
                      tensorboard=False,
                      model_dir=None,
@@ -398,7 +411,7 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
 
     tf_args = self.args.argv if self.args.argv else local_args
     cluster = TFCluster.run(sc, self.train_fn, tf_args, local_args.cluster_size, local_args.num_ps,
-                            local_args.tensorboard, local_args.input_mode, driver_ps_nodes=local_args.driver_ps_nodes)
+                            local_args.tensorboard, local_args.input_mode, master_node=local_args.master_node, driver_ps_nodes=local_args.driver_ps_nodes)
     if local_args.input_mode == TFCluster.InputMode.SPARK:
       # feed data, using a deterministic order for input columns (lexicographic by key)
       input_cols = sorted(self.getInputMapping())
@@ -493,6 +506,8 @@ def _run_model(iterator, args, tf_args):
   """
   single_node_env(tf_args)
 
+  tf.compat.v1.disable_eager_execution()
+
   logging.info("===== input_mapping: {}".format(args.input_mapping))
   logging.info("===== output_mapping: {}".format(args.output_mapping))
   input_tensor_names = [tensor for col, tensor in sorted(args.input_mapping.items())]
@@ -502,7 +517,7 @@ def _run_model(iterator, args, tf_args):
   if args.signature_def_key:
     assert args.export_dir, "Inferencing with signature_def_key requires --export_dir argument"
     logging.info("===== loading meta_graph_def for tag_set ({0}) from saved_model: {1}".format(args.tag_set, args.export_dir))
-    meta_graph_def = get_meta_graph_def(args.export_dir, args.tag_set)
+    meta_graph_def = saved_model_utils.get_meta_graph_def(args.export_dir, args.tag_set)
     signature = meta_graph_def.signature_def[args.signature_def_key]
     logging.debug("signature: {}".format(signature))
     inputs_tensor_info = signature.inputs
@@ -518,29 +533,22 @@ def _run_model(iterator, args, tf_args):
     sess = global_sess
   else:
     # otherwise, create new session and load graph from disk
-    tf.reset_default_graph()
-    sess = tf.Session(graph=tf.get_default_graph())
+    tf.compat.v1.reset_default_graph()
+    sess = tf.compat.v1.Session(graph=tf.compat.v1.get_default_graph())
     if args.export_dir:
       assert args.tag_set, "Inferencing from a saved_model requires --tag_set"
       # load graph from a saved_model
       logging.info("===== restoring from saved_model: {}".format(args.export_dir))
       loader.load(sess, args.tag_set.split(','), args.export_dir)
-    elif args.model_dir:
-      # load graph from a checkpoint
-      ckpt = tf.train.latest_checkpoint(args.model_dir)
-      assert ckpt, "Invalid model checkpoint path: {}".format(args.model_dir)
-      logging.info("===== restoring from checkpoint: {}".format(ckpt + ".meta"))
-      saver = tf.train.import_meta_graph(ckpt + ".meta", clear_devices=True)
-      saver.restore(sess, ckpt)
     else:
-      raise Exception("Inferencing requires either --model_dir or --export_dir argument")
+      raise Exception("Inferencing requires --export_dir argument")
     global_sess = sess
     global_args = args
 
   # get list of input/output tensors (by name)
   if args.signature_def_key:
     input_tensors = [inputs_tensor_info[t].name for t in input_tensor_names]
-    output_tensors = [outputs_tensor_info[t].name for t in output_tensor_names]
+    output_tensors = [outputs_tensor_info[output_tensor_names[0]].name]
   else:
     input_tensors = [t + ':0' for t in input_tensor_names]
     output_tensors = [t + ':0' for t in output_tensor_names]
@@ -579,26 +587,6 @@ def single_node_env(args):
   # setup ENV for Hadoop-compatibility and/or GPU allocation
   num_gpus = args.num_gpus if 'num_gpus' in args else 1
   util.single_node_env(num_gpus)
-
-
-def get_meta_graph_def(saved_model_dir, tag_set):
-  """Utility function to read a meta_graph_def from disk.
-
-  From `saved_model_cli.py <https://github.com/tensorflow/tensorflow/blob/8e0e8d41a3a8f2d4a6100c2ea1dc9d6c6c4ad382/tensorflow/python/tools/saved_model_cli.py#L186>`_
-
-  Args:
-    :saved_model_dir: path to saved_model.
-    :tag_set: list of string tags identifying the TensorFlow graph within the saved_model.
-
-  Returns:
-    A TensorFlow meta_graph_def, or raises an Exception otherwise.
-  """
-  saved_model = reader.read_saved_model(saved_model_dir)
-  set_of_tags = set(tag_set.split(','))
-  for meta_graph_def in saved_model.meta_graphs:
-    if set(meta_graph_def.meta_info_def.tags) == set_of_tags:
-      return meta_graph_def
-  raise RuntimeError("MetaGraphDef associated with tag-set {0} could not be found in SavedModel".format(tag_set))
 
 
 def yield_batch(iterable, batch_size, num_tensors=1):
