@@ -51,6 +51,7 @@ def main_fun(args, ctx):
   train_datasets = train_datasets_unbatched.batch(GLOBAL_BATCH_SIZE)
   with strategy.scope():
     multi_worker_model = build_and_compile_cnn_model()
+  multi_worker_model.fit(x=train_datasets, epochs=args.epochs, steps_per_epoch=args.steps_per_epoch)
 
   if ctx.job_name == 'chief':
     # multi_worker_model.save(args.model_dir, save_format='tf')
@@ -71,7 +72,7 @@ if __name__ == '__main__':
   parser.add_argument("--batch_size", help="number of records per batch", type=int, default=64)
   parser.add_argument("--buffer_size", help="size of shuffle buffer", type=int, default=10000)
   parser.add_argument("--cluster_size", help="number of nodes in the cluster", type=int, default=num_executors)
-  parser.add_argument("--epochs", help="number of epochs of training data", type=int, default=5)
+  parser.add_argument("--epochs", help="number of epochs of training data", type=int, default=3)
   parser.add_argument("--model_dir", help="path to save model/checkpoint", default="mnist_model")
   parser.add_argument("--steps_per_epoch", help="number of steps per epoch", type=int, default=469)
   parser.add_argument("--tensorboard", help="launch tensorboard process", action="store_true")
