@@ -49,13 +49,20 @@ def main_fun(args, ctx):
   # and now this becomes 128.
   GLOBAL_BATCH_SIZE = BATCH_SIZE * NUM_WORKERS
   train_datasets = train_datasets_unbatched.batch(GLOBAL_BATCH_SIZE)
+
+  # this fails
+  # callbacks = [tf.keras.callbacks.ModelCheckpoint(filepath=args.model_dir)]
+  tf.io.gfile.makedirs(args.model_dir)
+  filepath = args.model_dir + "/weights-{epoch:04d}"
+  callbacks = [tf.keras.callbacks.ModelCheckpoint(filepath=filepath, verbose=1, save_weights_only=True)]
+
   with strategy.scope():
     multi_worker_model = build_and_compile_cnn_model()
-  multi_worker_model.fit(x=train_datasets, epochs=args.epochs, steps_per_epoch=args.steps_per_epoch)
+  multi_worker_model.fit(x=train_datasets, epochs=args.epochs, steps_per_epoch=args.steps_per_epoch, callbacks=callbacks)
 
   if ctx.job_name == 'chief':
     # multi_worker_model.save(args.model_dir, save_format='tf')
-    tf.keras.experimental.export_saved_model(multi_worker_model, args.model_dir)
+    tf.keras.experimental.export_saved_model(multi_worker_model, args.export_dir)
 
 
 if __name__ == '__main__':
@@ -74,6 +81,7 @@ if __name__ == '__main__':
   parser.add_argument("--cluster_size", help="number of nodes in the cluster", type=int, default=num_executors)
   parser.add_argument("--epochs", help="number of epochs of training data", type=int, default=3)
   parser.add_argument("--model_dir", help="path to save model/checkpoint", default="mnist_model")
+  parser.add_argument("--export_dir", help="path to export saved_model", default="mnist_export")
   parser.add_argument("--steps_per_epoch", help="number of steps per epoch", type=int, default=469)
   parser.add_argument("--tensorboard", help="launch tensorboard process", action="store_true")
 
