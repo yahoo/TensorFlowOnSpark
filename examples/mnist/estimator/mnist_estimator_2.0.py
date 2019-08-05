@@ -26,7 +26,12 @@ def main(args, ctx):
     if input_context:
       mnist_dataset = mnist_dataset.shard(input_context.num_input_pipelines,
                                           input_context.input_pipeline_id)
-    return mnist_dataset.repeat(2).map(scale).shuffle(BUFFER_SIZE).batch(BATCH_SIZE)
+    return mnist_dataset.repeat(args.epochs).map(scale).shuffle(BUFFER_SIZE).batch(BATCH_SIZE)
+
+  def serving_input_receiver_fn():
+    features = tf.compat.v1.placeholder(dtype=tf.float32, shape=[None, 28, 28, 1], name='features')
+    receiver_tensors = {'features': features}
+    return tf.estimator.export.ServingInputReceiver(receiver_tensors, receiver_tensors)
 
   def model_fn(features, labels, mode):
     model = tf.keras.Sequential([
@@ -40,7 +45,7 @@ def main(args, ctx):
 
     if mode == tf.estimator.ModeKeys.PREDICT:
       predictions = {'logits': logits}
-      return tf.estimator.EstimatorSpec(labels=labels, predictions=predictions)
+      return tf.estimator.EstimatorSpec(mode, predictions=predictions)
 
     optimizer = tf.compat.v1.train.GradientDescentOptimizer(
         learning_rate=LEARNING_RATE)
@@ -62,11 +67,18 @@ def main(args, ctx):
   classifier = tf.estimator.Estimator(
       model_fn=model_fn, model_dir=args.model_dir, config=config)
 
+  # exporter = tf.estimator.FinalExporter("serving", serving_input_receiver_fn=serving_input_receiver_fn)
+
   tf.estimator.train_and_evaluate(
       classifier,
       train_spec=tf.estimator.TrainSpec(input_fn=input_fn),
       eval_spec=tf.estimator.EvalSpec(input_fn=input_fn)
+      # eval_spec=tf.estimator.EvalSpec(input_fn=input_fn, exporters=exporter)
   )
+
+  if ctx.job_name == 'chief':
+    print("========== exporting saved_model to {}".format(args.export_dir))
+    classifier.export_saved_model(args.export_dir, serving_input_receiver_fn)
 
 
 if __name__ == "__main__":
@@ -85,12 +97,14 @@ if __name__ == "__main__":
   parser.add_argument("--batch_size", help="number of records per batch", type=int, default=64)
   parser.add_argument("--buffer_size", help="size of shuffle buffer", type=int, default=10000)
   parser.add_argument("--cluster_size", help="number of nodes in the cluster", type=int, default=num_executors)
-  parser.add_argument("--learning_rate", help="learning rate", type=float, default=1e-4)
-  parser.add_argument("--model_dir", help="path to save model/checkpoint", default="mnist_model")
+  parser.add_argument("--epochs", help="number of epochs", type=int, default=2)
+  parser.add_argument("--learning_rate", help="learning rate", type=float, default=1e-3)
+  parser.add_argument("--model_dir", help="path to save checkpoint", default="mnist_model")
+  parser.add_argument("--export_dir", help="path to export saved_model", default="mnist_export")
   parser.add_argument("--tensorboard", help="launch tensorboard process", action="store_true")
 
   args = parser.parse_args()
   print("args:", args)
 
-  cluster = TFCluster.run(sc, main, args, args.cluster_size, num_ps=0, tensorboard=args.tensorboard, input_mode=TFCluster.InputMode.TENSORFLOW, log_dir=args.model_dir, master_node='chief')
-  cluster.shutdown()
+  cluster = TFCluster.run(sc, main, args, args.cluster_size, num_ps=0, tensorboard=args.tensorboard, input_mode=TFCluster.InputMode.TENSORFLOW, log_dir=args.model_dir, master_node='chief', eval_node=True)
+  cluster.shutdown(grace_secs=120)

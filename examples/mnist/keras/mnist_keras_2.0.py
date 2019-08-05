@@ -54,7 +54,7 @@ def main_fun(args, ctx):
   # callbacks = [tf.keras.callbacks.ModelCheckpoint(filepath=args.model_dir)]
   tf.io.gfile.makedirs(args.model_dir)
   filepath = args.model_dir + "/weights-{epoch:04d}"
-  callbacks = [tf.keras.callbacks.ModelCheckpoint(filepath=filepath, verbose=1, save_weights_only=True)]
+  callbacks = [tf.keras.callbacks.ModelCheckpoint(filepath=filepath, verbose=1, load_weights_on_restart=True, save_weights_only=True)]
 
   with strategy.scope():
     multi_worker_model = build_and_compile_cnn_model()
@@ -79,7 +79,7 @@ if __name__ == '__main__':
   parser.add_argument("--batch_size", help="number of records per batch", type=int, default=64)
   parser.add_argument("--buffer_size", help="size of shuffle buffer", type=int, default=10000)
   parser.add_argument("--cluster_size", help="number of nodes in the cluster", type=int, default=num_executors)
-  parser.add_argument("--epochs", help="number of epochs of training data", type=int, default=3)
+  parser.add_argument("--epochs", help="number of epochs", type=int, default=3)
   parser.add_argument("--model_dir", help="path to save model/checkpoint", default="mnist_model")
   parser.add_argument("--export_dir", help="path to export saved_model", default="mnist_export")
   parser.add_argument("--steps_per_epoch", help="number of steps per epoch", type=int, default=469)
