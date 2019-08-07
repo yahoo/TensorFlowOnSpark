@@ -51,7 +51,7 @@ def main(args, ctx):
         learning_rate=LEARNING_RATE)
     loss = tf.keras.losses.SparseCategoricalCrossentropy(
         from_logits=True, reduction=tf.keras.losses.Reduction.NONE)(labels, logits)
-    loss = tf.reduce_sum(loss) * (1. / BATCH_SIZE)
+    loss = tf.reduce_sum(input_tensor=loss) * (1. / BATCH_SIZE)
     if mode == tf.estimator.ModeKeys.EVAL:
       return tf.estimator.EstimatorSpec(mode, loss=loss)
 

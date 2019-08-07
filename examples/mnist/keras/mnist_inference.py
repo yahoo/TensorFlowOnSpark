@@ -9,7 +9,7 @@
 # graph.  In these situations, we can use Spark to instantiate a single-node TensorFlow instance on each executor,
 # where each executor can independently load the model and inference on input data.
 #
-# Note: this particular example demonstrates use of `tf.data.Dataset` to read the input data for inferencing, 
+# Note: this particular example demonstrates use of `tf.data.Dataset` to read the input data for inferencing,
 # but it could also be adapted to just use an RDD of TFRecords from Spark.
 
 from __future__ import absolute_import
@@ -19,8 +19,6 @@ from __future__ import print_function
 import argparse
 import numpy as np
 import tensorflow as tf
-
-IMAGE_PIXELS = 28
 
 
 def inference(it, num_workers, args):
@@ -34,49 +32,37 @@ def inference(it, num_workers, args):
   # setup env for single-node TF
   util.single_node_env()
 
-  # load saved_model using default tag and signature
-  sess = tf.Session()
-  tf.saved_model.loader.load(sess, ['serve'], args.export)
+  # load saved_model
+  saved_model = tf.saved_model.load(args.export_dir, tags='serve')
+  predict = saved_model.signatures['serving_default']
 
   # parse function for TFRecords
   def parse_tfr(example_proto):
-    feature_def = {"label": tf.FixedLenFeature(10, tf.int64),
-                   "image": tf.FixedLenFeature(IMAGE_PIXELS * IMAGE_PIXELS, tf.int64)}
-    features = tf.parse_single_example(example_proto, feature_def)
-    norm = tf.constant(255, dtype=tf.float32, shape=(784,))
-    image = tf.div(tf.to_float(features['image']), norm)
-    label = tf.to_float(features['label'])
+    feature_def = {"label": tf.io.FixedLenFeature(1, tf.int64),
+                   "image": tf.io.FixedLenFeature(784, tf.int64)}
+    features = tf.io.parse_single_example(serialized=example_proto, features=feature_def)
+    image = tf.cast(features['image'], dtype=tf.float32) / 255.0
+    image = tf.reshape(image, [28, 28, 1])
+    label = tf.cast(features['label'], dtype=tf.float32)
     return (image, label)
 
   # define a new tf.data.Dataset (for inferencing)
   ds = tf.data.Dataset.list_files("{}/part-*".format(args.images_labels))
   ds = ds.shard(num_workers, worker_num)
-  ds = ds.interleave(tf.data.TFRecordDataset, cycle_length=1)
-  ds = ds.map(parse_tfr).batch(10)
-  iterator = ds.make_one_shot_iterator()
-  image_label = iterator.get_next(name='inf_image')
+  ds = ds.interleave(tf.data.TFRecordDataset)
+  ds = ds.map(parse_tfr)
+  ds = ds.batch(10)
 
   # create an output file per spark worker for the predictions
-  tf.gfile.MakeDirs(args.output)
-  output_file = tf.gfile.GFile("{}/part-{:05d}".format(args.output, worker_num), mode='w')
+  tf.io.gfile.makedirs(args.output)
+  output_file = tf.io.gfile.GFile("{}/part-{:05d}".format(args.output, worker_num), mode='w')
 
-  while True:
-    try:
-      # get images and labels from tf.data.Dataset
-      img, lbl = sess.run(['inf_image:0', 'inf_image:1'])
-
-      # inference by feeding these images and labels into the input tensors
-      # you can view the exported model signatures via:
-      #     saved_model_cli show --dir <export_dir> --all
-
-      # note that we feed directly into the graph tensors (bypassing the exported signatures)
-      # these tensors will be shown in the "name" field of the signature definitions
-
-      outputs = sess.run(['dense_2/Softmax:0'], feed_dict={'Placeholder:0': img})
-      for p in outputs[0]:
-        output_file.write("{}\n".format(np.argmax(p)))
-    except tf.errors.OutOfRangeError:
-      break
+  for batch in ds:
+    predictions = predict(conv2d_input=batch[0])
+    labels = np.reshape(batch[1], -1).astype(np.int)
+    preds = np.argmax(predictions['dense_1'], axis=1)
+    for x in zip(labels, preds):
+      output_file.write("{} {}\n".format(x[0], x[1]))
 
   output_file.close()
 
@@ -92,7 +78,7 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument("--cluster_size", help="number of nodes in the cluster (for S with labelspark Standalone)", type=int, default=num_executors)
   parser.add_argument('--images_labels', type=str, help='Directory for input images with labels')
-  parser.add_argument("--export", help="HDFS path to export model", type=str, default="mnist_export")
+  parser.add_argument("--export_dir", help="HDFS path to export model", type=str, default="mnist_export")
   parser.add_argument("--output", help="HDFS path to save predictions", type=str, default="predictions")
   args, _ = parser.parse_known_args()
   print("args: {}".format(args))
