@@ -1,12 +1,11 @@
 # MNIST using Keras
 
-Original Source: https://github.com/fchollet/keras/blob/master/examples/mnist_mlp.py
+Original Source: https://www.tensorflow.org/beta/tutorials/distribute/multi_worker_with_keras
 
-This is the MNIST Multi Layer Perceptron example from the [Keras examples](https://github.com/fchollet/keras/blob/master/examples), adapted for the `tf.estimator` API and TensorFlowOnSpark.
+This is the [Multi-worker Training with Keras](https://www.tensorflow.org/beta/tutorials/distribute/multi_worker_with_keras) example, adapted for TensorFlowOnSpark.
 
 Notes:
 - This example assumes that Spark, TensorFlow, and TensorFlowOnSpark are already installed.
-- InputMode.SPARK only supports feeding data from a single RDD, so the validation dataset/code is disabled in the corresponding example.
 
 #### Launch the Spark Standalone cluster
 
@@ -18,74 +17,81 @@ Notes:
 
     ${SPARK_HOME}/sbin/start-master.sh; ${SPARK_HOME}/sbin/start-slave.sh -c $CORES_PER_WORKER -m 3G ${MASTER}
 
-#### Run MNIST MLP using InputMode.TENSORFLOW
+#### Run using InputMode.TENSORFLOW
 
 In this mode, each worker will load the entire MNIST dataset into memory (automatically downloading the dataset if needed).
 
     # remove any old artifacts
     rm -rf ${TFoS_HOME}/mnist_model
+    rm -rf ${TFoS_HOME}/mnist_export
 
     # train and validate
     ${SPARK_HOME}/bin/spark-submit \
     --master ${MASTER} \
     --conf spark.cores.max=${TOTAL_CORES} \
     --conf spark.task.cpus=${CORES_PER_WORKER} \
-    --conf spark.executorEnv.JAVA_HOME="$JAVA_HOME" \
-    ${TFoS_HOME}/examples/mnist/keras/mnist_mlp_estimator.py \
+    ${TFoS_HOME}/examples/mnist/keras/mnist_tf.py \
     --cluster_size ${SPARK_WORKER_INSTANCES} \
-    --input_mode tf \
     --model_dir ${TFoS_HOME}/mnist_model \
-    --epochs 5 \
-    --tensorboard
+    --export_dir ${TFoS_HOME}/mnist_export
 
-#### Run MNIST MLP using InputMode.SPARK
 
-In this mode, Spark will distribute the MNIST dataset (as CSV) across the workers, so each of the two workers will see roughly half of the dataset per epoch.  Also note that InputMode.SPARK currently only supports a single input RDD, so the validation/test data is not used.
+#### Run using InputMode.SPARK
+
+In this mode, Spark will distribute the MNIST dataset (as CSV) across the workers, so each of the workers will see only a portion of the dataset per epoch.  Also note that InputMode.SPARK currently only supports a single input RDD, so the validation/test data is not used.
 
     # Convert the MNIST zip files into CSV (if not already done)
     cd ${TFoS_HOME}
     ${SPARK_HOME}/bin/spark-submit \
     --master ${MASTER} \
+    --jars ${TFoS_HOME}/lib/tensorflow-hadoop-1.0-SNAPSHOT.jar \
     ${TFoS_HOME}/examples/mnist/mnist_data_setup.py \
-    --output ${TFoS_HOME}/mnist/csv \
-    --format csv
+    --output ${TFoS_HOME}/data/mnist
 
     # confirm that data was generated
-    ls -lR ${TFoS_HOME}/mnist/csv
+    ls -lR ${TFoS_HOME}/data/mnist/csv
 
     # remove any old artifacts
     rm -rf ${TFoS_HOME}/mnist_model
+    rm -rf ${TFoS_HOME}/mnist_export
 
     # train
     ${SPARK_HOME}/bin/spark-submit \
     --master ${MASTER} \
     --conf spark.cores.max=${TOTAL_CORES} \
     --conf spark.task.cpus=${CORES_PER_WORKER} \
-    --conf spark.executorEnv.JAVA_HOME="$JAVA_HOME" \
-    ${TFoS_HOME}/examples/mnist/keras/mnist_mlp_estimator.py \
+    ${TFoS_HOME}/examples/mnist/keras/mnist_spark.py \
     --cluster_size ${SPARK_WORKER_INSTANCES} \
-    --input_mode spark \
-    --images ${TFoS_HOME}/mnist/csv/train/images \
-    --labels ${TFoS_HOME}/mnist/csv/train/labels \
-    --epochs 5 \
+    --images_labels ${TFoS_HOME}/data/mnist/csv/train \
     --model_dir ${TFoS_HOME}/mnist_model \
-    --tensorboard
+    --export_dir ${TFoS_HOME}/mnist_export
 
 #### Inference via saved_model_cli
 
 The training code will automatically export a TensorFlow SavedModel, which can be used with the `saved_model_cli` from the command line, as follows:
 
     # path to the SavedModel export
-    export SAVED_MODEL=${TFoS_HOME}/mnist_model/export/serving/*
+    export MODEL_BASE=${TFoS_HOME}/mnist_export
+    export MODEL_VERSION=$(ls ${MODEL_BASE} | sort -n | tail -n 1)
+    export SAVED_MODEL=${MODEL_BASE}/${MODEL_VERSION}
 
     # use a CSV formatted test example
-    IMG=$(head -n 1 $TFoS_HOME/examples/mnist/csv/test/images/part-00000)
+    # converting from a flat list of 784 digits to a json array (28, 28, 1)
+    cat <<EOF >reshape.py
+    import sys
+    import numpy as np
+    vec = [int(x) for x in next(sys.stdin).split(',')]
+    img = np.reshape(vec[1:], (28, 28, 1))
+    print(np.array2string(img).replace('\n ', ','))
+    EOF
+
+    IMG=$(head -n 1 $TFoS_HOME/data/mnist/csv/test/part-00000 | python reshape.py)
 
     # introspect model
     saved_model_cli show --dir $SAVED_MODEL --all
 
     # inference via saved_model_cli
-    saved_model_cli run --dir $SAVED_MODEL --tag_set serve --signature_def serving_default --input_exp "dense_input=[[$IMG]]"
+    saved_model_cli run --dir $SAVED_MODEL --tag_set serve --signature_def serving_default --input_exp "conv2d_input=[$IMG]"
 
 #### Inference via TF-Serving
 
@@ -94,7 +100,7 @@ demonstrate the use of the REST API.  Also, [per the TensorFlow Serving instruct
 
     # Start the TF-Serving instance in a docker container
     docker pull tensorflow/serving
-    docker run -t --rm -p 8501:8501 -v "${TFoS_HOME}/mnist_model/export/serving:/models/mnist" -e MODEL_NAME=mnist tensorflow/serving &
+    docker run -t --rm -p 8501:8501 -v "${MODEL_BASE}:/models/mnist" -e MODEL_NAME=mnist tensorflow/serving &
 
     # GET model status
     curl http://localhost:8501/v1/models/mnist
@@ -103,7 +109,7 @@ demonstrate the use of the REST API.  Also, [per the TensorFlow Serving instruct
     curl http://localhost:8501/v1/models/mnist/metadata
 
     # POST example for inferencing
-    curl -v -d "{\"instances\": [ {\"dense_input\": [$IMG] } ]}" -X POST http://localhost:8501/v1/models/mnist:predict
+    curl -v -d "{\"instances\": [ {\"conv2d_input\": $IMG } ]}" -X POST http://localhost:8501/v1/models/mnist:predict
 
     # Stop the TF-Serving container
     docker stop $(docker ps -q)
@@ -117,11 +123,15 @@ For batch inferencing use cases, you can use Spark to run multiple single-node T
 
     # inference
     ${SPARK_HOME}/bin/spark-submit \
-    --master $MASTER ${TFoS_HOME}/examples/mnist/keras/mnist_inference.py \
-    --cluster_size 3 \
-    --images_labels ${TFoS_HOME}/mnist/tfr/test \
-    --export ${TFoS_HOME}/mnist_model/export/serving/* \
+    --master ${MASTER} \
+    --conf spark.cores.max=${TOTAL_CORES} \
+    --conf spark.task.cpus=${CORES_PER_WORKER} \
+    ${TFoS_HOME}/examples/mnist/keras/mnist_inference.py \
+    --cluster_size ${SPARK_WORKER_INSTANCES} \
+    --images_labels ${TFoS_HOME}/data/mnist/tfr/test \
+    --export_dir ${TFoS_HOME}/mnist_export \
     --output ${TFoS_HOME}/predictions
+
 
 #### Shutdown the Spark Standalone cluster
 

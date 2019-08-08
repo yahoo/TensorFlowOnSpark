@@ -56,11 +56,13 @@ def main_fun(args, ctx):
     multi_worker_model = build_and_compile_cnn_model()
   multi_worker_model.fit(x=ds, epochs=args.epochs, steps_per_epoch=args.steps_per_epoch, callbacks=callbacks)
 
-  tf_feed.terminate()
-
   if ctx.job_name == 'chief':
+    from tensorflow_estimator.python.estimator.export import export_lib
+    export_dir = export_lib.get_timestamped_export_dir(args.export_dir)
+    tf.keras.experimental.export_saved_model(multi_worker_model, export_dir)
     # multi_worker_model.save(args.model_dir, save_format='tf')
-    tf.keras.experimental.export_saved_model(multi_worker_model, args.export_dir)
+
+  tf_feed.terminate()
 
 
 if __name__ == '__main__':
@@ -78,7 +80,7 @@ if __name__ == '__main__':
   parser.add_argument("--cluster_size", help="number of nodes in the cluster", type=int, default=num_executors)
   parser.add_argument("--epochs", help="number of epochs", type=int, default=3)
   parser.add_argument("--images_labels", help="path to MNIST images and labels in parallelized format")
-  parser.add_argument("--model_dir", help="path to save model/checkpoint", default="mnist_model")
+  parser.add_argument("--model_dir", help="path to save checkpoint", default="mnist_model")
   parser.add_argument("--export_dir", help="path to export saved_model", default="mnist_export")
   parser.add_argument("--steps_per_epoch", help="number of steps per epoch", type=int, default=469)
   parser.add_argument("--tensorboard", help="launch tensorboard process", action="store_true")

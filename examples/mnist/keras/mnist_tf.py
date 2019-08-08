@@ -61,8 +61,10 @@ def main_fun(args, ctx):
   multi_worker_model.fit(x=train_datasets, epochs=args.epochs, steps_per_epoch=args.steps_per_epoch, callbacks=callbacks)
 
   if ctx.job_name == 'chief':
+    from tensorflow_estimator.python.estimator.export import export_lib
+    export_dir = export_lib.get_timestamped_export_dir(args.export_dir)
+    tf.keras.experimental.export_saved_model(multi_worker_model, export_dir)
     # multi_worker_model.save(args.model_dir, save_format='tf')
-    tf.keras.experimental.export_saved_model(multi_worker_model, args.export_dir)
 
 
 if __name__ == '__main__':
