@@ -13,7 +13,7 @@ Notes:
     export SPARK_WORKER_INSTANCES=3
     export CORES_PER_WORKER=1
     export TOTAL_CORES=$((${CORES_PER_WORKER}*${SPARK_WORKER_INSTANCES}))
-    export TFoS_HOME=<path to TensorFlowOnSpark>
+    export TFoS_HOME=<path/to/TensorFlowOnSpark>
 
     ${SPARK_HOME}/sbin/start-master.sh; ${SPARK_HOME}/sbin/start-slave.sh -c $CORES_PER_WORKER -m 3G ${MASTER}
 
@@ -34,7 +34,6 @@ In this mode, each worker will load the entire MNIST dataset into memory (automa
     --cluster_size ${SPARK_WORKER_INSTANCES} \
     --model_dir ${TFoS_HOME}/mnist_model \
     --export_dir ${TFoS_HOME}/mnist_export
-
 
 #### Run using InputMode.SPARK
 

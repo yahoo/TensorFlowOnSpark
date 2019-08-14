@@ -50,6 +50,7 @@ class TFNodeContext:
     self.job_name = job_name
     self.task_index = task_index
     self.cluster_spec = cluster_spec
+    self.num_workers = sum([len(v) for k, v in cluster_spec.items() if k == 'master' or k == 'chief' or k == 'worker'])
     self.defaultFS = defaultFS
     self.working_dir = working_dir
     self.mgr = mgr

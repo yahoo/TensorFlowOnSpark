@@ -62,7 +62,7 @@ def main(args, ctx):
             loss, tf.compat.v1.train.get_or_create_global_step()))
 
   strategy = tf.distribute.experimental.MultiWorkerMirroredStrategy()
-  config = tf.estimator.RunConfig(train_distribute=strategy)
+  config = tf.estimator.RunConfig(train_distribute=strategy, save_checkpoints_steps=100)
 
   classifier = tf.estimator.Estimator(
       model_fn=model_fn, model_dir=args.model_dir, config=config)
@@ -97,8 +97,8 @@ if __name__ == "__main__":
   parser.add_argument("--batch_size", help="number of records per batch", type=int, default=64)
   parser.add_argument("--buffer_size", help="size of shuffle buffer", type=int, default=10000)
   parser.add_argument("--cluster_size", help="number of nodes in the cluster", type=int, default=num_executors)
-  parser.add_argument("--epochs", help="number of epochs", type=int, default=2)
-  parser.add_argument("--learning_rate", help="learning rate", type=float, default=1e-3)
+  parser.add_argument("--epochs", help="number of epochs", type=int, default=3)
+  parser.add_argument("--learning_rate", help="learning rate", type=float, default=1e-4)
   parser.add_argument("--model_dir", help="path to save checkpoint", default="mnist_model")
   parser.add_argument("--export_dir", help="path to export saved_model", default="mnist_export")
   parser.add_argument("--tensorboard", help="launch tensorboard process", action="store_true")

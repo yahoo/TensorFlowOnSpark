@@ -54,7 +54,11 @@ def main_fun(args, ctx):
 
   with strategy.scope():
     multi_worker_model = build_and_compile_cnn_model()
-  multi_worker_model.fit(x=ds, epochs=args.epochs, steps_per_epoch=args.steps_per_epoch, callbacks=callbacks)
+
+  steps_per_epoch = 60000 / args.batch_size
+  steps_per_epoch_per_worker = steps_per_epoch / ctx.num_workers
+
+  multi_worker_model.fit(x=ds, epochs=args.epochs, steps_per_epoch=steps_per_epoch_per_worker, callbacks=callbacks)
 
   if ctx.job_name == 'chief':
     from tensorflow_estimator.python.estimator.export import export_lib
@@ -62,6 +66,7 @@ def main_fun(args, ctx):
     tf.keras.experimental.export_saved_model(multi_worker_model, export_dir)
     # multi_worker_model.save(args.model_dir, save_format='tf')
 
+  # terminating feed tells spark to skip processing further partitions
   tf_feed.terminate()
 
 
@@ -82,7 +87,6 @@ if __name__ == '__main__':
   parser.add_argument("--images_labels", help="path to MNIST images and labels in parallelized format")
   parser.add_argument("--model_dir", help="path to save checkpoint", default="mnist_model")
   parser.add_argument("--export_dir", help="path to export saved_model", default="mnist_export")
-  parser.add_argument("--steps_per_epoch", help="number of steps per epoch", type=int, default=469)
   parser.add_argument("--tensorboard", help="launch tensorboard process", action="store_true")
 
   args = parser.parse_args()
@@ -92,6 +96,7 @@ if __name__ == '__main__':
   def parse(ln):
     vec = [int(x) for x in ln.split(',')]
     return (vec[1:], vec[0])
+
   images_labels = sc.textFile(args.images_labels).map(parse)
 
   cluster = TFCluster.run(sc, main_fun, args, args.cluster_size, num_ps=0, tensorboard=args.tensorboard, input_mode=TFCluster.InputMode.SPARK, master_node='chief')
