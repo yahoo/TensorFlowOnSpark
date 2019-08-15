@@ -17,7 +17,7 @@ Notes:
 
     ${SPARK_HOME}/sbin/start-master.sh; ${SPARK_HOME}/sbin/start-slave.sh -c $CORES_PER_WORKER -m 3G ${MASTER}
 
-#### Run using InputMode.TENSORFLOW
+#### Train via InputMode.TENSORFLOW
 
 In this mode, each worker will load the entire MNIST dataset into memory (automatically downloading the dataset if needed).
 
@@ -35,7 +35,7 @@ In this mode, each worker will load the entire MNIST dataset into memory (automa
     --model_dir ${TFoS_HOME}/mnist_model \
     --export_dir ${TFoS_HOME}/mnist_export
 
-#### Run using InputMode.SPARK
+#### Train via InputMode.SPARK
 
 In this mode, Spark will distribute the MNIST dataset (as CSV) across the workers, so each of the workers will see only a portion of the dataset per epoch.  Also note that InputMode.SPARK currently only supports a single input RDD, so the validation/test data is not used.
 
@@ -113,7 +113,7 @@ demonstrate the use of the REST API.  Also, [per the TensorFlow Serving instruct
     # Stop the TF-Serving container
     docker stop $(docker ps -q)
 
-#### Run Parallel Inferencing via Spark
+#### Parallel Inferencing via Spark
 
 For batch inferencing use cases, you can use Spark to run multiple single-node TensorFlow instances in parallel (on the Spark executors).  Each executor/instance will operate independently on a shard of the dataset.  Note that this requires that the model fits in the memory of each executor.
 

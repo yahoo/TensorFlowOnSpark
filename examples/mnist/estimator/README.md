@@ -16,7 +16,7 @@ Note: this example assumes that Spark, TensorFlow, and TensorFlowOnSpark are alr
 
     ${SPARK_HOME}/sbin/start-master.sh; ${SPARK_HOME}/sbin/start-slave.sh -c $CORES_PER_WORKER -m 3G ${MASTER}
 
-#### Run using InputMode.TENSORFLOW
+#### Train via InputMode.TENSORFLOW
 
 In this mode, each worker will load the entire MNIST dataset into memory (automatically downloading the dataset if needed).
 
@@ -34,7 +34,7 @@ In this mode, each worker will load the entire MNIST dataset into memory (automa
     --model_dir ${TFoS_HOME}/mnist_model \
     --export_dir ${TFoS_HOME}/mnist_export
 
-#### Run using InputMode.SPARK
+#### Train via InputMode.SPARK
 
 In this mode, Spark will distribute the MNIST dataset (as CSV) across the workers, so each of the workers will see only a portion of the dataset per epoch.  Also note that InputMode.SPARK currently only supports a single input RDD, so the validation/test data is not used.
 
@@ -64,6 +64,69 @@ In this mode, Spark will distribute the MNIST dataset (as CSV) across the worker
     --model_dir ${TFoS_HOME}/mnist_model \
     --export_dir ${TFoS_HOME}/mnist_export
 
+#### Train via InputMode.SPARK with Spark Streaming
+
+Spark also includes a streaming mode, which allows you feed data to your Spark applications in an online/streaming mode vs. reading a static list of files from disk. In this mode, Spark watches a location on disk (or listens on a network port) for new data to arrive and batches the incoming data into a sequence of RDDs for your application.
+
+This example is essentially the same as the one above, except it replaces the Spark RDD with a Spark Streaming RDD (DStream).  Note that there is no final export to saved_model, since training is essentially ongoing.
+
+    # Convert the MNIST zip files into CSV (if not already done)
+    cd ${TFoS_HOME}
+    ${SPARK_HOME}/bin/spark-submit \
+    --master ${MASTER} \
+    --jars ${TFoS_HOME}/lib/tensorflow-hadoop-1.0-SNAPSHOT.jar \
+    ${TFoS_HOME}/examples/mnist/mnist_data_setup.py \
+    --output ${TFoS_HOME}/data/mnist
+
+    # confirm that data was generated
+    ls -lR ${TFoS_HOME}/data/mnist/csv
+
+    # create a folder for new streaming data to arrive
+    export STREAM_DATA=${TFoS_HOME}/data/stream
+    mkdir -p ${STREAM_DATA}
+
+    # create a temp folder to stage streaming data
+    export TEMP_DATA=${TFoS_HOME}/data/tmp
+    mkdir -p ${TEMP_DATA}
+
+    # remove any old artifacts
+    rm -rf ${TFoS_HOME}/mnist_model
+    rm ${STREAM_DATA}/*
+    rm ${TEMP_DATA}/*
+
+    # train
+    ${SPARK_HOME}/bin/spark-submit \
+    --master ${MASTER} \
+    --conf spark.cores.max=${TOTAL_CORES} \
+    --conf spark.task.cpus=${CORES_PER_WORKER} \
+    ${TFoS_HOME}/examples/mnist/estimator/mnist_spark_streaming.py \
+    --cluster_size ${SPARK_WORKER_INSTANCES} \
+    --images_labels ${TFoS_HOME}/data/stream \
+    --model_dir ${TFoS_HOME}/mnist_model
+
+    # in another shell window
+    export TFoS_HOME=<path/to/TensorFlowOnSpark>
+    export STREAM_DATA=${TFoS_HOME}/data/stream
+    export TEMP_DATA=${TFoS_HOME}/data/tmp
+
+    # wait for spark job to be RUNNING, then simulate arrival of NEW data in stream by:
+    # 1. making a copy of the data (to get a recent timestamp).
+    # 2. moving it into the stream folder atomically (to avoid spark picking up a partial file).
+    # for more info, see: http://spark.apache.org/docs/latest/streaming-programming-guide.html#basic-sources
+    # monitor the spark streaming logs after each command to view behavior.
+
+    COUNT=0
+    for f in ${TFoS_HOME}/data/mnist/csv/train/part-*; do cp $f ${TEMP_DATA}/$(basename $f | sed -e "s/[0-9][0-9]*/$COUNT/"); COUNT=$((COUNT + 1)); done; mv ${TEMP_DATA}/* ${STREAM_DATA}
+    for f in ${TFoS_HOME}/data/mnist/csv/train/part-*; do cp $f ${TEMP_DATA}/$(basename $f | sed -e "s/[0-9][0-9]*/$COUNT/"); COUNT=$((COUNT + 1)); done; mv ${TEMP_DATA}/* ${STREAM_DATA}
+    for f in ${TFoS_HOME}/data/mnist/csv/train/part-*; do cp $f ${TEMP_DATA}/$(basename $f | sed -e "s/[0-9][0-9]*/$COUNT/"); COUNT=$((COUNT + 1)); done; mv ${TEMP_DATA}/* ${STREAM_DATA}
+
+    # shutdown job via <ctrl-c> or `yarn application -kill <applicationId>`
+
+    # for a "graceful" shutdown, we provide the following tool to signal the SparkStreamingContext to stop.
+    # Note: the host and port of the reservation server will be in the driver logs, e.g.
+    # "listening for reservations at ('127.0.0.1', 38254)"
+    python ${TFoS_HOME}/examples/utils/stop_streaming.py <host> <port>
+
 #### Inference via saved_model_cli
 
 The training code will automatically export a TensorFlow SavedModel, which can be used with the `saved_model_cli` from the command line, as follows:
@@ -73,17 +136,8 @@ The training code will automatically export a TensorFlow SavedModel, which can b
     export MODEL_VERSION=$(ls ${MODEL_BASE} | sort -n | tail -n 1)
     export SAVED_MODEL=${MODEL_BASE}/${MODEL_VERSION}
 
-    # use a CSV formatted test example
-    # converting from a flat list of 784 digits to a json array (28, 28, 1)
-    cat <<EOF >reshape.py
-    import sys
-    import numpy as np
-    vec = [int(x) for x in next(sys.stdin).split(',')]
-    img = np.reshape(vec[1:], (28, 28, 1))
-    print(np.array2string(img).replace('\n ', ','))
-    EOF
-
-    IMG=$(head -n 1 $TFoS_HOME/data/mnist/csv/test/part-00000 | python reshape.py)
+    # use a CSV formatted test example (reshaping from [784] to [28, 28, 1])
+    IMG=$(head -n 1 $TFoS_HOME/data/mnist/csv/test/part-00000 | python ${TFoS_HOME}/examples/utils/mnist_reshape.py)
 
     # introspect model
     saved_model_cli show --dir $SAVED_MODEL --all
@@ -112,7 +166,7 @@ demonstrate the use of the REST API.  Also, [per the TensorFlow Serving instruct
     # Stop the TF-Serving container
     docker stop $(docker ps -q)
 
-#### Run Parallel Inferencing via Spark
+#### Parallel Inferencing via Spark
 
 For batch inferencing use cases, you can use Spark to run multiple single-node TensorFlow instances in parallel (on the Spark executors).  Each executor/instance will operate independently on a shard of the dataset.  Note that this requires that the model fits in the memory of each executor.
 
@@ -129,7 +183,6 @@ For batch inferencing use cases, you can use Spark to run multiple single-node T
     --images_labels ${TFoS_HOME}/data/mnist/tfr/test \
     --export_dir ${SAVED_MODEL} \
     --output ${TFoS_HOME}/predictions
-
 
 #### Shutdown the Spark Standalone cluster
 

@@ -6,7 +6,7 @@ Simple utility to shutdown a Spark StreamingContext by signaling the reservation
 Note: use the reservation server address (host, port) reported in the driver logs.
 """
 
-import reservation
+from tensorflowonspark import reservation
 import sys
 
 if __name__ == "__main__":
