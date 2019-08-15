@@ -74,17 +74,8 @@ The training code will automatically export a TensorFlow SavedModel, which can b
     export MODEL_VERSION=$(ls ${MODEL_BASE} | sort -n | tail -n 1)
     export SAVED_MODEL=${MODEL_BASE}/${MODEL_VERSION}
 
-    # use a CSV formatted test example
-    # converting from a flat list of 784 digits to a json array (28, 28, 1)
-    cat <<EOF >reshape.py
-    import sys
-    import numpy as np
-    vec = [int(x) for x in next(sys.stdin).split(',')]
-    img = np.reshape(vec[1:], (28, 28, 1))
-    print(np.array2string(img).replace('\n ', ','))
-    EOF
-
-    IMG=$(head -n 1 $TFoS_HOME/data/mnist/csv/test/part-00000 | python reshape.py)
+    # use a CSV formatted test example (reshaping from [784] to [28, 28, 1])
+    IMG=$(head -n 1 $TFoS_HOME/data/mnist/csv/test/part-00000 | python ${TFoS_HOME}/examples/utils/mnist_reshape.py)
 
     # introspect model
     saved_model_cli show --dir $SAVED_MODEL --all
