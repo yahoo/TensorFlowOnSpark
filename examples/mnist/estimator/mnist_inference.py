@@ -60,7 +60,7 @@ def inference(it, num_workers, args):
   for batch in ds:
     predictions = predict(features=batch[0])
     labels = np.reshape(batch[1], -1).astype(np.int)
-    preds = np.argmax(predictions['dense_1'], axis=1)
+    preds = np.argmax(predictions['logits'], axis=1)
     for x in zip(labels, preds):
       output_file.write("{} {}\n".format(x[0], x[1]))
 

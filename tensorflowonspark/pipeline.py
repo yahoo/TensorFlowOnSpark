@@ -5,12 +5,10 @@
 
 It provides a TFEstimator class to fit a TFModel using TensorFlow.  The TFEstimator will actually spawn a TensorFlowOnSpark cluster
 to conduct distributed training, but due to architectural limitations, the TFModel will only run single-node TensorFlow instances
-when inferencing on the executors.  The executors will run in parallel, but the TensorFlow model must fit in the memory
+when inferencing on the executors.  The executors will run in parallel, so the TensorFlow model must fit in the memory
 of each executor.
 
-There is also an option to provide a separate "export" function, which allows users to export a different graph for inferencing vs. training.
-This is useful when the training graph uses InputMode.TENSORFLOW with queue_runners, but the inferencing graph needs placeholders.
-And this is especially useful for exporting saved_models for TensorFlow Serving.
+
 """
 
 from __future__ import absolute_import
@@ -26,7 +24,7 @@ import tensorflow as tf
 # from tensorflow.contrib.saved_model.python.saved_model import reader
 from tensorflow.python.saved_model import loader
 from tensorflow.python.tools import saved_model_utils
-from . import TFCluster, dfutil, util
+from . import TFCluster, util
 
 import argparse
 import copy
@@ -83,6 +81,19 @@ class HasEpochs(Params):
 
   def getEpochs(self):
     return self.getOrDefault(self.epochs)
+
+
+class HasGraceSecs(Params):
+  grace_secs = Param(Params._dummy(), "grace_secs", "Number of seconds to wait after feeding data (for final tasks like exporting a saved_model)", typeConverter=TypeConverters.toInt)
+
+  def __init__(self):
+    super(HasGraceSecs, self).__init__()
+
+  def setGraceSecs(self, value):
+    return self._set(grace_secs=value)
+
+  def getGraceSecs(self):
+    return self.getOrDefault(self.grace_secs)
 
 
 class HasInputMapping(Params):
@@ -333,20 +344,17 @@ class TFParams(Params):
 
 
 class TFEstimator(Estimator, TFParams, HasInputMapping,
-                  HasClusterSize, HasNumPS, HasInputMode, HasMasterNode, HasProtocol, HasTensorboard, HasModelDir, HasExportDir, HasTFRecordDir,
+                  HasClusterSize, HasNumPS, HasInputMode, HasMasterNode, HasProtocol, HasGraceSecs,
+                  HasTensorboard, HasModelDir, HasExportDir, HasTFRecordDir,
                   HasBatchSize, HasEpochs, HasReaders, HasSteps):
   """Spark ML Estimator which launches a TensorFlowOnSpark cluster for distributed training.
 
   The columns of the DataFrame passed to the ``fit()`` method will be mapped to TensorFlow tensors according to the ``setInputMapping()`` method.
+  Since the Spark ML Estimator API inherently relies on DataFrames/DataSets, InputMode.TENSORFLOW is not supported.
 
   If an ``export_fn`` was provided to the constructor, it will be run on a single executor immediately after the distributed training has completed.
   This allows users to export a TensorFlow saved_model with a different execution graph for inferencing, e.g. replacing an input graph of
   TFReaders and QueueRunners with Placeholders.
-
-  For InputMode.TENSORFLOW, the input DataFrame will be exported as TFRecords to a temporary location specified by the ``tfrecord_dir``.
-  The TensorFlow application will then be expected to read directly from this location during training.  However, if the input DataFrame was
-  produced by the ``dfutil.loadTFRecords()`` method, i.e. originated from TFRecords on disk, then the `tfrecord_dir` will be set to the
-  original source location of the TFRecords with the additional export step.
 
   Args:
     :train_fn: TensorFlow "main" function for training.
@@ -357,10 +365,9 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
   train_fn = None
   export_fn = None
 
-  def __init__(self, train_fn, tf_args, export_fn=None):
+  def __init__(self, train_fn, tf_args):
     super(TFEstimator, self).__init__()
     self.train_fn = train_fn
-    self.export_fn = export_fn
     self.args = Namespace(tf_args)
     self._setDefault(input_mapping={},
                      cluster_size=1,
@@ -376,7 +383,8 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
                      batch_size=100,
                      epochs=1,
                      readers=1,
-                     steps=1000)
+                     steps=1000,
+                     grace_secs=30)
 
   def _fit(self, dataset):
     """Trains a TensorFlow model and returns a TFModel instance with the same args/params pointing to a checkpoint or saved_model on disk.
@@ -395,19 +403,7 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
     logging.info("===== 3. train args + params: {0}".format(local_args))
 
     if local_args.input_mode == TFCluster.InputMode.TENSORFLOW:
-      if dfutil.isLoadedDF(dataset):
-        # if just a DataFrame loaded from tfrecords, just point to original source path
-        logging.info("Loaded DataFrame of TFRecord.")
-        local_args.tfrecord_dir = dfutil.loadedDF[dataset]
-      else:
-        # otherwise, save as tfrecords and point to save path
-        assert local_args.tfrecord_dir, "Please specify --tfrecord_dir to export DataFrame to TFRecord."
-        if self.getInputMapping():
-          # if input mapping provided, filter only required columns before exporting
-          dataset = dataset.select(list(self.getInputMapping()))
-        logging.info("Exporting DataFrame {} as TFRecord to: {}".format(dataset.dtypes, local_args.tfrecord_dir))
-        dfutil.saveAsTFRecords(dataset, local_args.tfrecord_dir)
-        logging.info("Done saving")
+      raise Exception("InputMode.TENSORFLOW is not supported.")
 
     tf_args = self.args.argv if self.args.argv else local_args
     cluster = TFCluster.run(sc, self.train_fn, tf_args, local_args.cluster_size, local_args.num_ps,
@@ -416,19 +412,7 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
       # feed data, using a deterministic order for input columns (lexicographic by key)
       input_cols = sorted(self.getInputMapping())
       cluster.train(dataset.select(input_cols).rdd, local_args.epochs)
-    cluster.shutdown(grace_secs=30)
-
-    # Run export function, if provided
-    if self.export_fn:
-      assert local_args.export_dir, "Export function requires --export_dir to be set"
-      logging.info("Exporting saved_model (via export_fn) to: {}".format(local_args.export_dir))
-
-      def _export(iterator, fn, args):
-        single_node_env(args)
-        fn(args)
-
-      # Run on a single exeucutor
-      sc.parallelize([1], 1).foreachPartition(lambda it: _export(it, self.export_fn, tf_args))
+    cluster.shutdown(grace_secs=self.getGraceSecs())
 
     return self._copyValues(TFModel(self.args))
 
@@ -455,8 +439,8 @@ class TFModel(Model, TFParams,
                      batch_size=100,
                      model_dir=None,
                      export_dir=None,
-                     signature_def_key=None,
-                     tag_set=None)
+                     signature_def_key='serving_default',
+                     tag_set='serve')
 
   def _transform(self, dataset):
     """Transforms the input DataFrame by applying the _run_model() mapPartitions function.
@@ -488,13 +472,13 @@ class TFModel(Model, TFParams,
     return spark.createDataFrame(rows_out, output_cols)
 
 
-# global to each python worker process on the executors
-global_sess = None            # tf.Session cache
-global_args = None            # args provided to the _run_model() method.  Any change will invalidate the global_sess cache.
+# global on each python worker process on the executors
+pred_fn = None           # saved_model prediction function/signature.
+pred_args = None         # args provided to the _run_model() method.  Any change will invalidate the pred_fn.
 
 
 def _run_model(iterator, args, tf_args):
-  """mapPartitions function to run single-node inferencing from a checkpoint/saved_model, using the model's input/output mappings.
+  """mapPartitions function to run single-node inferencing from a saved_model, using input/output mappings.
 
   Args:
     :iterator: input RDD partition iterator.
@@ -506,68 +490,58 @@ def _run_model(iterator, args, tf_args):
   """
   single_node_env(tf_args)
 
-  tf.compat.v1.disable_eager_execution()
-
   logging.info("===== input_mapping: {}".format(args.input_mapping))
   logging.info("===== output_mapping: {}".format(args.output_mapping))
   input_tensor_names = [tensor for col, tensor in sorted(args.input_mapping.items())]
   output_tensor_names = [tensor for tensor, col in sorted(args.output_mapping.items())]
 
-  # if using a signature_def_key, get input/output tensor info from the requested signature
-  if args.signature_def_key:
-    assert args.export_dir, "Inferencing with signature_def_key requires --export_dir argument"
-    logging.info("===== loading meta_graph_def for tag_set ({0}) from saved_model: {1}".format(args.tag_set, args.export_dir))
-    meta_graph_def = saved_model_utils.get_meta_graph_def(args.export_dir, args.tag_set)
-    signature = meta_graph_def.signature_def[args.signature_def_key]
-    logging.debug("signature: {}".format(signature))
-    inputs_tensor_info = signature.inputs
-    logging.debug("inputs_tensor_info: {0}".format(inputs_tensor_info))
-    outputs_tensor_info = signature.outputs
-    logging.debug("outputs_tensor_info: {0}".format(outputs_tensor_info))
+  global pred_fn, pred_args
+
+  # cache saved_model pred_fn to avoid reloading the model for each partition
+  if not pred_fn or args != pred_args:
+    assert args.export_dir, "Inferencing requires --export_dir argument"
+    logging.info("===== loading saved_model from: {}".format(args.export_dir))
+    saved_model = tf.saved_model.load(args.export_dir, tags=args.tag_set)
+    logging.info("===== signature_def_key: {}".format(args.signature_def_key))
+    pred_fn = saved_model.signatures[args.signature_def_key]
+    pred_args = args
+
+  inputs_tensor_info = {i.name: i for i in pred_fn.inputs}
+  logging.info("===== inputs_tensor_info: {0}".format(inputs_tensor_info))
+  outputs_tensor_info = pred_fn.outputs
+  logging.info("===== outputs_tensor_info: {0}".format(outputs_tensor_info))
 
   result = []
 
-  global global_sess, global_args
-  if global_sess and global_args == args:
-    # if graph/session already loaded/started (and using same args), just reuse it
-    sess = global_sess
-  else:
-    # otherwise, create new session and load graph from disk
-    tf.compat.v1.reset_default_graph()
-    sess = tf.compat.v1.Session(graph=tf.compat.v1.get_default_graph())
-    if args.export_dir:
-      assert args.tag_set, "Inferencing from a saved_model requires --tag_set"
-      # load graph from a saved_model
-      logging.info("===== restoring from saved_model: {}".format(args.export_dir))
-      loader.load(sess, args.tag_set.split(','), args.export_dir)
-    else:
-      raise Exception("Inferencing requires --export_dir argument")
-    global_sess = sess
-    global_args = args
-
-  # get list of input/output tensors (by name)
-  if args.signature_def_key:
-    input_tensors = [inputs_tensor_info[t].name for t in input_tensor_names]
-    output_tensors = [outputs_tensor_info[output_tensor_names[0]].name]
-  else:
-    input_tensors = [t + ':0' for t in input_tensor_names]
-    output_tensors = [t + ':0' for t in output_tensor_names]
-
-  logging.info("input_tensors: {0}".format(input_tensors))
-  logging.info("output_tensors: {0}".format(output_tensors))
-
   # feed data in batches and return output tensors
   for tensors in yield_batch(iterator, args.batch_size, len(input_tensor_names)):
-    inputs_feed_dict = {}
-    for i in range(len(input_tensors)):
-      inputs_feed_dict[input_tensors[i]] = tensors[i]
+    inputs = {}
+    for i in range(len(input_tensor_names)):
+      name = input_tensor_names[i]
+      t = inputs_tensor_info[name + ":0"]
+      tensor = tf.constant(tensors[i], dtype=t.dtype)
+      # coerce shape if needed, since Spark only supports flat arrays
+      # and since saved_models don't encode tf.data operations
+      expected_shape = list(t.shape)
+      expected_shape[0] = tensor.shape[0]
+      if tensor.shape != expected_shape:
+        tensor = tf.reshape(tensor, expected_shape)
+      inputs[name] = tensor
 
-    outputs = sess.run(output_tensors, feed_dict=inputs_feed_dict)
-    lengths = [len(output) for output in outputs]
+    predictions = pred_fn(**inputs)
+    outputs = {k: v for k, v in predictions.items() if k in output_tensor_names}
+
+    # validate that all output sizes match input size
+    output_sizes = [len(v) for k, v in outputs.items()]
+
     input_size = len(tensors[0])
-    assert all([length == input_size for length in lengths]), "Output array sizes {} must match input size: {}".format(lengths, input_size)
-    python_outputs = [output.tolist() for output in outputs]      # convert from numpy to standard python types
-    result.extend(zip(*python_outputs))                           # convert to an array of tuples of "output columns"
+    assert all([osize == input_size for osize in output_sizes]), "Output array sizes {} must match input size: {}".format(output_sizes, input_size)
+
+    # convert to standard python types
+    python_outputs = [v.numpy().tolist() for k, v in outputs.items()]
+
+    # convert to an array of tuples of "output columns"
+    result.extend(zip(*python_outputs))
 
   return result
 

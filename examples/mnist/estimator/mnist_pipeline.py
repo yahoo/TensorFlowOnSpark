@@ -21,7 +21,6 @@ def main_fun(args, ctx):
       self.feed.terminate()
       self.feed.next_batch(1)
 
-  BUFFER_SIZE = args.buffer_size
   BATCH_SIZE = args.batch_size
   LEARNING_RATE = args.learning_rate
 
@@ -123,10 +122,16 @@ if __name__ == "__main__":
 
   from pyspark.context import SparkContext
   from pyspark.conf import SparkConf
-  from tensorflowonspark import TFCluster
+  from pyspark.sql import SparkSession
+  from pyspark.sql.functions import udf
+  from pyspark.sql.types import IntegerType
+  from tensorflowonspark import TFCluster, dfutil
+  from tensorflowonspark.pipeline import TFEstimator, TFModel
   import argparse
 
   sc = SparkContext(conf=SparkConf().setAppName("mnist_estimator"))
+  spark = SparkSession(sc)
+
   executors = sc._conf.get("spark.executor.instances")
   num_executors = int(executors) if executors is not None else 1
 
@@ -135,22 +140,57 @@ if __name__ == "__main__":
   parser.add_argument("--buffer_size", help="size of shuffle buffer", type=int, default=10000)
   parser.add_argument("--cluster_size", help="number of nodes in the cluster", type=int, default=num_executors)
   parser.add_argument("--epochs", help="number of epochs", type=int, default=3)
+  parser.add_argument("--format", help="example format: (csv|tfr)", choices=["csv", "tfr"], default="csv")
   parser.add_argument("--images_labels", help="path to MNIST images and labels in parallelized format")
   parser.add_argument("--learning_rate", help="learning rate", type=float, default=1e-3)
+  parser.add_argument("--mode", help="train|inference", choices=["train", "inference"], default="train")
   parser.add_argument("--model_dir", help="path to save checkpoint", default="mnist_model")
   parser.add_argument("--export_dir", help="path to export saved_model", default="mnist_export")
+  parser.add_argument("--output", help="HDFS path to save predictions", type=str, default="predictions")
   parser.add_argument("--tensorboard", help="launch tensorboard process", action="store_true")
 
   args = parser.parse_args()
   print("args:", args)
 
-  # create RDD of input data
-  def parse(ln):
-    vec = [int(x) for x in ln.split(',')]
-    return (vec[1:], vec[0])
+  if args.format == 'tfr':
+    # load TFRecords as a DataFrame
+    df = dfutil.loadTFRecords(sc, args.images_labels)
+  else:  # args.format == 'csv':
+    # create RDD of input data
+    def parse(ln):
+      vec = [int(x) for x in ln.split(',')]
+      return (vec[1:], vec[0])
 
-  images_labels = sc.textFile(args.images_labels).map(parse)
+    images_labels = sc.textFile(args.images_labels).map(parse)
+    df = spark.createDataFrame(images_labels, ['image', 'label'])
 
-  cluster = TFCluster.run(sc, main_fun, args, args.cluster_size, num_ps=0, tensorboard=args.tensorboard, input_mode=TFCluster.InputMode.SPARK, log_dir=args.model_dir, master_node='chief')
-  cluster.train(images_labels, args.epochs)
-  cluster.shutdown(grace_secs=120)  # allow time for the chief to export model after data feeding
+  df.show()
+
+  if args.mode == 'train':
+    estimator = TFEstimator(main_fun, args) \
+        .setInputMapping({'image': 'image', 'label': 'label'}) \
+        .setModelDir(args.model_dir) \
+        .setExportDir(args.export_dir) \
+        .setClusterSize(args.cluster_size) \
+        .setInputMode(TFCluster.InputMode.SPARK) \
+        .setTensorboard(args.tensorboard) \
+        .setEpochs(args.epochs) \
+        .setBatchSize(args.batch_size) \
+        .setGraceSecs(60)
+    model = estimator.fit(df)
+  else:  # args.mode == 'inference':
+    # using a trained/exported model
+    model = TFModel(args) \
+        .setInputMapping({'image': 'features'}) \
+        .setOutputMapping({'logits': 'prediction'}) \
+        .setExportDir(args.export_dir) \
+        .setBatchSize(args.batch_size)
+
+    def argmax_fn(l):
+      return max(range(len(l)), key=lambda i: l[i])
+
+    argmax = udf(argmax_fn, IntegerType())
+
+    preds = model.transform(df).withColumn('argmax', argmax('prediction'))
+    preds.show()
+    preds.write.json(args.output)

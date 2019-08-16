@@ -3,7 +3,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 
-def main(args, ctx):
+def main_fun(args, ctx):
   import numpy as np
   import tensorflow as tf
   import tensorflow_datasets as tfds
@@ -11,6 +11,7 @@ def main(args, ctx):
 
   tfds.disable_progress_bar()
 
+  BUFFER_SIZE = args.buffer_size
   BATCH_SIZE = args.batch_size
   LEARNING_RATE = args.learning_rate
 
@@ -137,7 +138,7 @@ if __name__ == "__main__":
   stream = ssc.textFileStream(args.images_labels)
   images_labels = stream.map(parse)
 
-  cluster = TFCluster.run(sc, main, args, args.cluster_size, num_ps=1, tensorboard=args.tensorboard, input_mode=TFCluster.InputMode.SPARK, log_dir=args.model_dir, master_node='chief')
+  cluster = TFCluster.run(sc, main_fun, args, args.cluster_size, num_ps=1, tensorboard=args.tensorboard, input_mode=TFCluster.InputMode.SPARK, log_dir=args.model_dir, master_node='chief')
   cluster.train(images_labels, feed_timeout=86400)  # extend feed timeout to 24hrs for streaming data to arrive
   ssc.start()
   cluster.shutdown(ssc)

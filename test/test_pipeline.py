@@ -1,12 +1,9 @@
 import numpy as np
 import os
-import scipy
 import shutil
 import test
-import time
 import unittest
 
-from tensorflowonspark import TFCluster, dfutil
 from tensorflowonspark.pipeline import HasBatchSize, HasSteps, Namespace, TFEstimator, TFParams
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Dense
@@ -91,12 +88,40 @@ class PipelineTest(test.SparkTest):
   def test_spark_saved_model(self):
     """InputMode.SPARK TFEstimator w/ explicit saved_model export for TFModel inferencing"""
 
+    def _spark_train(args, ctx):
+      """Basic linear regression in a distributed TF cluster using InputMode.SPARK"""
+      import tensorflow as tf
+      from tensorflowonspark import TFNode
+
+      tf.compat.v1.reset_default_graph()
+
+      model = Sequential()
+      model.add(Dense(1, activation='linear', input_shape=(2,)))
+      model.compile(optimizer=tf.keras.optimizers.Adam(lr=0.2), loss='mse', metrics=['mse'])
+      model.summary()
+
+      tf_feed = TFNode.DataFeed(ctx.mgr, input_mapping=args.input_mapping)
+      while not tf_feed.should_stop():
+        batch = tf_feed.next_batch(args.batch_size)
+        if args.input_mapping:
+          if len(batch['x']) > 0:
+            model.fit(np.array(batch['x']), np.array(batch['y_']))
+
+      if ctx.job_name == 'chief':
+        print("saving checkpoint to: {}".format(args.model_dir))
+        tf.saved_model.save(model, args.model_dir)
+        # model.save_weights(args.model_dir + "/model", overwrite=True, save_format='tf')
+
+        if args.export_dir:
+          print("exporting model to: {}".format(args.export_dir))
+          tf.keras.experimental.export_saved_model(model, args.export_dir)
+
     # create a Spark DataFrame of training examples (features, labels)
     trainDF = self.spark.createDataFrame(self.train_examples, ['col1', 'col2']).repartition(3)
 
     # train and export model
     args = {}
-    estimator = TFEstimator(self.get_function('spark/train'), args) \
+    estimator = TFEstimator(_spark_train, args) \
                   .setInputMapping({'col1': 'x', 'col2': 'y_'}) \
                   .setModelDir(self.model_dir) \
                   .setExportDir(self.export_dir) \
@@ -118,15 +143,6 @@ class PipelineTest(test.SparkTest):
     preds = model.transform(testDF).head()                  # take first/only result
     pred = preds.cout[0]                                    # unpack scalar from tensor
     expected = np.sum(self.weights)
-    self.assertAlmostEqual(pred, expected, 3)
-
-    # test saved_model using custom/direct mapping
-    model.setTagSet('serve') \
-          .setSignatureDefKey(None) \
-          .setInputMapping({'c1': 'dense_input'}) \
-          .setOutputMapping({'dense/BiasAdd': 'cout'})
-    preds = model.transform(testDF).head()                  # take first/only result
-    pred = preds.cout[0]                                    # unpack pred scalar from tensor
     self.assertAlmostEqual(pred, expected, 3)
 
 #  def test_spark_sparse_tensor(self):
@@ -204,130 +220,6 @@ class PipelineTest(test.SparkTest):
 #    test_df.show(5)
 #    preds = model.transform(test_df)
 #    preds.show(5)
-
-  def test_tf_column_filter(self):
-    """InputMode.TENSORFLOW TFEstimator saving temporary TFRecords, filtered by input_mapping columns"""
-
-    # create a Spark DataFrame of training examples (features, labels)
-    trainDF = self.spark.createDataFrame(self.train_examples, ['col1', 'col2'])
-
-    # and add some extra columns
-    df = trainDF.withColumn('extra1', trainDF.col1)
-    df = df.withColumn('extra2', trainDF.col2)
-    self.assertEqual(len(df.columns), 4)
-    df.show()
-
-    # train model on selected columns
-    args = {}
-    estimator = TFEstimator(self.get_function('tf/train'), args) \
-                  .setInputMapping({'col1': 'x', 'col2': 'y_'}) \
-                  .setInputMode(TFCluster.InputMode.TENSORFLOW) \
-                  .setExportDir(self.export_dir) \
-                  .setTFRecordDir(self.tfrecord_dir) \
-                  .setClusterSize(self.num_workers) \
-                  .setNumPS(1) \
-                  .setBatchSize(10)
-    estimator.fit(df)
-    self.assertTrue(os.path.isdir(self.export_dir))
-    self.assertTrue(os.path.isdir(self.tfrecord_dir))
-
-    # verify that temporarily-saved TFRecords have the columns we requested
-    df_tmp = dfutil.loadTFRecords(self.sc, self.tfrecord_dir)
-    df_tmp.show()
-
-    self.assertEqual(df_tmp.columns, ['col1', 'col2'])
-
-  def test_tf_saved_model(self):
-    """InputMode.TENSORFLOW TFEstimator w/ a separate saved_model export function to add placeholders for InputMode.SPARK TFModel inferencing"""
-
-    # create a Spark DataFrame of training examples (features, labels)
-    trainDF = self.spark.createDataFrame(self.train_examples, ['col1', 'col2'])
-
-    # train model
-    args = {}
-    estimator = TFEstimator(self.get_function('tf/train'), args) \
-                  .setInputMapping({'col1': 'x', 'col2': 'y_'}) \
-                  .setInputMode(TFCluster.InputMode.TENSORFLOW) \
-                  .setExportDir(self.export_dir) \
-                  .setTFRecordDir(self.tfrecord_dir) \
-                  .setClusterSize(self.num_workers) \
-                  .setNumPS(1) \
-                  .setBatchSize(10)
-    model = estimator.fit(trainDF)
-    self.assertTrue(os.path.isdir(self.export_dir))
-
-    # create a Spark DataFrame of test examples (features, labels)
-    testDF = self.spark.createDataFrame(self.test_examples, ['c1', 'c2'])
-
-    # test from saved_model
-    model.setTagSet('serve') \
-        .setSignatureDefKey('serving_default') \
-        .setInputMapping({'c1': 'dense_input'}) \
-        .setOutputMapping({'dense': 'cout'})
-    preds = model.transform(testDF).head()                # take first/only result, e.g. [ Row(cout=[4.758000373840332])]
-    pred1 = preds.cout[0]
-    self.assertAlmostEqual(pred1, np.sum(self.weights), 5)
-
-  def get_function(self, name):
-    """Returns a TF map_function for tests (required to avoid serializing the parent module/class)"""
-
-    def _spark_train(args, ctx):
-      """Basic linear regression in a distributed TF cluster using InputMode.SPARK"""
-      import tensorflow as tf
-      from tensorflowonspark import TFNode
-
-      model = Sequential()
-      model.add(Dense(1, activation='linear', input_shape=(2,)))
-      model.compile(optimizer=tf.keras.optimizers.Adam(lr=0.2), loss='mse', metrics=['mse'])
-      model.summary()
-
-      tf_feed = TFNode.DataFeed(ctx.mgr, input_mapping=args.input_mapping)
-      while not tf_feed.should_stop():
-        batch = tf_feed.next_batch(args.batch_size)
-        if args.input_mapping:
-          if len(batch['x']) > 0:
-            model.fit(np.array(batch['x']), np.array(batch['y_']))
-
-      if ctx.job_name == 'chief':
-        print("saving checkpoint to: {}".format(args.model_dir))
-        tf.saved_model.save(model, args.model_dir)
-        # model.save_weights(args.model_dir + "/model", overwrite=True, save_format='tf')
-
-        if args.export_dir:
-          print("exporting model to: {}".format(args.export_dir))
-          tf.keras.experimental.export_saved_model(model, args.export_dir)
-
-    def _tf_train(args, ctx):
-      """Basic linear regression in a distributed TF cluster using InputMode.TENSORFLOW"""
-      import tensorflow as tf
-
-      def _get_examples(num_rows, batch_size):
-        """Generate test data"""
-        for i in range(num_rows):
-          features = tf.random.uniform([batch_size, 2])     # (batch_size x 2)
-          weights = tf.constant([[3.14], [1.618]])          # (2, 1)
-          labels = tf.matmul(features, weights)
-          yield features, labels
-
-      model = Sequential()
-      model.add(Dense(1, activation='linear', input_shape=(2,)))
-      model.compile(optimizer=tf.keras.optimizers.Adam(lr=0.2), loss='mse', metrics=['mse'])
-      model.summary()
-
-      model.fit_generator(_get_examples(1000, 10), steps_per_epoch=100, epochs=5)
-
-      # export saved_model
-      if ctx.job_name == 'chief' and args.export_dir:
-        print("model weights: {}".format(model.get_weights()))
-        print("exporting model to: {}".format(args.export_dir))
-        tf.keras.experimental.export_saved_model(model, args.export_dir)
-
-    if name == 'spark/train':
-      return _spark_train
-    elif name == 'tf/train':
-      return _tf_train
-    else:
-      raise Exception("Unknown function name: {}".format(name))
 
 
 if __name__ == '__main__':

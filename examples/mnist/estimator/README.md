@@ -150,6 +150,9 @@ The training code will automatically export a TensorFlow SavedModel, which can b
 For online inferencing use cases, you can serve the SavedModel via a TensorFlow Serving instance as follows.  Note that TF-Serving provides both GRPC and REST APIs, but we will only
 demonstrate the use of the REST API.  Also, [per the TensorFlow Serving instructions](https://www.tensorflow.org/tfx/serving/docker), we will run the serving instance inside a Docker container.
 
+    # path to the SavedModel export
+    export MODEL_BASE=${TFoS_HOME}/mnist_export
+
     # Start the TF-Serving instance in a docker container
     docker pull tensorflow/serving
     docker run -t --rm -p 8501:8501 -v "${MODEL_BASE}:/models/mnist" -e MODEL_NAME=mnist tensorflow/serving &
@@ -170,6 +173,11 @@ demonstrate the use of the REST API.  Also, [per the TensorFlow Serving instruct
 
 For batch inferencing use cases, you can use Spark to run multiple single-node TensorFlow instances in parallel (on the Spark executors).  Each executor/instance will operate independently on a shard of the dataset.  Note that this requires that the model fits in the memory of each executor.
 
+    # path to the SavedModel export
+    export MODEL_BASE=${TFoS_HOME}/mnist_export
+    export MODEL_VERSION=$(ls ${MODEL_BASE} | sort -n | tail -n 1)
+    export SAVED_MODEL=${MODEL_BASE}/${MODEL_VERSION}
+
     # remove any old artifacts
     rm -Rf ${TFoS_HOME}/predictions
 
@@ -183,6 +191,60 @@ For batch inferencing use cases, you can use Spark to run multiple single-node T
     --images_labels ${TFoS_HOME}/data/mnist/tfr/test \
     --export_dir ${SAVED_MODEL} \
     --output ${TFoS_HOME}/predictions
+
+#### Train and Inference via Spark ML Pipeline API
+
+Spark also includes an [ML Pipelines API](https://spark.apache.org/docs/latest/ml-pipeline.html), built on Spark DataFrames and intended for ML applications.  Since this API is targeted towards building ML pipelines in Spark, only InputMode.SPARK is supported for this API.  However, a `dfutil` library is provided to read simple TFRecords into a Spark DataFrame.  Note that complex TFRecords are not supported, since they cannot be easily represented in Spark DataFrames.
+
+    # remove any old artifacts
+    rm -rf ${TFoS_HOME}/mnist_model
+    rm -rf ${TFoS_HOME}/mnist_export
+
+    # train w/ CSV
+    ${SPARK_HOME}/bin/spark-submit \
+    --master ${MASTER} \
+    --conf spark.cores.max=${TOTAL_CORES} \
+    --conf spark.task.cpus=${CORES_PER_WORKER} \
+    --conf spark.executorEnv.JAVA_HOME="$JAVA_HOME" \
+    --jars ${TFoS_HOME}/lib/tensorflow-hadoop-1.0-SNAPSHOT.jar \
+    ${TFoS_HOME}/examples/mnist/estimator/mnist_pipeline.py \
+    --cluster_size ${SPARK_WORKER_INSTANCES} \
+    --images_labels ${TFoS_HOME}/data/mnist/csv/train \
+    --format csv \
+    --mode train \
+    --model_dir ${TFoS_HOME}/mnist_model \
+    --export_dir ${TFoS_HOME}/mnist_export
+
+    # train with TFRecords
+    # --images_labels ${TFoS_HOME}/data/mnist/tfr/train \
+    # --format tfr \
+
+    # inference w/ CSV using exported saved_model
+    export MODEL_BASE=${TFoS_HOME}/mnist_export
+    export MODEL_VERSION=$(ls ${MODEL_BASE} | sort -n | tail -n 1)
+    export SAVED_MODEL=${MODEL_BASE}/${MODEL_VERSION}
+
+    # remove any old artifacts
+    rm -rf ${TFoS_HOME}/predictions
+
+    # inference with CSV
+    ${SPARK_HOME}/bin/spark-submit \
+    --master ${MASTER} \
+    --conf spark.cores.max=${TOTAL_CORES} \
+    --conf spark.task.cpus=${CORES_PER_WORKER} \
+    --conf spark.executorEnv.JAVA_HOME="$JAVA_HOME" \
+    --jars ${TFoS_HOME}/lib/tensorflow-hadoop-1.0-SNAPSHOT.jar \
+    ${TFoS_HOME}/examples/mnist/estimator/mnist_pipeline.py \
+    --cluster_size ${SPARK_WORKER_INSTANCES} \
+    --images_labels ${TFoS_HOME}/data/mnist/csv/test \
+    --format csv \
+    --mode inference \
+    --export_dir ${SAVED_MODEL} \
+    --output ${TFoS_HOME}/predictions
+
+    # inference with TFRecords
+    # --images_labels ${TFoS_HOME}/data/mnist/tfr/test \
+    # --format tfr \
 
 #### Shutdown the Spark Standalone cluster
 
