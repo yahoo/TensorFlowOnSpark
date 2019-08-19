@@ -143,7 +143,7 @@ class PipelineTest(test.SparkTest):
     preds = model.transform(testDF).head()                  # take first/only result
     pred = preds.cout[0]                                    # unpack scalar from tensor
     expected = np.sum(self.weights)
-    self.assertAlmostEqual(pred, expected, 3)
+    self.assertAlmostEqual(pred, expected, 2)
 
 #  def test_spark_sparse_tensor(self):
 #    """InputMode.SPARK feeding sparse tensors"""

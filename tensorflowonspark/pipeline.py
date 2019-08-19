@@ -21,9 +21,6 @@ from pyspark.ml.pipeline import Estimator, Model
 from pyspark.sql import Row, SparkSession
 
 import tensorflow as tf
-# from tensorflow.contrib.saved_model.python.saved_model import reader
-from tensorflow.python.saved_model import loader
-from tensorflow.python.tools import saved_model_utils
 from . import TFCluster, util
 
 import argparse
@@ -107,19 +104,6 @@ class HasInputMapping(Params):
 
   def getInputMapping(self):
     return self.getOrDefault(self.input_mapping)
-
-
-class HasInputMode(Params):
-  input_mode = Param(Params._dummy(), "input_mode", "Input data feeding mode (0=TENSORFLOW, 1=SPARK)", typeConverter=TypeConverters.toInt)
-
-  def __init__(self):
-    super(HasInputMode, self).__init__()
-
-  def setInputMode(self, value):
-    return self._set(input_mode=value)
-
-  def getInputMode(self):
-    return self.getOrDefault(self.input_mode)
 
 
 class HasMasterNode(Params):
@@ -344,7 +328,7 @@ class TFParams(Params):
 
 
 class TFEstimator(Estimator, TFParams, HasInputMapping,
-                  HasClusterSize, HasNumPS, HasInputMode, HasMasterNode, HasProtocol, HasGraceSecs,
+                  HasClusterSize, HasNumPS, HasMasterNode, HasProtocol, HasGraceSecs,
                   HasTensorboard, HasModelDir, HasExportDir, HasTFRecordDir,
                   HasBatchSize, HasEpochs, HasReaders, HasSteps):
   """Spark ML Estimator which launches a TensorFlowOnSpark cluster for distributed training.
@@ -352,14 +336,9 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
   The columns of the DataFrame passed to the ``fit()`` method will be mapped to TensorFlow tensors according to the ``setInputMapping()`` method.
   Since the Spark ML Estimator API inherently relies on DataFrames/DataSets, InputMode.TENSORFLOW is not supported.
 
-  If an ``export_fn`` was provided to the constructor, it will be run on a single executor immediately after the distributed training has completed.
-  This allows users to export a TensorFlow saved_model with a different execution graph for inferencing, e.g. replacing an input graph of
-  TFReaders and QueueRunners with Placeholders.
-
   Args:
     :train_fn: TensorFlow "main" function for training.
     :tf_args: Arguments specific to the TensorFlow "main" function.
-    :export_fn: TensorFlow function for exporting a saved_model.
   """
 
   train_fn = None
@@ -373,7 +352,6 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
                      cluster_size=1,
                      num_ps=0,
                      driver_ps_nodes=False,
-                     input_mode=TFCluster.InputMode.SPARK,
                      master_node='chief',
                      protocol='grpc',
                      tensorboard=False,
@@ -402,16 +380,12 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
     local_args = self.merge_args_params()
     logging.info("===== 3. train args + params: {0}".format(local_args))
 
-    if local_args.input_mode == TFCluster.InputMode.TENSORFLOW:
-      raise Exception("InputMode.TENSORFLOW is not supported.")
-
     tf_args = self.args.argv if self.args.argv else local_args
     cluster = TFCluster.run(sc, self.train_fn, tf_args, local_args.cluster_size, local_args.num_ps,
-                            local_args.tensorboard, local_args.input_mode, master_node=local_args.master_node, driver_ps_nodes=local_args.driver_ps_nodes)
-    if local_args.input_mode == TFCluster.InputMode.SPARK:
-      # feed data, using a deterministic order for input columns (lexicographic by key)
-      input_cols = sorted(self.getInputMapping())
-      cluster.train(dataset.select(input_cols).rdd, local_args.epochs)
+                            local_args.tensorboard, TFCluster.InputMode.SPARK, master_node=local_args.master_node, driver_ps_nodes=local_args.driver_ps_nodes)
+    # feed data, using a deterministic order for input columns (lexicographic by key)
+    input_cols = sorted(self.getInputMapping())
+    cluster.train(dataset.select(input_cols).rdd, local_args.epochs)
     cluster.shutdown(grace_secs=self.getGraceSecs())
 
     return self._copyValues(TFModel(self.args))
