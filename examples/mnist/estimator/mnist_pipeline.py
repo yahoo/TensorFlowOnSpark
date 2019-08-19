@@ -125,7 +125,7 @@ if __name__ == "__main__":
   from pyspark.sql import SparkSession
   from pyspark.sql.functions import udf
   from pyspark.sql.types import IntegerType
-  from tensorflowonspark import TFCluster, dfutil
+  from tensorflowonspark import dfutil
   from tensorflowonspark.pipeline import TFEstimator, TFModel
   import argparse
 
@@ -172,7 +172,6 @@ if __name__ == "__main__":
         .setModelDir(args.model_dir) \
         .setExportDir(args.export_dir) \
         .setClusterSize(args.cluster_size) \
-        .setInputMode(TFCluster.InputMode.SPARK) \
         .setTensorboard(args.tensorboard) \
         .setEpochs(args.epochs) \
         .setBatchSize(args.batch_size) \
