@@ -32,7 +32,7 @@
         <scalatest.version>3.0.5</scalatest.version>
         <scalatest-maven-plugin.version>1.0</scalatest-maven-plugin.version>
         <scopt.version>3.7.0</scopt.version>
-        <tensorflow.version>1.13.1</tensorflow.version>
+        <tensorflow.version>1.14.0</tensorflow.version>
     </properties>
     <dependencies>
         <dependency>
