@@ -1,100 +1,79 @@
-This folder contains the Keras implementation of the ResNet models. For more
-information about the models, please refer to this [README file](../../README.md).
+# ResNet Image Classification
 
-Similar to the [estimator implementation](../../r1/resnet), the Keras
-implementation has code for both CIFAR-10 data and ImageNet data. The CIFAR-10
-version uses a ResNet56 model implemented in
-[`resnet_cifar_model.py`](./resnet_cifar_model.py), and the ImageNet version
-uses a ResNet50 model implemented in [`resnet_model.py`](./resnet_model.py).
+Original Source: https://github.com/tensorflow/models/tree/master/official/vision/image_classification
 
-To use
-either dataset, make sure that you have the latest version of TensorFlow
-installed and
-[add the models folder to your Python path](/official/#running-the-models),
-otherwise you may encounter an error like `ImportError: No module named
-official.resnet`.
+This code is based on the Image Classification model from the official [TensorFlow Models](https://github.com/tensorflow/models) repository.  This example already supports different forms of distribution via the `DistributionStrategy` API, so there isn't much additional work to convert it to TensorFlowOnSpark.
 
-## CIFAR-10
+Notes: 
+- This example assumes that Spark, TensorFlow, and TensorFlowOnSpark are already installed.
+- For simplicity, this just uses a single-node Spark Standalone installation.
 
-Download and extract the CIFAR-10 data. You can use the following script:
-```bash
-python ../../r1/resnet/cifar10_download_and_extract.py
+#### Run the Single-Node Application
+
+First, make sure that you can run the example per the [original instructions](https://github.com/tensorflow/models/tree/68c3c65596b8fc624be15aef6eac3dc8952cbf23/official/vision/image_classification).  For now, we'll just use the CIFAR-10 dataset.  After cloning the `tensorflow/models` repository and downloading the dataset, you should be able to run the training as follows:
+```
+export TENSORFLOW_MODELS=/path/to/tensorflow/models
+export CIFAR_DATA=/path/to/cifar
+export PYTHONPATH=${PYTHONPATH}:${TENSORFLOW_MODELS}
+python resnet_cifar_main.py --data_dir=${CIFAR_DATA} --num_gpus=0 --train_epochs=1
 ```
 
-After you download the data, you can run the program by:
+If you have GPUs available, just set `--num_gpus` to the number of GPUs on your machine.  Note: by default, `--train_epochs=182`, which runs for a long time on a CPU machine, so for brevity, we'll just run a single epoch in these examples.
 
-```bash
-python resnet_cifar_main.py
+#### Run as a Distributed TensorFlow Application
+
+Next, confirm that this application is capable of being distributed.  We can test this on a single CPU machine by using two different terminal/shell sessions, as follows:
+```
+# in one shell/window
+export PYTHONPATH=${PYTHONPATH}:${TENSORFLOW_MODELS}
+export TF_CONFIG='{"cluster": { "worker": ["localhost:2222", "localhost:2223"]}, "task": {"type": "worker", "index": 0}}'
+python resnet_cifar_main.py --data_dir=${CIFAR_DATA} --num_gpus=0 --ds=multi_worker_mirrored --train_epochs=1
+
+# in another shell/window
+export PYTHONPATH=${PYTHONPATH}:${TENSORFLOW_MODELS}
+export TF_CONFIG='{"cluster": { "worker": ["localhost:2222", "localhost:2223"]}, "task": {"type": "worker", "index": 1}}'
+python resnet_cifar_main.py --data_dir=${CIFAR_DATA} --num_gpus=0 --ds=multi_worker_mirrored --train_epochs=1
 ```
 
-If you did not use the default directory to download the data, specify the
-location with the `--data_dir` flag, like:
+Note that we now configure the code to use the `MultiWorkerMirroredtrategy`.  Also note that training will not begin until both nodes have started.
 
-```bash
-python resnet_cifar_main.py --data_dir=/path/to/cifar
+### Run as a TensorFlowOnSpark Application
+
+Finally, we can run the converted application as follows:
+```
+export TFoS_HOME=/path/to/TensorFlowOnSpark
+export PYTHONPATH=${PYTHONPATH}:${TENSORFLOW_MODELS}
+export MASTER=spark://$(hostname):7077
+export SPARK_WORKER_INSTANCES=2
+export CORES_PER_WORKER=1
+export TOTAL_CORES=$((${CORES_PER_WORKER}*${SPARK_WORKER_INSTANCES}))
+
+# start spark cluster
+${SPARK_HOME}/sbin/start-master.sh; ${SPARK_HOME}/sbin/start-slave.sh -c $CORES_PER_WORKER -m 3G ${MASTER}
+
+# train and evaluate
+${SPARK_HOME}/bin/spark-submit \
+--master ${MASTER} \
+--conf spark.cores.max=${TOTAL_CORES} \
+--conf spark.task.cpus=${CORES_PER_WORKER} \
+--py-files ${TFoS_HOME}/examples/resnet/resnet_cifar_dist.py \
+${TFoS_HOME}/examples/resnet/resnet_cifar_spark.py \
+--cluster_size ${SPARK_WORKER_INSTANCES} \
+--epochs 1 \
+--data_dir /Users/leewyang/datasets/cifar10/cifar-10-batches-bin \
+--num_gpus=0 \
+--ds=multi_worker_mirrored \
+--train_epochs 1
+
+# shutdown spark
+${SPARK_HOME}/sbin/stop-slave.sh; ${SPARK_HOME}/sbin/stop-master.sh
 ```
 
-## ImageNet
-
-Download the ImageNet dataset and convert it to TFRecord format.
-The following [script](https://github.com/tensorflow/tpu/blob/master/tools/datasets/imagenet_to_gcs.py)
-and [README](https://github.com/tensorflow/tpu/tree/master/tools/datasets#imagenet_to_gcspy)
-provide a few options.
-
-Once your dataset is ready, you can begin training the model as follows:
-
-```bash
-python resnet_imagenet_main.py
-```
-
-Again, if you did not download the data to the default directory, specify the
-location with the `--data_dir` flag:
-
-```bash
-python resnet_imagenet_main.py --data_dir=/path/to/imagenet
-```
-
-There are more flag options you can specify. Here are some examples:
-
-- `--use_synthetic_data`: when set to true, synthetic data, rather than real
-data, are used;
-- `--batch_size`: the batch size used for the model;
-- `--model_dir`: the directory to save the model checkpoint;
-- `--train_epochs`: number of epoches to run for training the model;
-- `--train_steps`: number of steps to run for training the model. We now only
-support a number that is smaller than the number of batches in an epoch.
-- `--skip_eval`: when set to true, evaluation as well as validation during
-training is skipped
-
-For example, this is a typical command line to run with ImageNet data with
-batch size 128 per GPU:
-
-```bash
-python -m resnet_imagenet_main \
-    --model_dir=/tmp/model_dir/something \
-    --num_gpus=2 \
-    --batch_size=128 \
-    --train_epochs=90 \
-    --train_steps=10 \
-    --use_synthetic_data=false
-```
-
-See [`common.py`](common.py) for full list of options.
-
-## Using multiple GPUs
-You can train these models on multiple GPUs using `tf.distribute.Strategy` API.
-You can read more about them in this
-[guide](https://www.tensorflow.org/guide/distribute_strategy).
-
-In this example, we have made it easier to use is with just a command line flag
-`--num_gpus`. By default this flag is 1 if TensorFlow is compiled with CUDA,
-and 0 otherwise.
-
-- --num_gpus=0: Uses tf.distribute.OneDeviceStrategy with CPU as the device.
-- --num_gpus=1: Uses tf.distribute.OneDeviceStrategy with GPU as the device.
-- --num_gpus=2+: Uses tf.distribute.MirroredStrategy to run synchronous
-distributed training across the GPUs.
-
-If you wish to run without `tf.distribute.Strategy`, you can do so by setting
-`--distribution_strategy=off`.
-
+Notes:
+- Most of the original TensorFlow code from `resnet_cifar_main.py` has been copied into `resnet_cifar_dist.py`, so you can diff the changes.
+- The `def main(_)` function was changed to `def main_fun(argv, ctx)`.
+- The `absl_app.run(main)` invocation was replaced by the Spark "main" function in `resnet_cifar_spark.py`.  This file mostly contains the Spark application boilerplate along with the TensorFlowOnSpark calls to setup the TensorFlow cluster.  Note that having the separate Spark and TensorFlow files can help isolate code and avoid Spark serialization issues.
+- The Spark "main" function uses `argparse` to parse TensorFlowOnSpark-specific command line arguments, but it passes the remaining argments (in the `rem` variable) to the TensorFlow `main_fun`, which then parses those arguments via `define_cifar_flags()` and `flags.FLAGS(argv)`.
+- In a truly distributed environment, you would need:
+  - A distributed file system to store the dataset, so that each executor/node is able to read the data.
+  - The dependencies from the `tensorflow/models` to be available on the executors, either installed locally or bundled with the Spark application.
