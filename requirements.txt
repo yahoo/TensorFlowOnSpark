@@ -1,7 +1,8 @@
+h5py==2.9.0
 numpy>=1.14.0
 py4j
 pyspark
 scipy
 sphinx
 sphinx_rtd_theme
-tensorflow==2.0.0-beta1
+tensorflow==2.0.0rc0
