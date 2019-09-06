@@ -3,4 +3,5 @@ py4j
 pyspark
 scipy
 sphinx
+sphinx_rtd_theme
 tensorflow==2.0.0-beta1
