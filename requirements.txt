@@ -5,4 +5,4 @@ pyspark
 scipy
 sphinx
 sphinx_rtd_theme
-tensorflow==2.0.0rc0
+tensorflow==2.0.0b1
