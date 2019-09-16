@@ -94,30 +94,55 @@ class PipelineTest(test.SparkTest):
       from tensorflowonspark import TFNode
 
       tf.compat.v1.reset_default_graph()
+      strategy = tf.distribute.experimental.MultiWorkerMirroredStrategy()
 
-      model = Sequential()
-      model.add(Dense(1, activation='linear', input_shape=(2,)))
-      model.compile(optimizer=tf.keras.optimizers.Adam(lr=0.2), loss='mse', metrics=['mse'])
-      model.summary()
+      with strategy.scope():
+        model = Sequential()
+        model.add(Dense(1, activation='linear', input_shape=[2]))
+        model.compile(optimizer=tf.keras.optimizers.Adam(lr=0.2), loss='mse', metrics=['mse'])
+        model.summary()
 
       tf_feed = TFNode.DataFeed(ctx.mgr, input_mapping=args.input_mapping)
-      while not tf_feed.should_stop():
-        batch = tf_feed.next_batch(args.batch_size)
-        if args.input_mapping:
+
+      def rdd_generator():
+        while not tf_feed.should_stop():
+          batch = tf_feed.next_batch(1)
           if len(batch['x']) > 0:
-            model.fit(np.array(batch['x']), np.array(batch['y_']))
+            features = batch['x'][0]
+            label = batch['y_'][0]
+            yield (features, label)
+          else:
+            return
 
-      if ctx.job_name == 'chief':
-        print("saving checkpoint to: {}".format(args.model_dir))
-        tf.saved_model.save(model, args.model_dir)
-        # model.save_weights(args.model_dir + "/model", overwrite=True, save_format='tf')
+      ds = tf.data.Dataset.from_generator(rdd_generator, (tf.float32, tf.float32), (tf.TensorShape([2]), tf.TensorShape([1])))
+      ds = ds.batch(args.batch_size)
 
-        if args.export_dir:
-          print("exporting model to: {}".format(args.export_dir))
-          tf.keras.experimental.export_saved_model(model, args.export_dir)
+      # disable auto-sharding dataset
+      options = tf.data.Options()
+      options.experimental_distribute.auto_shard = False
+      ds = ds.with_options(options)
+
+      # only train 90% of each epoch to account for uneven RDD partition sizes
+      steps_per_epoch = 1000 * 0.9 // (args.batch_size * ctx.num_workers)
+
+      tf.io.gfile.makedirs(args.model_dir)
+      filepath = args.model_dir + "/weights-{epoch:04d}"
+      callbacks = [tf.keras.callbacks.ModelCheckpoint(filepath=filepath, verbose=1, load_weights_on_restart=True, save_weights_only=True)]
+
+      model.fit(ds, epochs=args.epochs, steps_per_epoch=steps_per_epoch, callbacks=callbacks)
+
+      # This fails with: "NotImplementedError: `fit_generator` is not supported for models compiled with tf.distribute.Strategy"
+      # model.fit_generator(ds, epochs=args.epochs, steps_per_epoch=steps_per_epoch, callbacks=callbacks)
+
+      if ctx.job_name == 'chief' and args.export_dir:
+        print("exporting model to: {}".format(args.export_dir))
+        tf.keras.experimental.export_saved_model(model, args.export_dir)
+
+      tf_feed.terminate()
 
     # create a Spark DataFrame of training examples (features, labels)
-    trainDF = self.spark.createDataFrame(self.train_examples, ['col1', 'col2']).repartition(3)
+    rdd = self.sc.parallelize(self.train_examples, 3)
+    trainDF = rdd.toDF(['col1', 'col2'])
 
     # train and export model
     args = {}
