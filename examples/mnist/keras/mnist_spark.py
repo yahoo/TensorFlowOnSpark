@@ -50,7 +50,7 @@ def main_fun(args, ctx):
   # callbacks = [tf.keras.callbacks.ModelCheckpoint(filepath=args.model_dir)]
   tf.io.gfile.makedirs(args.model_dir)
   filepath = args.model_dir + "/weights-{epoch:04d}"
-  callbacks = [tf.keras.callbacks.ModelCheckpoint(filepath=filepath, verbose=1, load_weights_on_restart=True, save_weights_only=True)]
+  callbacks = [tf.keras.callbacks.ModelCheckpoint(filepath=filepath, verbose=1, save_weights_only=True)]
 
   with strategy.scope():
     multi_worker_model = build_and_compile_cnn_model()

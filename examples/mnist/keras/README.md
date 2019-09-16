@@ -75,7 +75,7 @@ The training code will automatically export a TensorFlow SavedModel, which can b
     export SAVED_MODEL=${MODEL_BASE}/${MODEL_VERSION}
 
     # use a CSV formatted test example (reshaping from [784] to [28, 28, 1])
-    IMG=$(head -n 1 $TFoS_HOME/data/mnist/csv/test/part-00000 | python ${TFoS_HOME}/examples/utils/mnist_reshape.py)
+    IMG=$(head -n 1 ${TFoS_HOME}/data/mnist/csv/test/part-00000 | python ${TFoS_HOME}/examples/utils/mnist_reshape.py)
 
     # introspect model
     saved_model_cli show --dir $SAVED_MODEL --all
