@@ -35,9 +35,9 @@ matrix:
     script:
     - sphinx-build -b html docs/source docs/build/html
     - test/run_tests.sh
-  - language: java
-    dist: trusty
-    jdk: oraclejdk8
+#  - language: java
+#    dist: trusty
+#    jdk: oraclejdk8
 notifications:
   email: false
 deploy:
@@ -63,8 +63,8 @@ deploy:
 - provider: script
   script: mvn deploy -DskipTests --settings .travis.settings.xml
   skip_cleanup: true
-  on:
-    branch: master
-    jdk: oraclejdk8
-    tags: true
-    condition: "$TRAVIS_TAG =~ ^scala_.*$"
+#  on:
+#    branch: master
+#    jdk: oraclejdk8
+#    tags: true
+#    condition: "$TRAVIS_TAG =~ ^scala_.*$"
