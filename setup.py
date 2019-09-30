@@ -6,7 +6,7 @@ with open('README.md') as f:
 setup(
   name='tensorflowonspark',
   packages=['tensorflowonspark'],
-  version='1.4.3',
+  version='1.4.4',
   description='Deep learning with TensorFlow on Apache Spark clusters',
   long_description=long_description,
   long_description_content_type='text/markdown',
@@ -15,7 +15,6 @@ setup(
   keywords=['tensorflowonspark', 'tensorflow', 'spark', 'machine learning', 'yahoo'],
   license='Apache 2.0',
   classifiers=[
-    'Development Status :: 4 - Beta',
     'Intended Audience :: Developers',
     'Intended Audience :: Science/Research',
     'License :: OSI Approved :: Apache Software License',

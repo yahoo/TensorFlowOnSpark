@@ -1,0 +1,3 @@
+tests:
+  removed: warn
+  unlicensed: warn
