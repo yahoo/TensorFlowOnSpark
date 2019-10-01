@@ -20,10 +20,6 @@ export PATH=$SPARK_HOME/bin:$PATH
 export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 
 # Update Python
+# Note: TensorFlow 2.0.0 requires pip>19.0
 pip install --upgrade pip
 export PYTHONPATH=$(pwd)
-
-# Echo versions
-java -version
-pyspark --version
-python --version
