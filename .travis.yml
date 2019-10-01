@@ -4,8 +4,7 @@ matrix:
     python: 2.7
     dist: xenial
     before_install:
-    - source scripts/travis_install_spark.sh
-    - pip install --upgrade pip
+    - source scripts/travis_before_install.sh
     install:
     - pip install -r requirements.txt
     - pip install mock
@@ -15,8 +14,7 @@ matrix:
     python: 3.6
     dist: xenial
     before_install:
-    - source scripts/travis_install_spark.sh
-    - pip install --upgrade pip
+    - source scripts/travis_before_install.sh
     install:
     - pip install -r requirements.txt
     - pip list
