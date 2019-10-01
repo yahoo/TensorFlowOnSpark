@@ -1,8 +1,9 @@
-h5py==2.9.0
+h5py>=2.9.0
 numpy>=1.14.0
-py4j
+py4j==0.10.7
 pyspark
 scipy
+setuptools>=41.0.0
 sphinx
 sphinx_rtd_theme
 tensorflow>=2.0.0
