@@ -13,6 +13,7 @@ matrix:
     - export SPARK_CLASSPATH=./lib/tensorflow-hadoop-1.0-SNAPSHOT.jar
     - export PYTHONPATH=$(pwd)
     install:
+    - pip install --upgrade pip
     - pip install -r requirements.txt
     - pip install mock
     script:
@@ -30,6 +31,7 @@ matrix:
     - export SPARK_CLASSPATH=./lib/tensorflow-hadoop-1.0-SNAPSHOT.jar
     - export PYTHONPATH=$(pwd)
     install:
+    - pip install --upgrade pip
     - pip install -r requirements.txt
     - pip list
     script:
