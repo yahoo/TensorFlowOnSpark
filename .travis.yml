@@ -2,7 +2,7 @@ matrix:
   include:
   - language: python
     python: 2.7
-    dist: trusty
+    dist: xenial
     before_install:
     - curl -LO http://www-us.apache.org/dist/spark/spark-2.4.4/spark-2.4.4-bin-hadoop2.7.tgz
     - export SPARK_HOME=./spark
@@ -19,7 +19,7 @@ matrix:
     - test/run_tests.sh
   - language: python
     python: 3.6
-    dist: trusty
+    dist: xenial
     before_install:
     - curl -LO http://www-us.apache.org/dist/spark/spark-2.4.4/spark-2.4.4-bin-hadoop2.7.tgz
     - export SPARK_HOME=./spark
@@ -36,7 +36,7 @@ matrix:
     - sphinx-build -b html docs/source docs/build/html
     - test/run_tests.sh
 #  - language: java
-#    dist: trusty
+#    dist: xenial
 #    jdk: oraclejdk8
 notifications:
   email: false
