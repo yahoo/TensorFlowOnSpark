@@ -1,5 +1,5 @@
 <!--
-Copyright 2017 Yahoo Inc.
+Copyright 2019 Yahoo Inc.
 Licensed under the terms of the Apache 2.0 license.
 Please see LICENSE file in the project root for terms.
 -->
@@ -41,18 +41,22 @@ deep learning on our Hadoop clusters in Yahoo's private cloud.
 TensorFlowOnSpark provides some important benefits (see [our
 blog](http://yahoohadoop.tumblr.com/post/157196317141/open-sourcing-tensorflowonspark-distributed-deep))
 over alternative deep learning solutions.
-   * Easily migrate existing TensorFlow programs with <10 lines of code change
-   * Support all TensorFlow functionalities: synchronous/asynchronous training, model/data parallelism, inferencing and TensorBoard
-   * Server-to-server direct communication achieves faster learning when available
-   * Allow datasets on HDFS and other sources pushed by Spark or pulled by TensorFlow
-   * Easily integrate with your existing Spark data processing pipelines
+   * Easily migrate existing TensorFlow programs with <10 lines of code change.
+   * Support all TensorFlow functionalities: synchronous/asynchronous training, model/data parallelism, inferencing and TensorBoard.
+   * Server-to-server direct communication achieves faster learning when available.
+   * Allow datasets on HDFS and other sources pushed by Spark or pulled by TensorFlow.
+   * Easily integrate with your existing Spark data processing pipelines.
    * Easily deployed on cloud or on-premise and on CPUs or GPUs.
 
 ## Install
 
 TensorFlowOnSpark is provided as a pip package, which can be installed on single machines via:
 ```
+# for tensorflow>=2.0.0
 pip install tensorflowonspark
+
+# for tensorflow<2.0.0
+pip install tensorflowonspark==1.4.4
 ```
 
 For distributed clusters, please see our [wiki site](../../wiki) for detailed documentation for specific environments, such as our getting started guides for [single-node Spark Standalone](https://github.com/yahoo/TensorFlowOnSpark/wiki/GetStarted_Standalone), [YARN clusters](../../wiki/GetStarted_YARN) and [AWS EC2](../../wiki/GetStarted_EC2).  Note: the Windows operating system is not currently supported due to [this issue](https://github.com/yahoo/TensorFlowOnSpark/issues/36).
@@ -60,6 +64,8 @@ For distributed clusters, please see our [wiki site](../../wiki) for detailed do
 ## Usage
 
 To use TensorFlowOnSpark with an existing TensorFlow application, you can follow our [Conversion Guide](../../wiki/Conversion-Guide) to describe the required changes.  Additionally, our [wiki site](../../wiki) has pointers to some presentations which provide an overview of the platform.
+
+**Note: since TensorFlow 2.x breaks API compatibility with TensorFlow 1.x, the examples have been updated accordingly.  If you are using TensorFlow 1.x, you will need to checkout the `v1.4.4` tag for compatible examples and instructions.**
 
 ## API
 
@@ -70,7 +76,6 @@ To use TensorFlowOnSpark with an existing TensorFlow application, you can follow
 Please join the [TensorFlowOnSpark user group](https://groups.google.com/forum/#!forum/TensorFlowOnSpark-users) for discussions and questions.  If you have a question, please review our [FAQ](../../wiki/Frequently-Asked-Questions) before posting.
 
 Contributions are always welcome.  For more information, please see our [guide for getting involved](Contributing.md).
-
 
 ## License
 

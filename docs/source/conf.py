@@ -28,9 +28,9 @@ copyright = '2019, Yahoo Inc'
 author = 'Yahoo Inc'
 
 # The short X.Y version
-version = '1.4.4'
+version = '2.0.0'
 # The full version, including alpha/beta/rc tags
-release = '1.4.4'
+release = '2.0.0'
 
 
 # -- General configuration ---------------------------------------------------

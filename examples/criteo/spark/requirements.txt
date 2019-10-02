@@ -1,5 +1,0 @@
-mmh3
-tensorflow
-numpy
-scipy
-scikit-learn

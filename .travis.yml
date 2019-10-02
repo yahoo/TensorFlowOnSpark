@@ -2,16 +2,9 @@ matrix:
   include:
   - language: python
     python: 2.7
-    dist: trusty
+    dist: xenial
     before_install:
-    - curl -LO http://www-us.apache.org/dist/spark/spark-2.4.4/spark-2.4.4-bin-hadoop2.7.tgz
-    - export SPARK_HOME=./spark
-    - mkdir $SPARK_HOME
-    - tar -xf spark-2.4.4-bin-hadoop2.7.tgz -C $SPARK_HOME --strip-components=1
-    - export PATH=$SPARK_HOME/bin:$PATH
-    - export SPARK_LOCAL_IP=127.0.0.1
-    - export SPARK_CLASSPATH=./lib/tensorflow-hadoop-1.0-SNAPSHOT.jar
-    - export PYTHONPATH=$(pwd)
+    - source scripts/travis_before_install.sh
     install:
     - pip install -r requirements.txt
     - pip install mock
@@ -19,25 +12,15 @@ matrix:
     - test/run_tests.sh
   - language: python
     python: 3.6
-    dist: trusty
+    dist: xenial
     before_install:
-    - curl -LO http://www-us.apache.org/dist/spark/spark-2.4.4/spark-2.4.4-bin-hadoop2.7.tgz
-    - export SPARK_HOME=./spark
-    - mkdir $SPARK_HOME
-    - tar -xf spark-2.4.4-bin-hadoop2.7.tgz -C $SPARK_HOME --strip-components=1
-    - export PATH=$SPARK_HOME/bin:$PATH
-    - export SPARK_LOCAL_IP=127.0.0.1
-    - export SPARK_CLASSPATH=./lib/tensorflow-hadoop-1.0-SNAPSHOT.jar
-    - export PYTHONPATH=$(pwd)
+    - source scripts/travis_before_install.sh
     install:
     - pip install -r requirements.txt
     - pip list
     script:
     - sphinx-build -b html docs/source docs/build/html
     - test/run_tests.sh
-  - language: java
-    dist: trusty
-    jdk: oraclejdk8
 notifications:
   email: false
 deploy:
@@ -60,11 +43,3 @@ deploy:
     python: 3.6
     tags: true
     condition: "$TRAVIS_TAG =~ ^v.*$"
-- provider: script
-  script: mvn deploy -DskipTests --settings .travis.settings.xml
-  skip_cleanup: true
-  on:
-    branch: master
-    jdk: oraclejdk8
-    tags: true
-    condition: "$TRAVIS_TAG =~ ^scala_.*$"
