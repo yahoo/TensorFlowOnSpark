@@ -151,7 +151,7 @@ def main_fun(args, ctx):
 
   tf.io.gfile.makedirs(args.model_dir)
   filepath = args.model_dir + "/weights-{epoch:04d}"
-  ckpt_callback = tf.keras.callbacks.ModelCheckpoint(filepath=filepath, verbose=1, load_weights_on_restart=True, save_weights_only=True)
+  ckpt_callback = tf.keras.callbacks.ModelCheckpoint(filepath=filepath, verbose=1, save_weights_only=True)
 
   model_history = model.fit(train_dataset, epochs=EPOCHS,
                             steps_per_epoch=STEPS_PER_EPOCH,

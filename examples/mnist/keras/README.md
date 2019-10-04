@@ -5,7 +5,7 @@ Original Source: https://www.tensorflow.org/beta/tutorials/distribute/multi_work
 This is the [Multi-worker Training with Keras](https://www.tensorflow.org/beta/tutorials/distribute/multi_worker_with_keras) example, adapted for TensorFlowOnSpark.
 
 Notes:
-- This example assumes that Spark, TensorFlow, and TensorFlowOnSpark are already installed.
+- This example assumes that Spark, TensorFlow, TensorFlow Datasets, and TensorFlowOnSpark are already installed.
 
 #### Launch the Spark Standalone cluster
 
