@@ -28,6 +28,8 @@ import copy
 import logging
 import sys
 
+logger = logging.getLogger(__name__)
+
 
 # TensorFlowOnSpark Params
 
@@ -375,10 +377,10 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
     """
     sc = SparkContext.getOrCreate()
 
-    logging.info("===== 1. train args: {0}".format(self.args))
-    logging.info("===== 2. train params: {0}".format(self._paramMap))
+    logger.info("===== 1. train args: {0}".format(self.args))
+    logger.info("===== 2. train params: {0}".format(self._paramMap))
     local_args = self.merge_args_params()
-    logging.info("===== 3. train args + params: {0}".format(local_args))
+    logger.info("===== 3. train args + params: {0}".format(local_args))
 
     tf_args = self.args.argv if self.args.argv else local_args
     cluster = TFCluster.run(sc, self.train_fn, tf_args, local_args.cluster_size, local_args.num_ps,
@@ -429,14 +431,14 @@ class TFModel(Model, TFParams,
     output_cols = [col for tensor, col in sorted(self.getOutputMapping().items())]    # output tensor => output col
 
     # run single-node inferencing on each executor
-    logging.info("input_cols: {}".format(input_cols))
-    logging.info("output_cols: {}".format(output_cols))
+    logger.info("input_cols: {}".format(input_cols))
+    logger.info("output_cols: {}".format(output_cols))
 
     # merge args + params
-    logging.info("===== 1. inference args: {0}".format(self.args))
-    logging.info("===== 2. inference params: {0}".format(self._paramMap))
+    logger.info("===== 1. inference args: {0}".format(self.args))
+    logger.info("===== 2. inference params: {0}".format(self._paramMap))
     local_args = self.merge_args_params()
-    logging.info("===== 3. inference args + params: {0}".format(local_args))
+    logger.info("===== 3. inference args + params: {0}".format(local_args))
 
     tf_args = self.args.argv if self.args.argv else local_args
     rdd_out = dataset.select(input_cols).rdd.mapPartitions(lambda it: _run_model(it, local_args, tf_args))
@@ -464,8 +466,8 @@ def _run_model(iterator, args, tf_args):
   """
   single_node_env(tf_args)
 
-  logging.info("===== input_mapping: {}".format(args.input_mapping))
-  logging.info("===== output_mapping: {}".format(args.output_mapping))
+  logger.info("===== input_mapping: {}".format(args.input_mapping))
+  logger.info("===== output_mapping: {}".format(args.output_mapping))
   input_tensor_names = [tensor for col, tensor in sorted(args.input_mapping.items())]
   output_tensor_names = [tensor for tensor, col in sorted(args.output_mapping.items())]
 
@@ -474,16 +476,16 @@ def _run_model(iterator, args, tf_args):
   # cache saved_model pred_fn to avoid reloading the model for each partition
   if not pred_fn or args != pred_args:
     assert args.export_dir, "Inferencing requires --export_dir argument"
-    logging.info("===== loading saved_model from: {}".format(args.export_dir))
+    logger.info("===== loading saved_model from: {}".format(args.export_dir))
     saved_model = tf.saved_model.load(args.export_dir, tags=args.tag_set)
-    logging.info("===== signature_def_key: {}".format(args.signature_def_key))
+    logger.info("===== signature_def_key: {}".format(args.signature_def_key))
     pred_fn = saved_model.signatures[args.signature_def_key]
     pred_args = args
 
   inputs_tensor_info = {i.name: i for i in pred_fn.inputs}
-  logging.info("===== inputs_tensor_info: {0}".format(inputs_tensor_info))
+  logger.info("===== inputs_tensor_info: {0}".format(inputs_tensor_info))
   outputs_tensor_info = pred_fn.outputs
-  logging.info("===== outputs_tensor_info: {0}".format(outputs_tensor_info))
+  logger.info("===== outputs_tensor_info: {0}".format(outputs_tensor_info))
 
   result = []
 

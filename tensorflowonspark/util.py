@@ -15,6 +15,8 @@ import errno
 from socket import error as socket_error
 from . import gpu_info
 
+logger = logging.getLogger(__name__)
+
 
 def single_node_env(num_gpus=1):
   """Setup environment variables for Hadoop compatibility and GPU allocation"""
@@ -30,11 +32,11 @@ def single_node_env(num_gpus=1):
   # reserve GPU, if requested
   if tf.test.is_built_with_cuda():
     gpus_to_use = gpu_info.get_gpus(num_gpus)
-    logging.info("Using gpu(s): {0}".format(gpus_to_use))
+    logger.info("Using gpu(s): {0}".format(gpus_to_use))
     os.environ['CUDA_VISIBLE_DEVICES'] = gpus_to_use
   else:
     # CPU
-    logging.info("Using CPU")
+    logger.info("Using CPU")
     os.environ['CUDA_VISIBLE_DEVICES'] = ''
 
 

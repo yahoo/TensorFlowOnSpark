@@ -20,6 +20,8 @@ import time
 
 from . import util
 
+logger = logging.getLogger(__name__)
+
 TFOS_SERVER_PORT = "TFOS_SERVER_PORT"
 TFOS_SERVER_HOST = "TFOS_SERVER_HOST"
 BUFSIZE = 1024
@@ -112,7 +114,7 @@ class Server(MessageSocket):
     """Block until all reservations are received."""
     timespent = 0
     while not self.reservations.done():
-      logging.info("waiting for {0} reservations".format(self.reservations.remaining()))
+      logger.info("waiting for {0} reservations".format(self.reservations.remaining()))
       # check status flags for any errors
       if 'error' in status:
         sc.cancelAllJobs()
@@ -122,11 +124,11 @@ class Server(MessageSocket):
       timespent += 1
       if (timespent > timeout):
         raise Exception("timed out waiting for reservations to complete")
-    logging.info("all reservations completed")
+    logger.info("all reservations completed")
     return self.reservations.get()
 
   def _handle_message(self, sock, msg):
-    logging.debug("received: {0}".format(msg))
+    logger.debug("received: {0}".format(msg))
     msg_type = msg['type']
     if msg_type == 'REG':
       self.reservations.add(msg['data'])
@@ -137,7 +139,7 @@ class Server(MessageSocket):
       rinfo = self.reservations.get()
       MessageSocket.send(self, sock, rinfo)
     elif msg_type == 'STOP':
-      logging.info("setting server.done")
+      logger.info("setting server.done")
       MessageSocket.send(self, sock, 'OK')
       self.done = True
     else:
@@ -155,7 +157,7 @@ class Server(MessageSocket):
     host = self.get_server_ip()
     port = server_sock.getsockname()[1]
     addr = (host, port)
-    logging.info("listening for reservations at {0}".format(addr))
+    logger.info("listening for reservations at {0}".format(addr))
 
     def _listen(self, sock):
       CONNECTIONS = []
@@ -167,13 +169,13 @@ class Server(MessageSocket):
           if sock == server_sock:
             client_sock, client_addr = sock.accept()
             CONNECTIONS.append(client_sock)
-            logging.debug("client connected from {0}".format(client_addr))
+            logger.debug("client connected from {0}".format(client_addr))
           else:
             try:
               msg = self.receive(sock)
               self._handle_message(sock, msg)
             except Exception as e:
-              logging.debug(e)
+              logger.debug(e)
               sock.close()
               CONNECTIONS.remove(sock)
 
@@ -215,7 +217,7 @@ class Client(MessageSocket):
     self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     self.sock.connect(server_addr)
     self.server_addr = server_addr
-    logging.info("connected to server at {0}".format(server_addr))
+    logger.info("connected to server at {0}".format(server_addr))
 
   def _request(self, msg_type, msg_data=None):
     """Helper function to wrap msg w/ msg_type."""
@@ -239,9 +241,9 @@ class Client(MessageSocket):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect(self.server_addr)
 
-    logging.debug("sent: {0}".format(msg))
+    logger.debug("sent: {0}".format(msg))
     resp = MessageSocket.receive(self, self.sock)
-    logging.debug("received: {0}".format(resp))
+    logger.debug("received: {0}".format(resp))
     return resp
 
   def close(self):
