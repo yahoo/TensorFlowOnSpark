@@ -10,7 +10,7 @@ Notes:
 
 #### Run the Single-Node Application
 
-First, make sure that you can run the example per the [original instructions](https://github.com/tensorflow/models/tree/68c3c65596b8fc624be15aef6eac3dc8952cbf23/official/vision/image_classification).  For now, we'll just use the CIFAR-10 dataset.  After cloning the `tensorflow/models` repository and downloading the dataset, you should be able to run the training as follows:
+First, make sure that you can run the example per the [original instructions](https://github.com/tensorflow/models/tree/68c3c65596b8fc624be15aef6eac3dc8952cbf23/official/vision/image_classification).  For now, we'll just use the CIFAR-10 dataset.  After cloning the [tensorflow/models](https://github.com/tensorflow/models) repository and downloading the dataset, you should be able to run the training as follows:
 ```
 export TENSORFLOW_MODELS=/path/to/tensorflow/models
 export CIFAR_DATA=/path/to/cifar
