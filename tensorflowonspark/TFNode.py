@@ -19,6 +19,7 @@ import logging
 from six.moves.queue import Empty
 from . import marker
 
+logger = logging.getLogger(__name__)
 
 def hdfs_path(ctx, path):
   """Convenience function to create a Tensorflow-compatible absolute HDFS path from relative paths
@@ -54,7 +55,7 @@ def hdfs_path(ctx, path):
     elif ctx.defaultFS.startswith("file://"):
       return "{0}/{1}/{2}".format(ctx.defaultFS, ctx.working_dir[1:], path)
     else:
-      logging.warn("Unknown scheme {0} with relative path: {1}".format(ctx.defaultFS, path))
+      logger.warn("Unknown scheme {0} with relative path: {1}".format(ctx.defaultFS, path))
       return "{0}/{1}".format(ctx.defaultFS, path)
 
 
@@ -120,7 +121,7 @@ class DataFeed(object):
     Returns:
       A batch of items or a dictionary of tensors.
     """
-    logging.debug("next_batch() invoked")
+    logger.debug("next_batch() invoked")
     queue = self.mgr.get_queue(self.qname_in)
     tensors = [] if self.input_tensors is None else {tensor: [] for tensor in self.input_tensors}
     count = 0
@@ -128,13 +129,13 @@ class DataFeed(object):
       item = queue.get(block=True)
       if item is None:
         # End of Feed
-        logging.info("next_batch() got None")
+        logger.info("next_batch() got None")
         queue.task_done()
         self.done_feeding = True
         break
       elif type(item) is marker.EndPartition:
         # End of Partition
-        logging.info("next_batch() got EndPartition")
+        logger.info("next_batch() got EndPartition")
         queue.task_done()
         if not self.train_mode and count > 0:
           break
@@ -147,7 +148,7 @@ class DataFeed(object):
             tensors[self.input_tensors[i]].append(item[i])
         count += 1
         queue.task_done()
-    logging.debug("next_batch() returning {0} items".format(count))
+    logger.debug("next_batch() returning {0} items".format(count))
     return tensors
 
   def should_stop(self):
@@ -163,11 +164,11 @@ class DataFeed(object):
     Args:
       :results: array of output data for the equivalent batch of input data.
     """
-    logging.debug("batch_results() invoked")
+    logger.debug("batch_results() invoked")
     queue = self.mgr.get_queue(self.qname_out)
     for item in results:
       queue.put(item, block=True)
-    logging.debug("batch_results() returning data")
+    logger.debug("batch_results() returning data")
 
   def terminate(self):
     """Terminate data feeding early.
@@ -177,7 +178,7 @@ class DataFeed(object):
     to terminate an RDD operation early, so the extra partitions will still be sent to the executors (but will be ignored).  Because
     of this, you should size your input data accordingly to avoid excessive overhead.
     """
-    logging.info("terminate() invoked")
+    logger.info("terminate() invoked")
     self.mgr.set('state', 'terminating')
 
     # drop remaining items in the queue
@@ -190,5 +191,5 @@ class DataFeed(object):
         queue.task_done()
         count += 1
       except Empty:
-        logging.info("dropped {0} items from queue".format(count))
+        logger.info("dropped {0} items from queue".format(count))
         done = True

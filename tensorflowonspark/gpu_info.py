@@ -14,6 +14,8 @@ import random
 import subprocess
 import time
 
+logger = logging.getLogger(__name__)
+
 MAX_RETRIES = 3           #: Maximum retries to allocate GPUs
 
 
@@ -54,7 +56,7 @@ def get_gpus(num_gpu=1, worker_index=-1):
   """
   # get list of gpus (index, uuid)
   list_gpus = subprocess.check_output(["nvidia-smi", "--list-gpus"]).decode()
-  logging.debug("all GPUs:\n{0}".format(list_gpus))
+  logger.debug("all GPUs:\n{0}".format(list_gpus))
 
   # parse index and guid
   gpus = [x for x in list_gpus.split('\n') if len(x) > 0]
@@ -68,24 +70,24 @@ def get_gpus(num_gpu=1, worker_index=-1):
   retries = 0
   while len(free_gpus) < num_gpu and retries < MAX_RETRIES:
     smi_output = subprocess.check_output(["nvidia-smi", "--format=csv,noheader,nounits", "--query-compute-apps=gpu_uuid"]).decode()
-    logging.debug("busy GPUs:\n{0}".format(smi_output))
+    logger.debug("busy GPUs:\n{0}".format(smi_output))
     busy_uuids = [x for x in smi_output.split('\n') if len(x) > 0]
     for uuid, index in gpu_list:
       if uuid not in busy_uuids:
         free_gpus.append(index)
 
     if len(free_gpus) < num_gpu:
-      logging.warn("Unable to find available GPUs: requested={0}, available={1}".format(num_gpu, len(free_gpus)))
+      logger.warn("Unable to find available GPUs: requested={0}, available={1}".format(num_gpu, len(free_gpus)))
       retries += 1
       time.sleep(30 * retries)
       free_gpus = []
 
-  logging.info("Available GPUs: {}".format(free_gpus))
+  logger.info("Available GPUs: {}".format(free_gpus))
 
   # if still can't find available GPUs, raise exception
   if len(free_gpus) < num_gpu:
     smi_output = subprocess.check_output(["nvidia-smi", "--format=csv", "--query-compute-apps=gpu_uuid,pid,process_name,used_gpu_memory"]).decode()
-    logging.info(": {0}".format(smi_output))
+    logger.info(": {0}".format(smi_output))
     raise Exception("Unable to find {} free GPU(s)\n{}".format(num_gpu, smi_output))
 
   # Get logical placement
@@ -99,7 +101,7 @@ def get_gpus(num_gpu=1, worker_index=-1):
     if worker_index * num_gpu + num_gpu > num_available:
       worker_index = worker_index * num_gpu % num_available
     proposed_gpus = free_gpus[worker_index * num_gpu:(worker_index * num_gpu + num_gpu)]
-  logging.info("Proposed GPUs: {}".format(proposed_gpus))
+  logger.info("Proposed GPUs: {}".format(proposed_gpus))
 
   return ','.join(str(x) for x in proposed_gpus)
 

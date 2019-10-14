@@ -28,6 +28,8 @@ from . import marker
 from . import reservation
 from . import util
 
+logger = logging.getLogger(__name__)
+
 
 class TFNodeContext:
   """Encapsulates unique metadata for a TensorFlowOnSpark node/executor and provides methods to interact with Spark and HDFS.
@@ -114,7 +116,7 @@ def _get_manager(cluster_info, host, executor_id):
           "3. Spark dynamic allocation is disabled."
     raise Exception(msg)
 
-  logging.info("Connected to TFSparkNode.mgr on {0}, executor={1}, state={2}".format(host, executor_id, str(TFSparkNode.mgr.get('state'))))
+  logger.info("Connected to TFSparkNode.mgr on {0}, executor={1}, state={2}".format(host, executor_id, str(TFSparkNode.mgr.get('state'))))
   return TFSparkNode.mgr
 
 
@@ -169,7 +171,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
         raise Exception("TFManager already started on {0}, executor={1}, state={2}".format(host, executor_id, str(TFSparkNode.mgr.get("state"))))
       else:
         # old state, just continue with creating new manager
-        logging.warn("Ignoring old TFManager with cluster_id {0}, requested cluster_id {1}".format(TFSparkNode.cluster_id, cluster_id))
+        logger.warn("Ignoring old TFManager with cluster_id {0}, requested cluster_id {1}".format(TFSparkNode.cluster_id, cluster_id))
 
     # start a TFManager and get a free port
     # use a random uuid as the authkey
@@ -193,7 +195,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
       classpath = os.environ['CLASSPATH']
       hadoop_path = os.path.join(os.environ['HADOOP_PREFIX'], 'bin', 'hadoop')
       hadoop_classpath = subprocess.check_output([hadoop_path, 'classpath', '--glob']).decode()
-      logging.debug("CLASSPATH: {0}".format(hadoop_classpath))
+      logger.debug("CLASSPATH: {0}".format(hadoop_classpath))
       os.environ['CLASSPATH'] = classpath + os.pathsep + hadoop_classpath
 
     # start TensorBoard if requested
@@ -255,7 +257,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
           'authkey': authkey
       }
       # register node metadata with server
-      logging.info("TFSparkNode.reserve: {0}".format(node_meta))
+      logger.info("TFSparkNode.reserve: {0}".format(node_meta))
       client.register(node_meta)
       # wait for other nodes to finish reservations
       cluster_info = client.await_reservations()
@@ -269,7 +271,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
       if (node['executor_id'] == last_executor_id):
         raise Exception("Duplicate worker/task in cluster_info")
       last_executor_id = node['executor_id']
-      logging.info("node: {0}".format(node))
+      logger.info("node: {0}".format(node))
       (njob, nhost, nport) = (node['job_name'], node['host'], node['port'])
       hosts = [] if njob not in cluster_spec else cluster_spec[njob]
       hosts.append("{0}:{1}".format(nhost, nport))
@@ -282,7 +284,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
         'task': {'type': job_name, 'index': task_index},
         'environment': 'cloud'
       })
-      logging.info("export TF_CONFIG: {}".format(tf_config))
+      logger.info("export TF_CONFIG: {}".format(tf_config))
       os.environ['TF_CONFIG'] = tf_config
 
     # reserve GPU(s) again, just before launching TF process (in case situation has changed)
@@ -297,7 +299,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
       num_gpus = tf_args.num_gpus if 'num_gpus' in tf_args else 1
       gpus_to_use = gpu_info.get_gpus(num_gpus, my_index)
       gpu_str = "GPUs" if num_gpus > 1 else "GPU"
-      logging.debug("Requested {} {}, setting CUDA_VISIBLE_DEVICES={}".format(num_gpus, gpu_str, gpus_to_use))
+      logger.debug("Requested {} {}, setting CUDA_VISIBLE_DEVICES={}".format(num_gpus, gpu_str, gpus_to_use))
       os.environ['CUDA_VISIBLE_DEVICES'] = gpus_to_use
 
     # create a context object to hold metadata for TF
@@ -333,7 +335,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
 
     if job_name in ('ps', 'evaluator') or background:
       # invoke the TensorFlow main function in a background thread
-      logging.info("Starting TensorFlow {0}:{1} as {2} on cluster node {3} on background process".format(
+      logger.info("Starting TensorFlow {0}:{1} as {2} on cluster node {3} on background process".format(
         job_name, task_index, job_name, executor_id))
 
       p = multiprocessing.Process(target=wrapper_fn_background, args=(tf_args, ctx))
@@ -353,17 +355,17 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
             e_str = equeue.get()
             raise Exception("Exception in " + job_name + ":\n" + e_str)
           msg = queue.get(block=True)
-          logging.info("Got msg: {0}".format(msg))
+          logger.info("Got msg: {0}".format(msg))
           if msg is None:
-            logging.info("Terminating {}".format(job_name))
+            logger.info("Terminating {}".format(job_name))
             TFSparkNode.mgr.set('state', 'stopped')
             done = True
           queue.task_done()
     else:
       # otherwise, just run TF function in the main executor/worker thread
-      logging.info("Starting TensorFlow {0}:{1} on cluster node {2} on foreground thread".format(job_name, task_index, executor_id))
+      logger.info("Starting TensorFlow {0}:{1} on cluster node {2} on foreground thread".format(job_name, task_index, executor_id))
       wrapper_fn(tf_args, ctx)
-      logging.info("Finished TensorFlow {0}:{1} on cluster node {2}".format(job_name, task_index, executor_id))
+      logger.info("Finished TensorFlow {0}:{1} on cluster node {2}".format(job_name, task_index, executor_id))
 
   return _mapfn
 
@@ -391,14 +393,14 @@ def train(cluster_info, cluster_meta, feed_timeout=600, qname='input'):
       raise Exception(msg)
 
     state = str(mgr.get('state'))
-    logging.info("mgr.state={0}".format(state))
+    logger.info("mgr.state={0}".format(state))
     terminating = state == "'terminating'"
     if terminating:
-      logging.info("mgr is terminating, skipping partition")
+      logger.info("mgr is terminating, skipping partition")
       count = sum(1 for item in iter)
-      logging.info("Skipped {0} items from partition".format(count))
+      logger.info("Skipped {0} items from partition".format(count))
     else:
-      logging.info("Feeding partition {0} into {1} queue {2}".format(iter, qname, queue))
+      logger.info("Feeding partition {0} into {1} queue {2}".format(iter, qname, queue))
       count = 0
       for item in iter:
         count += 1
@@ -417,7 +419,7 @@ def train(cluster_info, cluster_meta, feed_timeout=600, qname='input'):
         if timeout <= 0:
           raise Exception("Timeout while feeding partition")
 
-      logging.info("Processed {0} items in partition".format(count))
+      logger.info("Processed {0} items in partition".format(count))
 
     # check if TF is terminating feed after this partition
     if not terminating:
@@ -425,13 +427,13 @@ def train(cluster_info, cluster_meta, feed_timeout=600, qname='input'):
       terminating = state == "'terminating'"
       if terminating:
         try:
-          logging.info("TFSparkNode: requesting stop")
+          logger.info("TFSparkNode: requesting stop")
           client = reservation.Client(cluster_meta['server_addr'])
           client.request_stop()
           client.close()
         except Exception as e:
           # ignore any errors while requesting stop
-          logging.debug("Error while requesting stop: {0}".format(e))
+          logger.debug("Error while requesting stop: {0}".format(e))
 
     return [terminating]
 
@@ -459,7 +461,7 @@ def inference(cluster_info, feed_timeout=600, qname='input'):
       msg = "Queue '{}' not found on this node, check for exceptions on other nodes.".format(qname)
       raise Exception(msg)
 
-    logging.info("Feeding partition {0} into {1} queue {2}".format(iter, qname, queue_in))
+    logger.info("Feeding partition {0} into {1} queue {2}".format(iter, qname, queue_in))
     count = 0
     for item in iter:
       count += 1
@@ -485,7 +487,7 @@ def inference(cluster_info, feed_timeout=600, qname='input'):
       if timeout <= 0:
         raise Exception("Timeout while feeding partition")
 
-    logging.info("Processed {0} items in partition".format(count))
+    logger.info("Processed {0} items in partition".format(count))
 
     # read result queue
     results = []
@@ -496,7 +498,7 @@ def inference(cluster_info, feed_timeout=600, qname='input'):
       count -= 1
       queue_out.task_done()
 
-    logging.info("Finished processing partition")
+    logger.info("Finished processing partition")
     return results
 
   return _inference
@@ -524,16 +526,16 @@ def shutdown(cluster_info, grace_secs=0, queues=['input']):
       if node['host'] == host and node['executor_id'] == executor_id:
         tb_pid = node['tb_pid']
         if tb_pid != 0:
-          logging.info("Stopping tensorboard (pid={0})".format(tb_pid))
+          logger.info("Stopping tensorboard (pid={0})".format(tb_pid))
           subprocess.Popen(["kill", str(tb_pid)])
 
     # terminate any listening queues
-    logging.info("Stopping all queues")
+    logger.info("Stopping all queues")
     for q in queues:
       if q != 'error':
         try:
           queue = mgr.get_queue(q)
-          logging.info("Feeding None into {0} queue".format(q))
+          logger.info("Feeding None into {0} queue".format(q))
           queue.put(None, block=True)
         except (AttributeError, KeyError):
           msg = "Queue '{}' not found on this node, check for exceptions on other nodes.".format(q)
@@ -541,7 +543,7 @@ def shutdown(cluster_info, grace_secs=0, queues=['input']):
 
     # wait for grace period (after terminating feed queues)
     if grace_secs > 0:
-      logging.info("Waiting for {} second grace period".format(grace_secs))
+      logger.info("Waiting for {} second grace period".format(grace_secs))
       time.sleep(grace_secs)
 
     # then check for any late exceptions
@@ -552,7 +554,7 @@ def shutdown(cluster_info, grace_secs=0, queues=['input']):
       equeue.put(e_str)
       raise Exception("Exception in worker:\n" + e_str)
 
-    logging.info("Setting mgr.state to 'stopped'")
+    logger.info("Setting mgr.state to 'stopped'")
     mgr.set('state', 'stopped')
     return [True]
 
