@@ -15,7 +15,8 @@ export SPARK_HOME=./spark
 mkdir $SPARK_HOME
 tar -xf spark-2.4.4-bin-hadoop2.7.tgz -C $SPARK_HOME --strip-components=1
 export SPARK_LOCAL_IP=127.0.0.1
-export SPARK_CLASSPATH=./lib/tensorflow-hadoop-1.0-SNAPSHOT.jar
+curl -LO https://repo1.maven.org/maven2/org/tensorflow/tensorflow-hadoop/1.13.1/tensorflow-hadoop-1.13.1.jar
+export SPARK_CLASSPATH=tensorflow-hadoop-1.13.1.jar
 export PATH=$SPARK_HOME/bin:$PATH
 export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 

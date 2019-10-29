@@ -40,9 +40,10 @@ In this mode, Spark will distribute the MNIST dataset (as CSV) across the worker
 
     # Convert the MNIST zip files into CSV (if not already done)
     cd ${TFoS_HOME}
+    curl -LO https://repo1.maven.org/maven2/org/tensorflow/tensorflow-hadoop/1.13.1/tensorflow-hadoop-1.13.1.jar
     ${SPARK_HOME}/bin/spark-submit \
     --master ${MASTER} \
-    --jars ${TFoS_HOME}/lib/tensorflow-hadoop-1.0-SNAPSHOT.jar \
+    --jars ${TFoS_HOME}/lib/tensorflow-hadoop-1.13.1.jar \
     ${TFoS_HOME}/examples/mnist/mnist_data_setup.py \
     --output ${TFoS_HOME}/data/mnist
 
@@ -72,9 +73,10 @@ This example is essentially the same as the one above, except it replaces the Sp
 
     # Convert the MNIST zip files into CSV (if not already done)
     cd ${TFoS_HOME}
+    curl -LO https://repo1.maven.org/maven2/org/tensorflow/tensorflow-hadoop/1.13.1/tensorflow-hadoop-1.13.1.jar
     ${SPARK_HOME}/bin/spark-submit \
     --master ${MASTER} \
-    --jars ${TFoS_HOME}/lib/tensorflow-hadoop-1.0-SNAPSHOT.jar \
+    --jars ${TFoS_HOME}/lib/tensorflow-hadoop-1.13.1.jar \
     ${TFoS_HOME}/examples/mnist/mnist_data_setup.py \
     --output ${TFoS_HOME}/data/mnist
 
@@ -199,6 +201,7 @@ Spark also includes an [ML Pipelines API](https://spark.apache.org/docs/latest/m
     # remove any old artifacts
     rm -rf ${TFoS_HOME}/mnist_model
     rm -rf ${TFoS_HOME}/mnist_export
+    curl -LO https://repo1.maven.org/maven2/org/tensorflow/tensorflow-hadoop/1.13.1/tensorflow-hadoop-1.13.1.jar
 
     # train w/ CSV
     ${SPARK_HOME}/bin/spark-submit \
@@ -206,7 +209,7 @@ Spark also includes an [ML Pipelines API](https://spark.apache.org/docs/latest/m
     --conf spark.cores.max=${TOTAL_CORES} \
     --conf spark.task.cpus=${CORES_PER_WORKER} \
     --conf spark.executorEnv.JAVA_HOME="$JAVA_HOME" \
-    --jars ${TFoS_HOME}/lib/tensorflow-hadoop-1.0-SNAPSHOT.jar \
+    --jars ${TFoS_HOME}/lib/tensorflow-hadoop-1.13.1.jar \
     ${TFoS_HOME}/examples/mnist/estimator/mnist_pipeline.py \
     --cluster_size ${SPARK_WORKER_INSTANCES} \
     --images_labels ${TFoS_HOME}/data/mnist/csv/train \
@@ -226,6 +229,7 @@ Spark also includes an [ML Pipelines API](https://spark.apache.org/docs/latest/m
 
     # remove any old artifacts
     rm -rf ${TFoS_HOME}/predictions
+    curl -LO https://repo1.maven.org/maven2/org/tensorflow/tensorflow-hadoop/1.13.1/tensorflow-hadoop-1.13.1.jar
 
     # inference with CSV
     ${SPARK_HOME}/bin/spark-submit \
@@ -233,7 +237,7 @@ Spark also includes an [ML Pipelines API](https://spark.apache.org/docs/latest/m
     --conf spark.cores.max=${TOTAL_CORES} \
     --conf spark.task.cpus=${CORES_PER_WORKER} \
     --conf spark.executorEnv.JAVA_HOME="$JAVA_HOME" \
-    --jars ${TFoS_HOME}/lib/tensorflow-hadoop-1.0-SNAPSHOT.jar \
+    --jars ${TFoS_HOME}/lib/tensorflow-hadoop-1.13.1.jar \
     ${TFoS_HOME}/examples/mnist/estimator/mnist_pipeline.py \
     --cluster_size ${SPARK_WORKER_INSTANCES} \
     --images_labels ${TFoS_HOME}/data/mnist/csv/test \
