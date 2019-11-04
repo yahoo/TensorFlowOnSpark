@@ -21,6 +21,7 @@ from . import marker
 
 logger = logging.getLogger(__name__)
 
+
 def hdfs_path(ctx, path):
   """Convenience function to create a Tensorflow-compatible absolute HDFS path from relative paths
 
