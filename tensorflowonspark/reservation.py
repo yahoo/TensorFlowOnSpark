@@ -190,9 +190,8 @@ class Server(MessageSocket):
   def get_server_ip(self):
     return os.getenv(TFOS_SERVER_HOST) if os.getenv(TFOS_SERVER_HOST) else util.get_ip_address()
 
-
   def start_listening_socket(self):
-    port_number = int(os.getenv(TFOS_SERVER_PORT)) if  os.getenv(TFOS_SERVER_PORT) else 0
+    port_number = int(os.getenv(TFOS_SERVER_PORT)) if os.getenv(TFOS_SERVER_PORT) else 0
     server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_sock.bind(('', port_number))

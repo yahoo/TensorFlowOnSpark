@@ -4,14 +4,16 @@ Original Source: https://github.com/tensorflow/models/tree/master/official/visio
 
 This code is based on the Image Classification model from the official [TensorFlow Models](https://github.com/tensorflow/models) repository.  This example already supports different forms of distribution via the `DistributionStrategy` API, so there isn't much additional work to convert it to TensorFlowOnSpark.
 
-Notes: 
+Notes:
 - This example assumes that Spark, TensorFlow, and TensorFlowOnSpark are already installed.
 - For simplicity, this just uses a single-node Spark Standalone installation.
 
 #### Run the Single-Node Application
 
-First, make sure that you can run the example per the [original instructions](https://github.com/tensorflow/models/tree/68c3c65596b8fc624be15aef6eac3dc8952cbf23/official/vision/image_classification).  For now, we'll just use the CIFAR-10 dataset.  After cloning the [tensorflow/models](https://github.com/tensorflow/models) repository and downloading the dataset, you should be able to run the training as follows:
+First, make sure that you can run the example per the [original instructions](https://github.com/tensorflow/models/tree/68c3c65596b8fc624be15aef6eac3dc8952cbf23/official/vision/image_classification).  For now, we'll just use the CIFAR-10 dataset.  After cloning the [tensorflow/models](https://github.com/tensorflow/models) repository (checking out the `v2.0` tag with `git checkout v2.0`), and downloading the dataset, you should be able to run the training as follows:
 ```
+# Note: these instructions have been tested with the `v2.0` tag of tensorflow/models.
+
 export TENSORFLOW_MODELS=/path/to/tensorflow/models
 export CIFAR_DATA=/path/to/cifar
 export PYTHONPATH=${PYTHONPATH}:${TENSORFLOW_MODELS}

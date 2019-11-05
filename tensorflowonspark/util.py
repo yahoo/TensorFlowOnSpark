@@ -18,7 +18,7 @@ from . import gpu_info
 logger = logging.getLogger(__name__)
 
 
-def single_node_env(num_gpus=1):
+def single_node_env(num_gpus=1, worker_index=-1, nodes=[]):
   """Setup environment variables for Hadoop compatibility and GPU allocation"""
   import tensorflow as tf
   # ensure expanded CLASSPATH w/o glob characters (required for Spark 2.1 + JNI)
@@ -29,9 +29,19 @@ def single_node_env(num_gpus=1):
       os.environ['CLASSPATH'] = classpath + os.pathsep + hadoop_classpath
       os.environ['TFOS_CLASSPATH_UPDATED'] = '1'
 
-  # reserve GPU, if requested
-  if tf.test.is_built_with_cuda():
-    gpus_to_use = gpu_info.get_gpus(num_gpus)
+  if tf.test.is_built_with_cuda() and num_gpus > 0:
+    # reserve GPU(s), if requested
+    if worker_index >= 0 and len(nodes) > 0:
+      # compute my index relative to other nodes on the same host, if known
+      my_addr = nodes[worker_index]
+      my_host = my_addr.split(':')[0]
+      local_peers = [n for n in nodes if n.startswith(my_host)]
+      my_index = local_peers.index(my_addr)
+    else:
+      # otherwise, just use global worker index
+      my_index = worker_index
+
+    gpus_to_use = gpu_info.get_gpus(num_gpus, my_index)
     logger.info("Using gpu(s): {0}".format(gpus_to_use))
     os.environ['CUDA_VISIBLE_DEVICES'] = gpus_to_use
   else:

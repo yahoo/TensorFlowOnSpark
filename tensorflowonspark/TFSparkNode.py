@@ -46,7 +46,7 @@ class TFNodeContext:
     :working_dir: the current working directory for local filesystems, or YARN containers.
     :mgr: TFManager instance for this Python worker.
   """
-  def __init__(self, executor_id, job_name, task_index, cluster_spec, defaultFS, working_dir, mgr):
+  def __init__(self, executor_id=0, job_name='', task_index=0, cluster_spec={}, defaultFS='file://', working_dir='.', mgr=None):
     self.worker_num = executor_id       # for backwards-compatibility
     self.executor_id = executor_id
     self.job_name = job_name

@@ -14,6 +14,7 @@ Submodules
    tensorflowonspark.TFCluster
    tensorflowonspark.TFManager
    tensorflowonspark.TFNode
+   tensorflowonspark.TFParallel
    tensorflowonspark.TFSparkNode
    tensorflowonspark.dfutil
    tensorflowonspark.gpu_info
