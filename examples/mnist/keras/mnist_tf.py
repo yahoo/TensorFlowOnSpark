@@ -6,6 +6,8 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 def main_fun(args, ctx):
   import tensorflow_datasets as tfds
   import tensorflow as tf
+  from tensorflowonspark import compat
+
   tfds.disable_progress_bar()
 
   strategy = tf.distribute.experimental.MultiWorkerMirroredStrategy()
@@ -62,7 +64,7 @@ def main_fun(args, ctx):
 
   from tensorflow_estimator.python.estimator.export import export_lib
   export_dir = export_lib.get_timestamped_export_dir(args.export_dir)
-  multi_worker_model.save(export_dir, save_format='tf')
+  compat.export_saved_model(multi_worker_model, export_dir, ctx.job_name == 'chief')
 
 
 if __name__ == '__main__':

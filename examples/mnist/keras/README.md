@@ -1,8 +1,8 @@
 # MNIST using Keras
 
-Original Source: https://www.tensorflow.org/beta/tutorials/distribute/multi_worker_with_keras
+Original Source: https://www.tensorflow.org/tutorials/distribute/multi_worker_with_keras
 
-This is the [Multi-worker Training with Keras](https://www.tensorflow.org/beta/tutorials/distribute/multi_worker_with_keras) example, adapted for TensorFlowOnSpark.
+This is the [Multi-worker Training with Keras](https://www.tensorflow.org/tutorials/distribute/multi_worker_with_keras) example, adapted for TensorFlowOnSpark.
 
 Notes:
 - This example assumes that Spark, TensorFlow, TensorFlow Datasets, and TensorFlowOnSpark are already installed.

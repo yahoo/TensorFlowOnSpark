@@ -6,7 +6,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 def main_fun(args, ctx):
   import numpy as np
   import tensorflow as tf
-  from tensorflowonspark import TFNode
+  from tensorflowonspark import compat, TFNode
 
   strategy = tf.distribute.experimental.MultiWorkerMirroredStrategy()
 
@@ -67,7 +67,7 @@ def main_fun(args, ctx):
 
   from tensorflow_estimator.python.estimator.export import export_lib
   export_dir = export_lib.get_timestamped_export_dir(args.export_dir)
-  multi_worker_model.save(export_dir, save_format='tf')
+  compat.export_saved_model(multi_worker_model, export_dir, ctx.job_name == 'chief')
 
   # terminating feed tells spark to skip processing further partitions
   tf_feed.terminate()

@@ -4,6 +4,7 @@ import shutil
 import test
 import unittest
 
+from tensorflowonspark import compat
 from tensorflowonspark.pipeline import HasBatchSize, HasSteps, Namespace, TFEstimator, TFParams
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Dense
@@ -117,7 +118,7 @@ class PipelineTest(test.SparkTest):
       ds = tf.data.Dataset.from_generator(rdd_generator, (tf.float32, tf.float32), (tf.TensorShape([2]), tf.TensorShape([1])))
       # disable auto-sharding since we're feeding from an RDD generator
       options = tf.data.Options()
-      options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.OFF
+      compat.disable_auto_shard(options)
       ds = ds.with_options(options)
       ds = ds.batch(args.batch_size)
 
@@ -133,8 +134,9 @@ class PipelineTest(test.SparkTest):
       # This fails with: "NotImplementedError: `fit_generator` is not supported for models compiled with tf.distribute.Strategy"
       # model.fit_generator(ds, epochs=args.epochs, steps_per_epoch=steps_per_epoch, callbacks=callbacks)
 
-      print("exporting model to: {}".format(args.export_dir))
-      model.save(args.export_dir, save_format='tf')
+      if args.export_dir:
+        print("exporting model to: {}".format(args.export_dir))
+        compat.export_saved_model(model, args.export_dir, ctx.job_name == 'chief')
 
       tf_feed.terminate()
 

@@ -1,8 +1,8 @@
 # Image Segmentation
 
-Original Source: https://www.tensorflow.org/beta/tutorials/images/segmentation
+Original Source: https://www.tensorflow.org/tutorials/images/segmentation
 
-This code is based on the [Image Segmentation](https://www.tensorflow.org/beta/tutorials/images/segmentation) notebook example, converted to a single-node TensorFlow python app, then converted into a distributed TensorFlow app using the `MultiWorkerMirroredStrategy`, and then finally adapted for TensorFlowOnSpark.  Compare the different versions to see the conversion steps involved at each stage.
+This code is based on the [Image Segmentation](https://www.tensorflow.org/tutorials/images/segmentation) notebook example, converted to a single-node TensorFlow python app, then converted into a distributed TensorFlow app using the `MultiWorkerMirroredStrategy`, and then finally adapted for TensorFlowOnSpark.  Compare the different versions to see the conversion steps involved at each stage.
 
 Notes: 
 - this example assumes that Spark, TensorFlow, and TensorFlowOnSpark are already installed.
