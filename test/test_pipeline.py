@@ -115,12 +115,11 @@ class PipelineTest(test.SparkTest):
             return
 
       ds = tf.data.Dataset.from_generator(rdd_generator, (tf.float32, tf.float32), (tf.TensorShape([2]), tf.TensorShape([1])))
-      ds = ds.batch(args.batch_size)
-
-      # disable auto-sharding dataset
+      # disable auto-sharding since we're feeding from an RDD generator
       options = tf.data.Options()
-      options.experimental_distribute.auto_shard = False
+      options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.OFF
       ds = ds.with_options(options)
+      ds = ds.batch(args.batch_size)
 
       # only train 90% of each epoch to account for uneven RDD partition sizes
       steps_per_epoch = 1000 * 0.9 // (args.batch_size * ctx.num_workers)
@@ -134,9 +133,8 @@ class PipelineTest(test.SparkTest):
       # This fails with: "NotImplementedError: `fit_generator` is not supported for models compiled with tf.distribute.Strategy"
       # model.fit_generator(ds, epochs=args.epochs, steps_per_epoch=steps_per_epoch, callbacks=callbacks)
 
-      if ctx.job_name == 'chief' and args.export_dir:
-        print("exporting model to: {}".format(args.export_dir))
-        tf.keras.experimental.export_saved_model(model, args.export_dir)
+      print("exporting model to: {}".format(args.export_dir))
+      model.save(args.export_dir, save_format='tf')
 
       tf_feed.terminate()
 

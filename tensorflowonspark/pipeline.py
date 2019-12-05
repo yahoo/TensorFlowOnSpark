@@ -451,6 +451,7 @@ class TFModel(Model, TFParams,
 # global on each python worker process on the executors
 pred_fn = None           # saved_model prediction function/signature.
 pred_args = None         # args provided to the _run_model() method.  Any change will invalidate the pred_fn.
+saved_model = None
 
 
 def _run_model(iterator, args, tf_args):
@@ -471,7 +472,7 @@ def _run_model(iterator, args, tf_args):
   input_tensor_names = [tensor for col, tensor in sorted(args.input_mapping.items())]
   output_tensor_names = [tensor for tensor, col in sorted(args.output_mapping.items())]
 
-  global pred_fn, pred_args
+  global pred_fn, pred_args, saved_model
 
   # cache saved_model pred_fn to avoid reloading the model for each partition
   if not pred_fn or args != pred_args:

@@ -65,11 +65,9 @@ def main_fun(args, ctx):
 
   multi_worker_model.fit(x=ds, epochs=args.epochs, steps_per_epoch=max_steps_per_worker, callbacks=callbacks)
 
-  if ctx.job_name == 'chief':
-    from tensorflow_estimator.python.estimator.export import export_lib
-    export_dir = export_lib.get_timestamped_export_dir(args.export_dir)
-    tf.keras.experimental.export_saved_model(multi_worker_model, export_dir)
-    # multi_worker_model.save(args.model_dir, save_format='tf')
+  from tensorflow_estimator.python.estimator.export import export_lib
+  export_dir = export_lib.get_timestamped_export_dir(args.export_dir)
+  multi_worker_model.save(export_dir, save_format='tf')
 
   # terminating feed tells spark to skip processing further partitions
   tf_feed.terminate()
