@@ -20,13 +20,15 @@ from pyspark.ml.param.shared import Param, Params, TypeConverters
 from pyspark.ml.pipeline import Estimator, Model
 from pyspark.sql import Row, SparkSession
 
-import tensorflow as tf
-from . import TFCluster, util
-
 import argparse
 import copy
 import logging
 import sys
+import tensorflow as tf
+
+from . import TFCluster, util
+from packaging import version
+
 
 logger = logging.getLogger(__name__)
 
@@ -106,6 +108,22 @@ class HasInputMapping(Params):
 
   def getInputMapping(self):
     return self.getOrDefault(self.input_mapping)
+
+
+class HasInputMode(Params):
+  input_mode = Param(Params._dummy(), "input_mode", "Input data feeding mode (0=TENSORFLOW, 1=SPARK)", typeConverter=TypeConverters.toInt)
+
+  def __init__(self):
+    super(HasInputMode, self).__init__()
+
+  def setInputMode(self, value):
+    if value == TFCluster.InputMode.TENSORFLOW:
+      raise Exception("InputMode.TENSORFLOW is deprecated")
+
+    return self._set(input_mode=value)
+
+  def getInputMode(self):
+    return self.getOrDefault(self.input_mode)
 
 
 class HasMasterNode(Params):
@@ -330,7 +348,7 @@ class TFParams(Params):
 
 
 class TFEstimator(Estimator, TFParams, HasInputMapping,
-                  HasClusterSize, HasNumPS, HasMasterNode, HasProtocol, HasGraceSecs,
+                  HasClusterSize, HasNumPS, HasInputMode, HasMasterNode, HasProtocol, HasGraceSecs,
                   HasTensorboard, HasModelDir, HasExportDir, HasTFRecordDir,
                   HasBatchSize, HasEpochs, HasReaders, HasSteps):
   """Spark ML Estimator which launches a TensorFlowOnSpark cluster for distributed training.
@@ -341,20 +359,24 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
   Args:
     :train_fn: TensorFlow "main" function for training.
     :tf_args: Arguments specific to the TensorFlow "main" function.
+    :export_fn: TensorFlow function for exporting a saved_model.  DEPRECATED for TF2.x.
   """
 
   train_fn = None
   export_fn = None
 
-  def __init__(self, train_fn, tf_args):
+  def __init__(self, train_fn, tf_args, export_fn=None):
     super(TFEstimator, self).__init__()
     self.train_fn = train_fn
     self.args = Namespace(tf_args)
+
+    master_node = 'chief' if version.parse(tf.__version__) >= version.parse("2.0.0") else None
     self._setDefault(input_mapping={},
                      cluster_size=1,
                      num_ps=0,
                      driver_ps_nodes=False,
-                     master_node='chief',
+                     input_mode=TFCluster.InputMode.SPARK,
+                     master_node=master_node,
                      protocol='grpc',
                      tensorboard=False,
                      model_dir=None,
@@ -390,6 +412,22 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
     cluster.train(dataset.select(input_cols).rdd, local_args.epochs)
     cluster.shutdown(grace_secs=self.getGraceSecs())
 
+    if self.export_fn:
+      if version.parse(tf.__version__) < version.parse("2.0.0"):
+        # For TF1.x, run export function, if provided
+        assert local_args.export_dir, "Export function requires --export_dir to be set"
+        logging.info("Exporting saved_model (via export_fn) to: {}".format(local_args.export_dir))
+
+        def _export(iterator, fn, args):
+          single_node_env(args)
+          fn(args)
+
+        # Run on a single exeucutor
+        sc.parallelize([1], 1).foreachPartition(lambda it: _export(it, self.export_fn, tf_args))
+      else:
+        # for TF2.x
+        raise Exception("Please use native TF2.x APIs to export a saved_model.")
+
     return self._copyValues(TFModel(self.args))
 
 
@@ -415,8 +453,8 @@ class TFModel(Model, TFParams,
                      batch_size=100,
                      model_dir=None,
                      export_dir=None,
-                     signature_def_key='serving_default',
-                     tag_set='serve')
+                     signature_def_key=None,
+                     tag_set=None)
 
   def _transform(self, dataset):
     """Transforms the input DataFrame by applying the _run_model() mapPartitions function.
@@ -441,6 +479,8 @@ class TFModel(Model, TFParams,
     logger.info("===== 3. inference args + params: {0}".format(local_args))
 
     tf_args = self.args.argv if self.args.argv else local_args
+
+    _run_model = _run_model_tf1 if version.parse(tf.__version__) < version.parse("2.0.0") else _run_model_tf2
     rdd_out = dataset.select(input_cols).rdd.mapPartitions(lambda it: _run_model(it, local_args, tf_args))
 
     # convert to a DataFrame-friendly format
@@ -450,12 +490,13 @@ class TFModel(Model, TFParams,
 
 # global on each python worker process on the executors
 pred_fn = None           # saved_model prediction function/signature.
-pred_args = None         # args provided to the _run_model() method.  Any change will invalidate the pred_fn.
-saved_model = None
+global_sess = None       # tf.Session cache (TF1.x)
+global_args = None       # args provided to the _run_model() method.  Any change will invalidate the pred_fn.
+global_model = None      # this needs to be global for TF2.1+
 
 
-def _run_model(iterator, args, tf_args):
-  """mapPartitions function to run single-node inferencing from a saved_model, using input/output mappings.
+def _run_model_tf1(iterator, args, tf_args):
+  """mapPartitions function (for TF1.x) to run single-node inferencing from a saved_model, using input/output mappings.
 
   Args:
     :iterator: input RDD partition iterator.
@@ -465,6 +506,8 @@ def _run_model(iterator, args, tf_args):
   Returns:
     An iterator of result data.
   """
+  from tensorflow.python.saved_model import loader
+
   single_node_env(tf_args)
 
   logger.info("===== input_mapping: {}".format(args.input_mapping))
@@ -472,16 +515,90 @@ def _run_model(iterator, args, tf_args):
   input_tensor_names = [tensor for col, tensor in sorted(args.input_mapping.items())]
   output_tensor_names = [tensor for tensor, col in sorted(args.output_mapping.items())]
 
-  global pred_fn, pred_args, saved_model
+  # if using a signature_def_key, get input/output tensor info from the requested signature
+  if version.parse(tf.__version__) < version.parse("2.0.0") and args.signature_def_key:
+    assert args.export_dir, "Inferencing with signature_def_key requires --export_dir argument"
+    logging.info("===== loading meta_graph_def for tag_set ({0}) from saved_model: {1}".format(args.tag_set, args.export_dir))
+    meta_graph_def = get_meta_graph_def(args.export_dir, args.tag_set)
+    signature = meta_graph_def.signature_def[args.signature_def_key]
+    logging.debug("signature: {}".format(signature))
+    inputs_tensor_info = signature.inputs
+    logging.debug("inputs_tensor_info: {0}".format(inputs_tensor_info))
+    outputs_tensor_info = signature.outputs
+    logging.debug("outputs_tensor_info: {0}".format(outputs_tensor_info))
 
-  # cache saved_model pred_fn to avoid reloading the model for each partition
-  if not pred_fn or args != pred_args:
+  result = []
+  global global_sess, global_args
+  if global_sess and global_args == args:
+    # if graph/session already loaded/started (and using same args), just reuse it
+    sess = global_sess
+  else:
+    # otherwise, create new session and load graph from disk
+    tf.reset_default_graph()
+    sess = tf.Session(graph=tf.get_default_graph())
+    if args.export_dir:
+      assert args.tag_set, "Inferencing from a saved_model requires --tag_set"
+      # load graph from a saved_model
+      logging.info("===== restoring from saved_model: {}".format(args.export_dir))
+      loader.load(sess, args.tag_set.split(','), args.export_dir)
+    elif args.model_dir:
+      # load graph from a checkpoint
+      ckpt = tf.train.latest_checkpoint(args.model_dir)
+      assert ckpt, "Invalid model checkpoint path: {}".format(args.model_dir)
+      logging.info("===== restoring from checkpoint: {}".format(ckpt + ".meta"))
+      saver = tf.train.import_meta_graph(ckpt + ".meta", clear_devices=True)
+      saver.restore(sess, ckpt)
+    else:
+      raise Exception("Inferencing requires either --model_dir or --export_dir argument")
+    global_sess = sess
+    global_args = args
+
+  # get list of input/output tensors (by name)
+  if args.signature_def_key:
+    input_tensors = [inputs_tensor_info[t].name for t in input_tensor_names]
+    output_tensors = [outputs_tensor_info[t].name for t in output_tensor_names]
+  else:
+    input_tensors = [t + ':0' for t in input_tensor_names]
+    output_tensors = [t + ':0' for t in output_tensor_names]
+
+  logging.info("input_tensors: {0}".format(input_tensors))
+  logging.info("output_tensors: {0}".format(output_tensors))
+
+  # feed data in batches and return output tensors
+  for tensors in yield_batch(iterator, args.batch_size, len(input_tensor_names)):
+    inputs_feed_dict = {}
+    for i in range(len(input_tensors)):
+      inputs_feed_dict[input_tensors[i]] = tensors[i]
+
+    outputs = sess.run(output_tensors, feed_dict=inputs_feed_dict)
+    lengths = [len(output) for output in outputs]
+    input_size = len(tensors[0])
+    assert all([length == input_size for length in lengths]), "Output array sizes {} must match input size: {}".format(lengths, input_size)
+    python_outputs = [output.tolist() for output in outputs]      # convert from numpy to standard python types
+    result.extend(zip(*python_outputs))                           # convert to an array of tuples of "output columns"
+
+  return result
+
+
+def _run_model_tf2(iterator, args, tf_args):
+  """mapPartitions function (for TF2.x) to run single-node inferencing from a saved_model, using input/output mappings."""
+  single_node_env(tf_args)
+
+  logger.info("===== input_mapping: {}".format(args.input_mapping))
+  logger.info("===== output_mapping: {}".format(args.output_mapping))
+  input_tensor_names = [tensor for col, tensor in sorted(args.input_mapping.items())]
+  output_tensor_names = [tensor for tensor, col in sorted(args.output_mapping.items())]
+
+  global pred_fn, global_args, global_model
+
+  if not pred_fn or args != global_args:
+    # cache pred_fn to avoid reloading model for each partition
     assert args.export_dir, "Inferencing requires --export_dir argument"
     logger.info("===== loading saved_model from: {}".format(args.export_dir))
-    saved_model = tf.saved_model.load(args.export_dir, tags=args.tag_set)
+    global_model = tf.saved_model.load(args.export_dir, tags=args.tag_set)
     logger.info("===== signature_def_key: {}".format(args.signature_def_key))
-    pred_fn = saved_model.signatures[args.signature_def_key]
-    pred_args = args
+    pred_fn = global_model.signatures[args.signature_def_key]
+    global_args = args
 
   inputs_tensor_info = {i.name: i for i in pred_fn.inputs}
   logger.info("===== inputs_tensor_info: {0}".format(inputs_tensor_info))
@@ -538,6 +655,30 @@ def single_node_env(args):
   # setup ENV for Hadoop-compatibility and/or GPU allocation
   num_gpus = args.num_gpus if 'num_gpus' in args else 1
   util.single_node_env(num_gpus)
+
+
+def get_meta_graph_def(saved_model_dir, tag_set):
+  """Utility function to read a meta_graph_def from disk.
+
+  From `saved_model_cli.py <https://github.com/tensorflow/tensorflow/blob/8e0e8d41a3a8f2d4a6100c2ea1dc9d6c6c4ad382/tensorflow/python/tools/saved_model_cli.py#L186>`_
+
+  DEPRECATED for TF2.0+
+
+  Args:
+    :saved_model_dir: path to saved_model.
+    :tag_set: list of string tags identifying the TensorFlow graph within the saved_model.
+
+  Returns:
+    A TensorFlow meta_graph_def, or raises an Exception otherwise.
+  """
+  from tensorflow.contrib.saved_model.python.saved_model import reader
+
+  saved_model = reader.read_saved_model(saved_model_dir)
+  set_of_tags = set(tag_set.split(','))
+  for meta_graph_def in saved_model.meta_graphs:
+    if set(meta_graph_def.meta_info_def.tags) == set_of_tags:
+      return meta_graph_def
+  raise RuntimeError("MetaGraphDef associated with tag-set {0} could not be found in SavedModel".format(tag_set))
 
 
 def yield_batch(iterable, batch_size, num_tensors=1):

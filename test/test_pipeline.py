@@ -151,6 +151,7 @@ class PipelineTest(test.SparkTest):
                   .setModelDir(self.model_dir) \
                   .setExportDir(self.export_dir) \
                   .setClusterSize(self.num_workers) \
+                  .setMasterNode("chief") \
                   .setNumPS(0) \
                   .setBatchSize(1) \
                   .setEpochs(1)
