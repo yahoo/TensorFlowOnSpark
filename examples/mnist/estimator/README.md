@@ -1,8 +1,8 @@
 # MNIST using Estimator
 
-Original Source: https://www.tensorflow.org/beta/tutorials/distribute/multi_worker_with_estimator
+Original Source: https://www.tensorflow.org/tutorials/distribute/multi_worker_with_estimator
 
-This is the [Multi-worker Training with Estimator](https://www.tensorflow.org/beta/tutorials/distribute/multi_worker_with_estimator) example, adapted for TensorFlowOnSpark.
+This is the [Multi-worker Training with Estimator](https://www.tensorflow.org/tutorials/distribute/multi_worker_with_estimator) example, adapted for TensorFlowOnSpark.
 
 Note: this example assumes that Spark, TensorFlow, and TensorFlowOnSpark are already installed.
 

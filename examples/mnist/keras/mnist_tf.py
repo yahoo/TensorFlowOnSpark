@@ -6,6 +6,8 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 def main_fun(args, ctx):
   import tensorflow_datasets as tfds
   import tensorflow as tf
+  from tensorflowonspark import compat
+
   tfds.disable_progress_bar()
 
   strategy = tf.distribute.experimental.MultiWorkerMirroredStrategy()
@@ -60,11 +62,9 @@ def main_fun(args, ctx):
     multi_worker_model = build_and_compile_cnn_model()
   multi_worker_model.fit(x=train_datasets, epochs=args.epochs, steps_per_epoch=args.steps_per_epoch, callbacks=callbacks)
 
-  if ctx.job_name == 'chief':
-    from tensorflow_estimator.python.estimator.export import export_lib
-    export_dir = export_lib.get_timestamped_export_dir(args.export_dir)
-    tf.keras.experimental.export_saved_model(multi_worker_model, export_dir)
-    # multi_worker_model.save(args.model_dir, save_format='tf')
+  from tensorflow_estimator.python.estimator.export import export_lib
+  export_dir = export_lib.get_timestamped_export_dir(args.export_dir)
+  compat.export_saved_model(multi_worker_model, export_dir, ctx.job_name == 'chief')
 
 
 if __name__ == '__main__':

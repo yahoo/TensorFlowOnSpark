@@ -4,6 +4,7 @@ import shutil
 import test
 import unittest
 
+from tensorflowonspark import compat
 from tensorflowonspark.pipeline import HasBatchSize, HasSteps, Namespace, TFEstimator, TFParams
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Dense
@@ -115,12 +116,11 @@ class PipelineTest(test.SparkTest):
             return
 
       ds = tf.data.Dataset.from_generator(rdd_generator, (tf.float32, tf.float32), (tf.TensorShape([2]), tf.TensorShape([1])))
-      ds = ds.batch(args.batch_size)
-
-      # disable auto-sharding dataset
+      # disable auto-sharding since we're feeding from an RDD generator
       options = tf.data.Options()
-      options.experimental_distribute.auto_shard = False
+      compat.disable_auto_shard(options)
       ds = ds.with_options(options)
+      ds = ds.batch(args.batch_size)
 
       # only train 90% of each epoch to account for uneven RDD partition sizes
       steps_per_epoch = 1000 * 0.9 // (args.batch_size * ctx.num_workers)
@@ -134,9 +134,9 @@ class PipelineTest(test.SparkTest):
       # This fails with: "NotImplementedError: `fit_generator` is not supported for models compiled with tf.distribute.Strategy"
       # model.fit_generator(ds, epochs=args.epochs, steps_per_epoch=steps_per_epoch, callbacks=callbacks)
 
-      if ctx.job_name == 'chief' and args.export_dir:
+      if args.export_dir:
         print("exporting model to: {}".format(args.export_dir))
-        tf.keras.experimental.export_saved_model(model, args.export_dir)
+        compat.export_saved_model(model, args.export_dir, ctx.job_name == 'chief')
 
       tf_feed.terminate()
 
@@ -151,6 +151,7 @@ class PipelineTest(test.SparkTest):
                   .setModelDir(self.model_dir) \
                   .setExportDir(self.export_dir) \
                   .setClusterSize(self.num_workers) \
+                  .setMasterNode("chief") \
                   .setNumPS(0) \
                   .setBatchSize(1) \
                   .setEpochs(1)

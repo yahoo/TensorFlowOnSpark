@@ -159,18 +159,15 @@ def main_fun(args, ctx):
                             validation_steps=VALIDATION_STEPS,
                             validation_data=test_dataset)
 
-  if ctx.job_name == 'chief':
+  if tf.__version__ == '2.0.0':
     # Workaround for: https://github.com/tensorflow/tensorflow/issues/30251
-    print("===== saving h5py model")
-    model.save(args.model_dir + ".h5")
-    print("===== re-loading model w/o DistributionStrategy")
-    new_model = tf.keras.models.load_model(args.model_dir + ".h5")
-    print("===== exporting saved_model")
-    tf.keras.experimental.export_saved_model(new_model, args.export_dir)
-    print("===== done exporting")
+    # Save model locally as h5py and reload it w/o distribution strategy
+    if ctx.job_name == 'chief':
+      model.save(args.model_dir + ".h5")
+      new_model = tf.keras.models.load_model(args.model_dir + ".h5")
+      tf.keras.experimental.export_saved_model(new_model, args.export_dir)
   else:
-    print("===== sleeping")
-    time.sleep(90)
+    model.save(args.export_dir, save_format='tf')
 
 
 if __name__ == '__main__':

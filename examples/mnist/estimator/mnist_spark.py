@@ -9,6 +9,8 @@ def main_fun(args, ctx):
   import tensorflow_datasets as tfds
   from tensorflowonspark import TFNode
 
+  strategy = tf.distribute.experimental.MultiWorkerMirroredStrategy()
+
   tfds.disable_progress_bar()
 
   class StopFeedHook(tf.estimator.SessionRunHook):
@@ -91,7 +93,6 @@ def main_fun(args, ctx):
         train_op=optimizer.minimize(
             loss, tf.compat.v1.train.get_or_create_global_step()))
 
-  strategy = tf.distribute.experimental.MultiWorkerMirroredStrategy()
   config = tf.estimator.RunConfig(train_distribute=strategy, save_checkpoints_steps=100)
 
   classifier = tf.estimator.Estimator(

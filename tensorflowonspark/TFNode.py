@@ -16,6 +16,8 @@ from __future__ import print_function
 
 import getpass
 import logging
+
+from packaging import version
 from six.moves.queue import Empty
 from . import marker
 
@@ -61,8 +63,86 @@ def hdfs_path(ctx, path):
 
 
 def start_cluster_server(ctx, num_gpus=1, rdma=False):
-  """*DEPRECATED*.  Use higher-level APIs like `tf.keras` or `tf.estimator`"""
-  raise Exception("DEPRECATED: Use higher-level APIs like `tf.keras` or `tf.estimator`")
+  """Function that wraps the creation of TensorFlow ``tf.train.Server`` for a node in a distributed TensorFlow cluster.
+
+  This is intended to be invoked from within the TF ``map_fun``, replacing explicit code to instantiate ``tf.train.ClusterSpec``
+  and ``tf.train.Server`` objects.
+
+  DEPRECATED for TensorFlow 2.x+
+
+  Args:
+    :ctx: TFNodeContext containing the metadata specific to this node in the cluster.
+    :num_gpu: number of GPUs desired
+    :rdma: boolean indicating if RDMA 'iverbs' should be used for cluster communications.
+
+  Returns:
+    A tuple of (cluster_spec, server)
+  """
+  import os
+  import tensorflow as tf
+  import time
+  from . import gpu_info
+
+  if version.parse(tf.__version__) >= version.parse("2.0.0"):
+    raise Exception("DEPRECATED: Use higher-level APIs like `tf.keras` or `tf.estimator`")
+
+  logging.info("{0}: ======== {1}:{2} ========".format(ctx.worker_num, ctx.job_name, ctx.task_index))
+  cluster_spec = ctx.cluster_spec
+  logging.info("{0}: Cluster spec: {1}".format(ctx.worker_num, cluster_spec))
+
+  if tf.test.is_built_with_cuda() and num_gpus > 0:
+    # compute my index relative to other nodes placed on the same host (for GPU allocation)
+    my_addr = cluster_spec[ctx.job_name][ctx.task_index]
+    my_host = my_addr.split(':')[0]
+    flattened = [v for sublist in cluster_spec.values() for v in sublist]
+    local_peers = [p for p in flattened if p.startswith(my_host)]
+    my_index = local_peers.index(my_addr)
+
+    # GPU
+    gpu_initialized = False
+    retries = 3
+    while not gpu_initialized and retries > 0:
+      try:
+        # override PS jobs to only reserve one GPU
+        if ctx.job_name == 'ps':
+          num_gpus = 0
+
+        # Find a free gpu(s) to use
+        gpus_to_use = gpu_info.get_gpus(num_gpus, my_index)
+        gpu_prompt = "GPU" if num_gpus == 1 else "GPUs"
+        logging.info("{0}: Using {1}: {2}".format(ctx.worker_num, gpu_prompt, gpus_to_use))
+
+        # Set GPU device to use for TensorFlow
+        os.environ['CUDA_VISIBLE_DEVICES'] = gpus_to_use
+
+        # Create a cluster from the parameter server and worker hosts.
+        cluster = tf.train.ClusterSpec(cluster_spec)
+
+        # Create and start a server for the local task.
+        if rdma:
+          server = tf.train.Server(cluster, ctx.job_name, ctx.task_index, protocol="grpc+verbs")
+        else:
+          server = tf.train.Server(cluster, ctx.job_name, ctx.task_index)
+        gpu_initialized = True
+      except Exception as e:
+        print(e)
+        logging.error("{0}: Failed to allocate GPU, trying again...".format(ctx.worker_num))
+        retries -= 1
+        time.sleep(10)
+    if not gpu_initialized:
+      raise Exception("Failed to allocate GPU")
+  else:
+    # CPU
+    os.environ['CUDA_VISIBLE_DEVICES'] = ''
+    logging.info("{0}: Using CPU".format(ctx.worker_num))
+
+    # Create a cluster from the parameter server and worker hosts.
+    cluster = tf.train.ClusterSpec(cluster_spec)
+
+    # Create and start a server for the local task.
+    server = tf.train.Server(cluster, ctx.job_name, ctx.task_index)
+
+  return (cluster, server)
 
 
 def next_batch(mgr, batch_size, qname='input'):
@@ -71,8 +151,55 @@ def next_batch(mgr, batch_size, qname='input'):
 
 
 def export_saved_model(sess, export_dir, tag_set, signatures):
-  """*DEPRECATED*. Use TF provided APIs instead."""
-  raise Exception("DEPRECATED: Use TF provided APIs instead.")
+  """Convenience function to export a saved_model using provided arguments
+
+  The caller specifies the saved_model signatures in a simplified python dictionary form, as follows::
+
+    signatures = {
+      'signature_def_key': {
+        'inputs': { 'input_tensor_alias': input_tensor_name },
+        'outputs': { 'output_tensor_alias': output_tensor_name },
+        'method_name': 'method'
+      }
+    }
+
+  And this function will generate the `signature_def_map` and export the saved_model.
+
+  DEPRECATED for TensorFlow 2.x+.
+
+  Args:
+    :sess: a tf.Session instance
+    :export_dir: path to save exported saved_model
+    :tag_set: string tag_set to identify the exported graph
+    :signatures: simplified dictionary representation of a TensorFlow signature_def_map
+
+  Returns:
+    A saved_model exported to disk at ``export_dir``.
+  """
+  import tensorflow as tf
+
+  if version.parse(tf.__version__) >= version.parse("2.0.0"):
+    raise Exception("DEPRECATED: Use TF provided APIs instead.")
+
+  g = sess.graph
+  g._unsafe_unfinalize()           # https://github.com/tensorflow/serving/issues/363
+  builder = tf.saved_model.builder.SavedModelBuilder(export_dir)
+
+  logging.info("===== signatures: {}".format(signatures))
+  signature_def_map = {}
+  for key, sig in signatures.items():
+    signature_def_map[key] = tf.saved_model.signature_def_utils.build_signature_def(
+        inputs={name: tf.saved_model.utils.build_tensor_info(tensor) for name, tensor in sig['inputs'].items()},
+        outputs={name: tf.saved_model.utils.build_tensor_info(tensor) for name, tensor in sig['outputs'].items()},
+        method_name=sig['method_name'] if 'method_name' in sig else key)
+  logging.info("===== signature_def_map: {}".format(signature_def_map))
+  builder.add_meta_graph_and_variables(
+      sess,
+      tag_set.split(','),
+      signature_def_map=signature_def_map,
+      clear_devices=True)
+  g.finalize()
+  builder.save()
 
 
 def batch_results(mgr, results, qname='output'):

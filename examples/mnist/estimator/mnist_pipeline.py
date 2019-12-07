@@ -45,8 +45,7 @@ def main_fun(args, ctx):
       ds = tf.data.Dataset.from_generator(rdd_generator, (tf.float32, tf.float32), (tf.TensorShape([28, 28, 1]), tf.TensorShape([1])))
       return ds.batch(BATCH_SIZE)
     else:
-      raise Exception("I'm evaluating: mode={}, input_context={}".format(mode, input_context))
-
+      # read evaluation data from tensorflow_datasets directly
       def scale(image, label):
         image = tf.cast(image, tf.float32) / 255.0
         return image, label

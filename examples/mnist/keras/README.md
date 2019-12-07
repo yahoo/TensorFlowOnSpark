@@ -1,8 +1,8 @@
 # MNIST using Keras
 
-Original Source: https://www.tensorflow.org/beta/tutorials/distribute/multi_worker_with_keras
+Original Source: https://www.tensorflow.org/tutorials/distribute/multi_worker_with_keras
 
-This is the [Multi-worker Training with Keras](https://www.tensorflow.org/beta/tutorials/distribute/multi_worker_with_keras) example, adapted for TensorFlowOnSpark.
+This is the [Multi-worker Training with Keras](https://www.tensorflow.org/tutorials/distribute/multi_worker_with_keras) example, adapted for TensorFlowOnSpark.
 
 Notes:
 - This example assumes that Spark, TensorFlow, TensorFlow Datasets, and TensorFlowOnSpark are already installed.
@@ -130,7 +130,7 @@ For batch inferencing use cases, you can use Spark to run multiple single-node T
     ${TFoS_HOME}/examples/mnist/keras/mnist_inference.py \
     --cluster_size ${SPARK_WORKER_INSTANCES} \
     --images_labels ${TFoS_HOME}/data/mnist/tfr/test \
-    --export_dir ${TFoS_HOME}/mnist_export \
+    --export_dir ${SAVED_MODEL} \
     --output ${TFoS_HOME}/predictions
 
 #### Train and Inference via Spark ML Pipeline API

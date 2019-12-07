@@ -1,5 +1,6 @@
 h5py>=2.9.0
 numpy>=1.14.0
+packaging
 py4j==0.10.7
 pyspark
 scipy
