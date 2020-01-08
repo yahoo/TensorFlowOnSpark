@@ -137,6 +137,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
   """
   def _mapfn(iter):
     import tensorflow as tf
+    from packaging import version
 
     # Note: consuming the input iterator helps Pyspark re-use this worker,
     for i in iter:
@@ -225,7 +226,11 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
         raise Exception("Unable to find 'tensorboard' in: {}".format(search_path))
 
       # launch tensorboard
-      tb_proc = subprocess.Popen([pypath, tb_path, "--logdir=%s" % logdir, "--port=%d" % tb_port], env=os.environ)
+      if version.parse(tf.__version__) >= version.parse('2.0.0'):
+        tb_proc = subprocess.Popen([pypath, tb_path, "--reload_multifile=True", "--logdir=%s" % logdir, "--port=%d" % tb_port], env=os.environ)
+      else:
+        tb_proc = subprocess.Popen([pypath, tb_path, "--logdir=%s" % logdir, "--port=%d" % tb_port], env=os.environ)
+
       tb_pid = tb_proc.pid
 
     # check server to see if this task is being retried (i.e. already reserved)
