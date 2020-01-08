@@ -198,10 +198,12 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
       logger.debug("CLASSPATH: {0}".format(hadoop_classpath))
       os.environ['CLASSPATH'] = classpath + os.pathsep + hadoop_classpath
 
-    # start TensorBoard if requested
+    # start TensorBoard if requested, on 'worker:0' if available (for backwards-compatibility), otherwise on 'chief:0' or 'master:0'
+    job_names = sorted([k for k in cluster_template.keys() if k in ['chief', 'master', 'worker']])
+    tb_job_name = 'worker' if 'worker' in job_names else job_names[0]
     tb_pid = 0
     tb_port = 0
-    if tensorboard and job_name == 'worker' and task_index == 0:
+    if tensorboard and job_name == tb_job_name and task_index == 0:
       tb_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
       tb_sock.bind(('', 0))
       tb_port = tb_sock.getsockname()[1]
