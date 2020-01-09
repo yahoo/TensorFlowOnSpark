@@ -13,14 +13,13 @@ import socket
 import subprocess
 import errno
 from socket import error as socket_error
-from . import gpu_info
+from . import compat, gpu_info
 
 logger = logging.getLogger(__name__)
 
 
 def single_node_env(num_gpus=1, worker_index=-1, nodes=[]):
   """Setup environment variables for Hadoop compatibility and GPU allocation"""
-  import tensorflow as tf
   # ensure expanded CLASSPATH w/o glob characters (required for Spark 2.1 + JNI)
   if 'HADOOP_PREFIX' in os.environ and 'TFOS_CLASSPATH_UPDATED' not in os.environ:
       classpath = os.environ['CLASSPATH']
@@ -29,7 +28,7 @@ def single_node_env(num_gpus=1, worker_index=-1, nodes=[]):
       os.environ['CLASSPATH'] = classpath + os.pathsep + hadoop_classpath
       os.environ['TFOS_CLASSPATH_UPDATED'] = '1'
 
-  if tf.test.is_built_with_cuda() and num_gpus > 0:
+  if compat.is_gpu_available() and num_gpus > 0:
     # reserve GPU(s), if requested
     if worker_index >= 0 and len(nodes) > 0:
       # compute my index relative to other nodes on the same host, if known

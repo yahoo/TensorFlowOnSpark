@@ -23,6 +23,7 @@ from threading import Thread
 
 from . import TFManager
 from . import TFNode
+from . import compat
 from . import gpu_info
 from . import marker
 from . import reservation
@@ -144,7 +145,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
       executor_id = i
 
     # check that there are enough available GPUs (if using tensorflow-gpu) before committing reservation on this node
-    if tf.test.is_built_with_cuda():
+    if compat.is_gpu_available():
       num_gpus = tf_args.num_gpus if 'num_gpus' in tf_args else 1
       gpus_to_use = gpu_info.get_gpus(num_gpus)
 
@@ -295,7 +296,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
       os.environ['TF_CONFIG'] = tf_config
 
     # reserve GPU(s) again, just before launching TF process (in case situation has changed)
-    if tf.test.is_built_with_cuda():
+    if compat.is_gpu_available():
       # compute my index relative to other nodes on the same host (for GPU allocation)
       my_addr = cluster_spec[job_name][task_index]
       my_host = my_addr.split(':')[0]
