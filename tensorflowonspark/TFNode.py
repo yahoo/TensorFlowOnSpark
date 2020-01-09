@@ -19,7 +19,7 @@ import logging
 
 from packaging import version
 from six.moves.queue import Empty
-from . import marker
+from . import compat, marker
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +90,7 @@ def start_cluster_server(ctx, num_gpus=1, rdma=False):
   cluster_spec = ctx.cluster_spec
   logging.info("{0}: Cluster spec: {1}".format(ctx.worker_num, cluster_spec))
 
-  if tf.test.is_built_with_cuda() and num_gpus > 0:
+  if compat.is_gpu_available() and num_gpus > 0:
     # compute my index relative to other nodes placed on the same host (for GPU allocation)
     my_addr = cluster_spec[ctx.job_name][ctx.task_index]
     my_host = my_addr.split(':')[0]
