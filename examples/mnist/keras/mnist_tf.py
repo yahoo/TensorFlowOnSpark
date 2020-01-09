@@ -56,7 +56,10 @@ def main_fun(args, ctx):
   # callbacks = [tf.keras.callbacks.ModelCheckpoint(filepath=args.model_dir)]
   tf.io.gfile.makedirs(args.model_dir)
   filepath = args.model_dir + "/weights-{epoch:04d}"
-  callbacks = [tf.keras.callbacks.ModelCheckpoint(filepath=filepath, verbose=1, save_weights_only=True)]
+  callbacks = [
+    tf.keras.callbacks.ModelCheckpoint(filepath=filepath, verbose=1, save_weights_only=True),
+    tf.keras.callbacks.TensorBoard(log_dir=args.model_dir)
+  ]
 
   with strategy.scope():
     multi_worker_model = build_and_compile_cnn_model()
@@ -90,5 +93,5 @@ if __name__ == '__main__':
   args = parser.parse_args()
   print("args:", args)
 
-  cluster = TFCluster.run(sc, main_fun, args, args.cluster_size, num_ps=0, tensorboard=args.tensorboard, input_mode=TFCluster.InputMode.TENSORFLOW, master_node='chief')
+  cluster = TFCluster.run(sc, main_fun, args, args.cluster_size, num_ps=0, tensorboard=args.tensorboard, input_mode=TFCluster.InputMode.TENSORFLOW, master_node='chief', log_dir=args.model_dir)
   cluster.shutdown()
