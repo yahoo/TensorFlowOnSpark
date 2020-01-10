@@ -94,7 +94,6 @@ class PipelineTest(test.SparkTest):
       import tensorflow as tf
       from tensorflowonspark import TFNode
 
-      tf.compat.v1.disable_eager_execution()
       tf.compat.v1.reset_default_graph()
       strategy = tf.distribute.experimental.MultiWorkerMirroredStrategy()
 

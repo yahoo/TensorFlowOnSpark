@@ -26,4 +26,4 @@ def is_gpu_available():
   if version.parse(tf.__version__) < version.parse('2.1.0'):
     return tf.test.is_built_with_cuda()
   else:
-    return len(tf.config.list_logical_devices('GPU')) > 0
+    return len(tf.config.list_physical_devices('GPU')) > 0
