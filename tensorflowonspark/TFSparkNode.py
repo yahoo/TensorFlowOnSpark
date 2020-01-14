@@ -137,6 +137,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
     A nodeRDD.mapPartitions() function.
   """
   def _mapfn(iter):
+    import pyspark
     import tensorflow as tf
     from packaging import version
 
@@ -145,9 +146,11 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
       executor_id = i
 
     # check that there are enough available GPUs (if using tensorflow-gpu) before committing reservation on this node
-    if compat.is_gpu_available():
-      num_gpus = tf_args.num_gpus if 'num_gpus' in tf_args else 1
-      gpus_to_use = gpu_info.get_gpus(num_gpus)
+    # note: for Spark 3+ w/ GPU allocation, the required number of GPUs should be guaranteed by the resource manager
+    if version.parse(pyspark.__version__) < version.parse('3.0.0'):
+      if compat.is_gpu_available():
+        num_gpus = tf_args.num_gpus if 'num_gpus' in tf_args else 1
+        gpus_to_use = gpu_info.get_gpus(num_gpus)
 
     # assign TF job/task based on provided cluster_spec template (or use default/null values)
     job_name = 'default'
@@ -295,20 +298,26 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
       logger.info("export TF_CONFIG: {}".format(tf_config))
       os.environ['TF_CONFIG'] = tf_config
 
-    # reserve GPU(s) again, just before launching TF process (in case situation has changed)
-    if compat.is_gpu_available():
-      # compute my index relative to other nodes on the same host (for GPU allocation)
-      my_addr = cluster_spec[job_name][task_index]
-      my_host = my_addr.split(':')[0]
-      flattened = [v for sublist in cluster_spec.values() for v in sublist]
-      local_peers = [p for p in flattened if p.startswith(my_host)]
-      my_index = local_peers.index(my_addr)
+    if version.parse(pyspark.__version__) >= version.parse("3.0.0"):
+      from pyspark import TaskContext
+      context = TaskContext()
+      gpus = context.resources()['gpu'] if 'gpu' in context.resources() else []
+      os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(gpus)
+    else:
+      # reserve GPU(s) again, just before launching TF process (in case situation has changed)
+      if compat.is_gpu_available():
+        # compute my index relative to other nodes on the same host (for GPU allocation)
+        my_addr = cluster_spec[job_name][task_index]
+        my_host = my_addr.split(':')[0]
+        flattened = [v for sublist in cluster_spec.values() for v in sublist]
+        local_peers = [p for p in flattened if p.startswith(my_host)]
+        my_index = local_peers.index(my_addr)
 
-      num_gpus = tf_args.num_gpus if 'num_gpus' in tf_args else 1
-      gpus_to_use = gpu_info.get_gpus(num_gpus, my_index)
-      gpu_str = "GPUs" if num_gpus > 1 else "GPU"
-      logger.debug("Requested {} {}, setting CUDA_VISIBLE_DEVICES={}".format(num_gpus, gpu_str, gpus_to_use))
-      os.environ['CUDA_VISIBLE_DEVICES'] = gpus_to_use
+        num_gpus = tf_args.num_gpus if 'num_gpus' in tf_args else 1
+        gpus_to_use = gpu_info.get_gpus(num_gpus, my_index)
+        gpu_str = "GPUs" if num_gpus > 1 else "GPU"
+        logger.debug("Requested {} {}, setting CUDA_VISIBLE_DEVICES={}".format(num_gpus, gpu_str, gpus_to_use))
+        os.environ['CUDA_VISIBLE_DEVICES'] = gpus_to_use
 
     # create a context object to hold metadata for TF
     ctx = TFNodeContext(executor_id, job_name, task_index, cluster_spec, cluster_meta['default_fs'], cluster_meta['working_dir'], TFSparkNode.mgr)
