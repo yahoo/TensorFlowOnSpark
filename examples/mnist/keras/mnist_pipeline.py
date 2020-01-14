@@ -134,6 +134,7 @@ if __name__ == '__main__':
     model = TFModel(args) \
         .setInputMapping({'image': 'conv2d_input'}) \
         .setOutputMapping({'dense_1': 'prediction'}) \
+        .setSignatureDefKey('serving_default') \
         .setExportDir(args.export_dir) \
         .setBatchSize(args.batch_size)
 

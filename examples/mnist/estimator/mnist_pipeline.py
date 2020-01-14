@@ -181,6 +181,7 @@ if __name__ == "__main__":
     model = TFModel(args) \
         .setInputMapping({'image': 'features'}) \
         .setOutputMapping({'logits': 'prediction'}) \
+        .setSignatureDefKey('serving_default') \
         .setExportDir(args.export_dir) \
         .setBatchSize(args.batch_size)
 
