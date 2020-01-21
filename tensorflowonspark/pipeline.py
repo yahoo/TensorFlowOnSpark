@@ -23,14 +23,15 @@ from pyspark.sql import Row, SparkSession
 import argparse
 import copy
 import logging
+import pkg_resources
 import sys
-import tensorflow as tf
 
 from . import TFCluster, util
 from packaging import version
 
 
 logger = logging.getLogger(__name__)
+TF_VERSION = pkg_resources.get_distribution('tensorflow').version
 
 
 # TensorFlowOnSpark Params
@@ -370,7 +371,7 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
     self.train_fn = train_fn
     self.args = Namespace(tf_args)
 
-    master_node = 'chief' if version.parse(tf.__version__) >= version.parse("2.0.0") else None
+    master_node = 'chief' if version.parse(TF_VERSION) >= version.parse("2.0.0") else None
     self._setDefault(input_mapping={},
                      cluster_size=1,
                      num_ps=0,
@@ -413,7 +414,7 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
     cluster.shutdown(grace_secs=self.getGraceSecs())
 
     if self.export_fn:
-      if version.parse(tf.__version__) < version.parse("2.0.0"):
+      if version.parse(TF_VERSION) < version.parse("2.0.0"):
         # For TF1.x, run export function, if provided
         assert local_args.export_dir, "Export function requires --export_dir to be set"
         logging.info("Exporting saved_model (via export_fn) to: {}".format(local_args.export_dir))
@@ -480,7 +481,7 @@ class TFModel(Model, TFParams,
 
     tf_args = self.args.argv if self.args.argv else local_args
 
-    _run_model = _run_model_tf1 if version.parse(tf.__version__) < version.parse("2.0.0") else _run_model_tf2
+    _run_model = _run_model_tf1 if version.parse(TF_VERSION) < version.parse("2.0.0") else _run_model_tf2
     rdd_out = dataset.select(input_cols).rdd.mapPartitions(lambda it: _run_model(it, local_args, tf_args))
 
     # convert to a DataFrame-friendly format
@@ -516,7 +517,7 @@ def _run_model_tf1(iterator, args, tf_args):
   output_tensor_names = [tensor for tensor, col in sorted(args.output_mapping.items())]
 
   # if using a signature_def_key, get input/output tensor info from the requested signature
-  if version.parse(tf.__version__) < version.parse("2.0.0") and args.signature_def_key:
+  if version.parse(TF_VERSION) < version.parse("2.0.0") and args.signature_def_key:
     assert args.export_dir, "Inferencing with signature_def_key requires --export_dir argument"
     logging.info("===== loading meta_graph_def for tag_set ({0}) from saved_model: {1}".format(args.tag_set, args.export_dir))
     meta_graph_def = get_meta_graph_def(args.export_dir, args.tag_set)
@@ -534,6 +535,7 @@ def _run_model_tf1(iterator, args, tf_args):
     sess = global_sess
   else:
     # otherwise, create new session and load graph from disk
+    import tensorflow as tf
     tf.reset_default_graph()
     sess = tf.Session(graph=tf.get_default_graph())
     if args.export_dir:
@@ -583,6 +585,8 @@ def _run_model_tf1(iterator, args, tf_args):
 def _run_model_tf2(iterator, args, tf_args):
   """mapPartitions function (for TF2.x) to run single-node inferencing from a saved_model, using input/output mappings."""
   single_node_env(tf_args)
+
+  import tensorflow as tf
 
   logger.info("===== input_mapping: {}".format(args.input_mapping))
   logger.info("===== output_mapping: {}".format(args.output_mapping))

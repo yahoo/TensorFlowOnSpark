@@ -42,6 +42,15 @@ def _get_gpu():
   return gpu
 
 
+def is_gpu_available():
+  """Determine if GPUs are available on the host"""
+  try:
+    subprocess.check_output(["nvidia-smi", "--list-gpus"])
+    return True
+  except Exception:
+    return False
+
+
 def get_gpus(num_gpu=1, worker_index=-1):
   """Get list of free GPUs according to nvidia-smi.
 
