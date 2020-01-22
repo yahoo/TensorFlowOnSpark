@@ -140,7 +140,6 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
   """
   def _mapfn(iter):
     import pyspark
-    from packaging import version
 
     # Note: consuming the input iterator helps Pyspark re-use this worker,
     for i in iter:
@@ -148,7 +147,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
 
     # check that there are enough available GPUs (if using tensorflow-gpu) before committing reservation on this node
     # note: for Spark 3+ w/ GPU allocation, the required number of GPUs should be guaranteed by the resource manager
-    if version.parse(pyspark.__version__).base_version < version.parse('3.0.0'):
+    if version.parse(pyspark.__version__).base_version < version.parse('3.0.0').base_version:
       if gpu_info.is_gpu_available():
         num_gpus = tf_args.num_gpus if 'num_gpus' in tf_args else 1
         gpus_to_use = gpu_info.get_gpus(num_gpus)
@@ -299,14 +298,18 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
       logger.info("export TF_CONFIG: {}".format(tf_config))
       os.environ['TF_CONFIG'] = tf_config
 
-    if version.parse(pyspark.__version__).base_version >= version.parse("3.0.0"):
-      from pyspark import TaskContext
-      context = TaskContext()
-      gpus = context.resources()['gpu'] if 'gpu' in context.resources() else []
-      os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(gpus)
-    else:
-      # reserve GPU(s) again, just before launching TF process (in case situation has changed)
-      if gpu_info.is_gpu_available():
+    # reserve GPU(s) again, just before launching TF process (in case situation has changed)
+    # and setup CUDA_VISIBLE_DEVICES accordingly
+    if gpu_info.is_gpu_available():
+      gpus = []
+      # For Spark 3+, try to get GPU resources from TaskContext first
+      if version.parse(pyspark.__version__).base_version >= version.parse("3.0.0").base_version:
+        from pyspark import TaskContext
+        context = TaskContext()
+        if 'gpu' in context.resources():
+          gpus = context.resources()['gpu'].addresses
+
+      if not gpus:
         # compute my index relative to other nodes on the same host (for GPU allocation)
         my_addr = cluster_spec[job_name][task_index]
         my_host = my_addr.split(':')[0]
