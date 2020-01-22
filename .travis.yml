@@ -1,16 +1,6 @@
 matrix:
   include:
   - language: python
-    python: 2.7
-    dist: xenial
-    before_install:
-    - source scripts/travis_before_install.sh
-    install:
-    - pip install -r requirements.txt
-    - pip install mock
-    script:
-    - test/run_tests.sh
-  - language: python
     python: 3.6
     dist: xenial
     before_install:
