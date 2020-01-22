@@ -16,12 +16,14 @@ from __future__ import print_function
 
 import getpass
 import logging
+import pkg_resources
 
 from packaging import version
 from six.moves.queue import Empty
 from . import compat, marker
 
 logger = logging.getLogger(__name__)
+TF_VERSION = pkg_resources.get_distribution('tensorflow').version
 
 
 def hdfs_path(ctx, path):
@@ -79,11 +81,10 @@ def start_cluster_server(ctx, num_gpus=1, rdma=False):
     A tuple of (cluster_spec, server)
   """
   import os
-  import tensorflow as tf
   import time
   from . import gpu_info
 
-  if version.parse(tf.__version__) >= version.parse("2.0.0"):
+  if version.parse(TF_VERSION) >= version.parse("2.0.0"):
     raise Exception("DEPRECATED: Use higher-level APIs like `tf.keras` or `tf.estimator`")
 
   logging.info("{0}: ======== {1}:{2} ========".format(ctx.worker_num, ctx.job_name, ctx.task_index))
@@ -114,6 +115,9 @@ def start_cluster_server(ctx, num_gpus=1, rdma=False):
 
         # Set GPU device to use for TensorFlow
         os.environ['CUDA_VISIBLE_DEVICES'] = gpus_to_use
+
+        # Import tensorflow after gpu allocation
+        import tensorflow as tf
 
         # Create a cluster from the parameter server and worker hosts.
         cluster = tf.train.ClusterSpec(cluster_spec)

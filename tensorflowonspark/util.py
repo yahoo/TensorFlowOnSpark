@@ -13,7 +13,7 @@ import socket
 import subprocess
 import errno
 from socket import error as socket_error
-from . import compat, gpu_info
+from . import gpu_info
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ def single_node_env(num_gpus=1, worker_index=-1, nodes=[]):
       os.environ['CLASSPATH'] = classpath + os.pathsep + hadoop_classpath
       os.environ['TFOS_CLASSPATH_UPDATED'] = '1'
 
-  if compat.is_gpu_available() and num_gpus > 0:
+  if gpu_info.is_gpu_available() and num_gpus > 0:
     # reserve GPU(s), if requested
     if worker_index >= 0 and len(nodes) > 0:
       # compute my index relative to other nodes on the same host, if known

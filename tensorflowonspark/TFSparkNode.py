@@ -12,6 +12,7 @@ import json
 import logging
 import multiprocessing
 import os
+import pkg_resources
 import platform
 import socket
 import subprocess
@@ -19,17 +20,18 @@ import sys
 import uuid
 import time
 import traceback
+from packaging import version
 from threading import Thread
 
 from . import TFManager
 from . import TFNode
-from . import compat
 from . import gpu_info
 from . import marker
 from . import reservation
 from . import util
 
 logger = logging.getLogger(__name__)
+TF_VERSION = pkg_resources.get_distribution('tensorflow').version
 
 
 class TFNodeContext:
@@ -138,7 +140,6 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
   """
   def _mapfn(iter):
     import pyspark
-    import tensorflow as tf
     from packaging import version
 
     # Note: consuming the input iterator helps Pyspark re-use this worker,
@@ -147,8 +148,8 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
 
     # check that there are enough available GPUs (if using tensorflow-gpu) before committing reservation on this node
     # note: for Spark 3+ w/ GPU allocation, the required number of GPUs should be guaranteed by the resource manager
-    if version.parse(pyspark.__version__) < version.parse('3.0.0'):
-      if compat.is_gpu_available():
+    if version.parse(pyspark.__version__).base_version < version.parse('3.0.0'):
+      if gpu_info.is_gpu_available():
         num_gpus = tf_args.num_gpus if 'num_gpus' in tf_args else 1
         gpus_to_use = gpu_info.get_gpus(num_gpus)
 
@@ -230,7 +231,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
         raise Exception("Unable to find 'tensorboard' in: {}".format(search_path))
 
       # launch tensorboard
-      if version.parse(tf.__version__) >= version.parse('2.0.0'):
+      if version.parse(TF_VERSION) >= version.parse('2.0.0'):
         tb_proc = subprocess.Popen([pypath, tb_path, "--reload_multifile=True", "--logdir=%s" % logdir, "--port=%d" % tb_port], env=os.environ)
       else:
         tb_proc = subprocess.Popen([pypath, tb_path, "--logdir=%s" % logdir, "--port=%d" % tb_port], env=os.environ)
@@ -298,14 +299,14 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
       logger.info("export TF_CONFIG: {}".format(tf_config))
       os.environ['TF_CONFIG'] = tf_config
 
-    if version.parse(pyspark.__version__) >= version.parse("3.0.0"):
+    if version.parse(pyspark.__version__).base_version >= version.parse("3.0.0"):
       from pyspark import TaskContext
       context = TaskContext()
       gpus = context.resources()['gpu'] if 'gpu' in context.resources() else []
       os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(gpus)
     else:
       # reserve GPU(s) again, just before launching TF process (in case situation has changed)
-      if compat.is_gpu_available():
+      if gpu_info.is_gpu_available():
         # compute my index relative to other nodes on the same host (for GPU allocation)
         my_addr = cluster_spec[job_name][task_index]
         my_host = my_addr.split(':')[0]
