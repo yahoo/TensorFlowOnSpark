@@ -301,15 +301,19 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
     # reserve GPU(s) again, just before launching TF process (in case situation has changed)
     # and setup CUDA_VISIBLE_DEVICES accordingly
     if gpu_info.is_gpu_available():
-      gpus = []
+
+      gpus_to_use = None
       # For Spark 3+, try to get GPU resources from TaskContext first
       if version.parse(pyspark.__version__).base_version >= version.parse("3.0.0").base_version:
         from pyspark import TaskContext
         context = TaskContext()
         if 'gpu' in context.resources():
+          # use ALL GPUs assigned by resource manager
           gpus = context.resources()['gpu'].addresses
+          num_gpus = len(gpus)
+          gpus_to_use = ','.join(gpus)
 
-      if not gpus:
+      if not gpus_to_use:
         # compute my index relative to other nodes on the same host (for GPU allocation)
         my_addr = cluster_spec[job_name][task_index]
         my_host = my_addr.split(':')[0]
@@ -317,11 +321,13 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
         local_peers = [p for p in flattened if p.startswith(my_host)]
         my_index = local_peers.index(my_addr)
 
+        # default to one GPU if not specified explicitly
         num_gpus = tf_args.num_gpus if 'num_gpus' in tf_args else 1
         gpus_to_use = gpu_info.get_gpus(num_gpus, my_index)
-        gpu_str = "GPUs" if num_gpus > 1 else "GPU"
-        logger.debug("Requested {} {}, setting CUDA_VISIBLE_DEVICES={}".format(num_gpus, gpu_str, gpus_to_use))
-        os.environ['CUDA_VISIBLE_DEVICES'] = gpus_to_use
+
+      gpu_str = "GPUs" if num_gpus > 1 else "GPU"
+      logger.info("Requested {} {}, setting CUDA_VISIBLE_DEVICES={}".format(num_gpus, gpu_str, gpus_to_use))
+      os.environ['CUDA_VISIBLE_DEVICES'] = gpus_to_use
 
     # create a context object to hold metadata for TF
     ctx = TFNodeContext(executor_id, job_name, task_index, cluster_spec, cluster_meta['default_fs'], cluster_meta['working_dir'], TFSparkNode.mgr)
