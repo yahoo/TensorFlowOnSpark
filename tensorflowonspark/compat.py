@@ -8,11 +8,13 @@ from packaging import version
 
 
 def export_saved_model(model, export_dir, is_chief=False):
-  if version.parse(tf.__version__) == version.parse('2.0.0'):
+  if version.parse(tf.__version__) == version.parse('2.1.0'):
+    # non-chief nodes save to dummy location on local disk
+    export_dir = export_dir if is_chief else 'worker_model'
+    model.save(export_dir, save_format='tf')
+  else:  # if version.parse(tf.__version__) <= version.parse('2.0.0'):
     if is_chief:
       tf.keras.experimental.export_saved_model(model, export_dir)
-  else:
-    model.save(export_dir, save_format='tf')
 
 
 def disable_auto_shard(options):
