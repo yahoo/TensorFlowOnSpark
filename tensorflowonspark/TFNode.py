@@ -137,6 +137,8 @@ def start_cluster_server(ctx, num_gpus=1, rdma=False):
       raise Exception("Failed to allocate GPU")
   else:
     # CPU
+    import tensorflow as tf
+
     os.environ['CUDA_VISIBLE_DEVICES'] = ''
     logging.info("{0}: Using CPU".format(ctx.worker_num))
 

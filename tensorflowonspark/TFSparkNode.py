@@ -139,14 +139,18 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
     A nodeRDD.mapPartitions() function.
   """
   def _mapfn(iter):
+    import pyspark
+
     # Note: consuming the input iterator helps Pyspark re-use this worker,
     for i in iter:
       executor_id = i
 
     # check that there are enough available GPUs (if using tensorflow-gpu) before committing reservation on this node
-    if gpu_info.is_gpu_available():
-      num_gpus = tf_args.num_gpus if 'num_gpus' in tf_args else 1
-      gpus_to_use = gpu_info.get_gpus(num_gpus)
+    # note: for Spark 3+ w/ GPU allocation, the required number of GPUs should be guaranteed by the resource manager
+    if version.parse(pyspark.__version__).base_version < version.parse('3.0.0').base_version:
+      if gpu_info.is_gpu_available():
+        num_gpus = tf_args.num_gpus if 'num_gpus' in tf_args else 1
+        gpus_to_use = gpu_info.get_gpus(num_gpus)
 
     # assign TF job/task based on provided cluster_spec template (or use default/null values)
     job_name = 'default'
@@ -295,18 +299,34 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
       os.environ['TF_CONFIG'] = tf_config
 
     # reserve GPU(s) again, just before launching TF process (in case situation has changed)
+    # and setup CUDA_VISIBLE_DEVICES accordingly
     if gpu_info.is_gpu_available():
-      # compute my index relative to other nodes on the same host (for GPU allocation)
-      my_addr = cluster_spec[job_name][task_index]
-      my_host = my_addr.split(':')[0]
-      flattened = [v for sublist in cluster_spec.values() for v in sublist]
-      local_peers = [p for p in flattened if p.startswith(my_host)]
-      my_index = local_peers.index(my_addr)
 
-      num_gpus = tf_args.num_gpus if 'num_gpus' in tf_args else 1
-      gpus_to_use = gpu_info.get_gpus(num_gpus, my_index)
+      gpus_to_use = None
+      # For Spark 3+, try to get GPU resources from TaskContext first
+      if version.parse(pyspark.__version__).base_version >= version.parse("3.0.0").base_version:
+        from pyspark import TaskContext
+        context = TaskContext()
+        if 'gpu' in context.resources():
+          # use ALL GPUs assigned by resource manager
+          gpus = context.resources()['gpu'].addresses
+          num_gpus = len(gpus)
+          gpus_to_use = ','.join(gpus)
+
+      if not gpus_to_use:
+        # compute my index relative to other nodes on the same host (for GPU allocation)
+        my_addr = cluster_spec[job_name][task_index]
+        my_host = my_addr.split(':')[0]
+        flattened = [v for sublist in cluster_spec.values() for v in sublist]
+        local_peers = [p for p in flattened if p.startswith(my_host)]
+        my_index = local_peers.index(my_addr)
+
+        # default to one GPU if not specified explicitly
+        num_gpus = tf_args.num_gpus if 'num_gpus' in tf_args else 1
+        gpus_to_use = gpu_info.get_gpus(num_gpus, my_index)
+
       gpu_str = "GPUs" if num_gpus > 1 else "GPU"
-      logger.debug("Requested {} {}, setting CUDA_VISIBLE_DEVICES={}".format(num_gpus, gpu_str, gpus_to_use))
+      logger.info("Requested {} {}, setting CUDA_VISIBLE_DEVICES={}".format(num_gpus, gpu_str, gpus_to_use))
       os.environ['CUDA_VISIBLE_DEVICES'] = gpus_to_use
 
     # create a context object to hold metadata for TF
