@@ -209,10 +209,15 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
     tb_pid = 0
     tb_port = 0
     if tensorboard and job_name == tb_job_name and task_index == 0:
-      tb_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-      tb_sock.bind(('', 0))
-      tb_port = tb_sock.getsockname()[1]
-      tb_sock.close()
+      if 'TENSORBOARD_PORT' in os.environ:
+        # use port defined in env var
+        tb_port = os.environ['TENSORBOARD_PORT']
+      else:
+        # otherwise, find a free port
+        tb_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        tb_sock.bind(('', 0))
+        tb_port = tb_sock.getsockname()[1]
+        tb_sock.close()
       logdir = log_dir if log_dir else "tensorboard_%d" % executor_id
 
       # search for tensorboard in python/bin, PATH, and PYTHONPATH
@@ -250,11 +255,15 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
 
     # if not already done, register everything we need to set up the cluster
     if node_meta is None:
-      # first, find a free port for TF
-      tmp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-      tmp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-      tmp_sock.bind(('', port))
-      port = tmp_sock.getsockname()[1]
+      if 'TENSORFLOW_PORT' in os.environ:
+        # use port defined in env var
+        port = int(os.environ['TENSORFLOW_PORT'])
+      else:
+        # otherwise, find a free port
+        tmp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        tmp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        tmp_sock.bind(('', port))
+        port = tmp_sock.getsockname()[1]
 
       node_meta = {
           'executor_id': executor_id,
