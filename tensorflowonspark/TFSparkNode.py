@@ -211,7 +211,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
     if tensorboard and job_name == tb_job_name and task_index == 0:
       if 'TENSORBOARD_PORT' in os.environ:
         # use port defined in env var
-        tb_port = os.environ['TENSORBOARD_PORT']
+        tb_port = int(os.environ['TENSORBOARD_PORT'])
       else:
         # otherwise, find a free port
         tb_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
