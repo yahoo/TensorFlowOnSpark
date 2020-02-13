@@ -38,7 +38,7 @@ def inference(args, ctx):
     return (image, label)
 
   # define a new tf.data.Dataset (for inferencing)
-  ds = tf.data.Dataset.list_files("{}/part-*".format(args.images_labels))
+  ds = tf.data.Dataset.list_files("{}/part-*".format(args.images_labels), shuffle=False)
   ds = ds.shard(ctx.num_workers, ctx.worker_num)
   ds = ds.interleave(tf.data.TFRecordDataset)
   ds = ds.map(parse_tfr)
