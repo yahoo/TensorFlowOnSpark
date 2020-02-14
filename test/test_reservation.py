@@ -12,6 +12,7 @@ if sys.version_info >= (3, 3):
 else:
     import mock
 
+
 class ReservationTest(unittest.TestCase):
   def test_reservation_class(self):
     """Test core reservation class, expecting 2 reservations"""
@@ -56,23 +57,23 @@ class ReservationTest(unittest.TestCase):
     self.assertEqual(s.done, True)
 
   def test_reservation_enviroment_exists_get_server_ip_return_environment_value(self):
-      tfso_server = Server(5)
-      with mock.patch.dict(os.environ,{'TFOS_SERVER_HOST':'my_host_ip'}):
-        assert tfso_server.get_server_ip() == "my_host_ip"
+      tfos_server = Server(5)
+      with mock.patch.dict(os.environ, {'TFOS_SERVER_HOST': 'my_host_ip'}):
+        assert tfos_server.get_server_ip() == "my_host_ip"
 
   def test_reservation_enviroment_not_exists_get_server_ip_return_actual_host_ip(self):
-    tfso_server = Server(5)
-    assert tfso_server.get_server_ip() == util.get_ip_address()
+    tfos_server = Server(5)
+    assert tfos_server.get_server_ip() == util.get_ip_address()
 
   def test_reservation_enviroment_exists_start_listening_socket_return_socket_listening_to_environment_port_value(self):
-    tfso_server = Server(1)
+    tfos_server = Server(1)
     with mock.patch.dict(os.environ, {'TFOS_SERVER_PORT': '9999'}):
-      assert tfso_server.start_listening_socket().getsockname()[1] == 9999
+      assert tfos_server.start_listening_socket().getsockname()[1] == 9999
 
   def test_reservation_enviroment_not_exists_start_listening_socket_return_socket(self):
-    tfso_server = Server(1)
-    print(tfso_server.start_listening_socket().getsockname()[1])
-    assert type(tfso_server.start_listening_socket().getsockname()[1]) == int
+    tfos_server = Server(1)
+    print(tfos_server.start_listening_socket().getsockname()[1])
+    assert type(tfos_server.start_listening_socket().getsockname()[1]) == int
 
   def test_reservation_server_multi(self):
     """Test reservation server, expecting multiple reservations"""
