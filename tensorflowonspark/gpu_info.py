@@ -7,9 +7,7 @@ from __future__ import division
 from __future__ import nested_scopes
 from __future__ import print_function
 
-import ctypes as ct
 import logging
-import platform
 import random
 import subprocess
 import time
@@ -17,29 +15,8 @@ import time
 logger = logging.getLogger(__name__)
 
 MAX_RETRIES = 3           #: Maximum retries to allocate GPUs
-
-
-def _get_gpu():
-  """*DEPRECATED*. Allocates first available GPU using cudaSetDevice(), or returns 0 otherwise."""
-  # Note: this code executes, but Tensorflow subsequently complains that the "current context was not created by the StreamExecutor cuda_driver API"
-  system = platform.system()
-  if system == "Linux":
-    libcudart = ct.cdll.LoadLibrary("libcudart.so")
-  elif system == "Darwin":
-    libcudart = ct.cdll.LoadLibrary("libcudart.dylib")
-  elif system == "Windows":
-    libcudart = ct.windll.LoadLibrary("libcudart.dll")
-  else:
-    raise NotImplementedError("Cannot identify system.")
-
-  device_count = ct.c_int()
-  libcudart.cudaGetDeviceCount(ct.byref(device_count))
-  gpu = 0
-  for i in range(device_count.value):
-    if (0 == libcudart.cudaSetDevice(i) and 0 == libcudart.cudaFree(0)):
-      gpu = i
-      break
-  return gpu
+AS_STRING = 'string'
+AS_LIST = 'list'
 
 
 def is_gpu_available():
@@ -51,7 +28,7 @@ def is_gpu_available():
     return False
 
 
-def get_gpus(num_gpu=1, worker_index=-1):
+def get_gpus(num_gpu=1, worker_index=-1, format=AS_STRING):
   """Get list of free GPUs according to nvidia-smi.
 
   This will retry for ``MAX_RETRIES`` times until the requested number of GPUs are available.
@@ -112,7 +89,12 @@ def get_gpus(num_gpu=1, worker_index=-1):
     proposed_gpus = free_gpus[worker_index * num_gpu:(worker_index * num_gpu + num_gpu)]
   logger.info("Proposed GPUs: {}".format(proposed_gpus))
 
-  return ','.join(str(x) for x in proposed_gpus)
+  if format == AS_STRING:
+    return ','.join(str(x) for x in proposed_gpus)
+  elif format == AS_LIST:
+    return proposed_gpus
+  else:
+    raise Exception("Unknown GPU format")
 
 
 # Function to get the gpu information
