@@ -201,6 +201,9 @@ class TFCluster(object):
       if len(jobs) == 0:
         break
 
+    # stop reservation server
+    self.server.stop()
+
   def tensorboard_url(self):
     """Utility function to get the Tensorboard URL"""
     for node in self.cluster_info:
