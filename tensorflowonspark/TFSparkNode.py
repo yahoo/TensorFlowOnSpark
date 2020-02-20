@@ -34,6 +34,28 @@ logger = logging.getLogger(__name__)
 TF_VERSION = pkg_resources.get_distribution('tensorflow').version
 
 
+def _has_spark_resource_api():
+  """Returns true if Spark 3+ resource API is available"""
+  import pyspark
+  return version.parse(pyspark.__version__).base_version >= version.parse("3.0.0").base_version
+
+
+def _get_cluster_spec(sorted_cluster_info):
+  """Given a list of node metadata sorted by executor_id, returns a tensorflow cluster_spec"""
+  cluster_spec = {}
+  last_executor_id = -1
+  for node in sorted_cluster_info:
+    if (node['executor_id'] == last_executor_id):
+      raise Exception("Duplicate worker/task in cluster_info")
+    last_executor_id = node['executor_id']
+    logger.info("node: {0}".format(node))
+    (njob, nhost, nport) = (node['job_name'], node['host'], node['port'])
+    hosts = [] if njob not in cluster_spec else cluster_spec[njob]
+    hosts.append("{0}:{1}".format(nhost, nport))
+    cluster_spec[njob] = hosts
+  return cluster_spec
+
+
 class TFNodeContext:
   """Encapsulates unique metadata for a TensorFlowOnSpark node/executor and provides methods to interact with Spark and HDFS.
 
@@ -139,13 +161,11 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
     A nodeRDD.mapPartitions() function.
   """
   def _mapfn(iter):
-    import pyspark
 
     # Note: consuming the input iterator helps Pyspark re-use this worker,
     for i in iter:
       executor_id = i
 
-    # check that there are enough available GPUs (if using tensorflow-gpu) before committing reservation on this node
     def _get_gpus(cluster_spec=None):
       gpus = []
       is_k8s = 'SPARK_EXECUTOR_POD_IP' in os.environ
@@ -160,10 +180,11 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
 
       # first, try Spark 3 resources API, returning all visible GPUs
       # note: num_gpus arg is only used (if supplied) to limit/truncate visible devices
-      if version.parse(pyspark.__version__).base_version >= version.parse("3.0.0").base_version:
+      if _has_spark_resource_api():
         from pyspark import TaskContext
         context = TaskContext()
-        if 'gpu' in context.resources():
+        resources = context.resources()
+        if resources and 'gpu' in resources:
           # get all GPUs assigned by resource manager
           gpus = context.resources()['gpu'].addresses
           logger.info("Spark gpu resources: {}".format(gpus))
@@ -339,17 +360,7 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
 
     # construct a TensorFlow clusterspec from cluster_info
     sorted_cluster_info = sorted(cluster_info, key=lambda k: k['executor_id'])
-    cluster_spec = {}
-    last_executor_id = -1
-    for node in sorted_cluster_info:
-      if (node['executor_id'] == last_executor_id):
-        raise Exception("Duplicate worker/task in cluster_info")
-      last_executor_id = node['executor_id']
-      logger.info("node: {0}".format(node))
-      (njob, nhost, nport) = (node['job_name'], node['host'], node['port'])
-      hosts = [] if njob not in cluster_spec else cluster_spec[njob]
-      hosts.append("{0}:{1}".format(nhost, nport))
-      cluster_spec[njob] = hosts
+    cluster_spec = _get_cluster_spec(sorted_cluster_info)
 
     # update TF_CONFIG if cluster spec has a 'master' node (i.e. tf.estimator)
     if 'master' in cluster_spec or 'chief' in cluster_spec:

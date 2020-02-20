@@ -50,6 +50,7 @@ def get_gpus(num_gpu=1, worker_index=-1, format=AS_STRING):
   def parse_gpu(gpu_str):
     cols = gpu_str.split(' ')
     return cols[5].split(')')[0], cols[1].split(':')[0]
+
   gpu_list = [parse_gpu(gpu) for gpu in gpus]
 
   free_gpus = []
@@ -95,76 +96,3 @@ def get_gpus(num_gpu=1, worker_index=-1, format=AS_STRING):
     return proposed_gpus
   else:
     raise Exception("Unknown GPU format")
-
-
-# Function to get the gpu information
-def _get_free_gpu(max_gpu_utilization=40, min_free_memory=0.5, num_gpu=1):
-  """Get available GPUs according to utilization thresholds.
-
-  Args:
-    :max_gpu_utilization: percent utilization threshold to consider a GPU "free"
-    :min_free_memory: percent free memory to consider a GPU "free"
-    :num_gpu: number of requested GPUs
-
-  Returns:
-    A tuple of (available_gpus, minimum_free_memory), where available_gpus is a comma-delimited string of GPU ids, and minimum_free_memory
-    is the lowest amount of free memory available on the available_gpus.
-
-  """
-  def get_gpu_info():
-    # Get the gpu information
-    gpu_info = subprocess.check_output(["nvidia-smi", "--format=csv,noheader,nounits", "--query-gpu=index,memory.total,memory.free,memory.used,utilization.gpu"]).decode()
-    gpu_info = gpu_info.split('\n')
-
-    gpu_info_array = []
-
-    # Check each gpu
-    for line in gpu_info:
-      if len(line) > 0:
-        gpu_id, total_memory, free_memory, used_memory, gpu_util = line.split(',')
-        gpu_memory_util = float(used_memory) / float(total_memory)
-        gpu_info_array.append((float(gpu_util), gpu_memory_util, gpu_id))
-
-    return(gpu_info_array)
-
-  # Read the gpu information multiple times
-  num_times_to_average = 5
-  current_array = []
-  for ind in range(num_times_to_average):
-    current_array.append(get_gpu_info())
-    time.sleep(1)
-
-  # Get number of gpus
-  num_gpus = len(current_array[0])
-
-  # Average the gpu information
-  avg_array = [(0, 0, str(x)) for x in range(num_gpus)]
-  for ind in range(num_times_to_average):
-    for gpu_ind in range(num_gpus):
-      avg_array[gpu_ind] = (avg_array[gpu_ind][0] + current_array[ind][gpu_ind][0], avg_array[gpu_ind][1] + current_array[ind][gpu_ind][1], avg_array[gpu_ind][2])
-
-  for gpu_ind in range(num_gpus):
-    avg_array[gpu_ind] = (float(avg_array[gpu_ind][0]) / num_times_to_average, float(avg_array[gpu_ind][1]) / num_times_to_average, avg_array[gpu_ind][2])
-
-  avg_array.sort()
-
-  gpus_found = 0
-  gpus_to_use = ""
-  free_memory = 1.0
-  # Return the least utilized GPUs if it's utilized less than max_gpu_utilization and amount of free memory is at least min_free_memory
-  # Otherwise, run in cpu only mode
-  for current_gpu in avg_array:
-    if current_gpu[0] < max_gpu_utilization and (1 - current_gpu[1]) > min_free_memory:
-      if gpus_found == 0:
-        gpus_to_use = current_gpu[2]
-        free_memory = 1 - current_gpu[1]
-      else:
-        gpus_to_use = gpus_to_use + "," + current_gpu[2]
-        free_memory = min(free_memory, 1 - current_gpu[1])
-
-      gpus_found = gpus_found + 1
-
-    if gpus_found == num_gpu:
-      break
-
-  return gpus_to_use, free_memory
