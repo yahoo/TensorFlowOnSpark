@@ -1,16 +1,11 @@
 import os
-import sys
 import threading
 import time
 import unittest
 
 from tensorflowonspark import util
 from tensorflowonspark.reservation import Reservations, Server, Client
-
-if sys.version_info >= (3, 3):
-    from unittest import mock
-else:
-    import mock
+from unittest import mock
 
 
 class ReservationTest(unittest.TestCase):
