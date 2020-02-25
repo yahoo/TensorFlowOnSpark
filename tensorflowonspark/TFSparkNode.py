@@ -137,8 +137,9 @@ def _get_manager(cluster_info, host, executor_id):
   if TFSparkNode.mgr is None:
     msg = "No TFManager found on this node, please ensure that:\n" + \
           "1. Spark num_executors matches TensorFlow cluster_size\n" + \
-          "2. Spark cores/tasks per executor is 1.\n" + \
-          "3. Spark dynamic allocation is disabled."
+          "2. Spark tasks per executor is 1\n" + \
+          "3. Spark dynamic allocation is disabled\n" + \
+          "4. There are no other root-cause exceptions on other nodes\n"
     raise Exception(msg)
 
   logger.info("Connected to TFSparkNode.mgr on {0}, executor={1}, state={2}".format(host, executor_id, str(TFSparkNode.mgr.get('state'))))
