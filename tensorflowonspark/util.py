@@ -82,5 +82,13 @@ def write_executor_id(num):
 
 def read_executor_id():
   """Read worker id from a local file in the executor's current working directory"""
-  with open("executor_id", "r") as f:
-    return int(f.read())
+  if os.path.isfile("executor_id"):
+    with open("executor_id", "r") as f:
+      return int(f.read())
+  else:
+    msg = "No executor_id file found on this node, please ensure that:\n" + \
+          "1. Spark num_executors matches TensorFlow cluster_size\n" + \
+          "2. Spark tasks per executor is 1\n" + \
+          "3. Spark dynamic allocation is disabled\n" + \
+          "4. There are no other root-cause exceptions on other nodes\n"
+    raise Exception(msg)
