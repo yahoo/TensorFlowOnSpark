@@ -22,7 +22,8 @@ def main_fun(args, ctx):
     image /= 255
     return image, label
 
-  datasets, info = tfds.load(name='mnist',
+  # workaround for https://github.com/tensorflow/datasets/issues/1405
+  datasets, info = tfds.load(name='mnist:1.0.0',
                              with_info=True,
                              as_supervised=True)
 
