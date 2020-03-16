@@ -188,14 +188,42 @@ class Server(MessageSocket):
     return addr
 
   def get_server_ip(self):
-    return os.getenv(TFOS_SERVER_HOST) if os.getenv(TFOS_SERVER_HOST) else util.get_ip_address()
+    """Returns the value of TFOS_SERVER_HOST environment variable (if set), otherwise defaults to current host/IP."""
+    return os.getenv(TFOS_SERVER_HOST, util.get_ip_address())
+
+  def get_server_ports(self):
+    """Returns a list of target ports as defined in the TFOS_SERVER_PORT environment (if set), otherwise defaults to 0 (any port).
+
+    TFOS_SERVER_PORT should be either a single port number or a range, e.g. '8888' or '9997-9999'
+    """
+    port_string = os.getenv(TFOS_SERVER_PORT, "0")
+    if '-' not in port_string:
+      return [int(port_string)]
+    else:
+      ports = port_string.split('-')
+      if len(ports) != 2:
+        raise Exception("Invalid TFOS_SERVER_PORT: {}".format(port_string))
+      return list(range(int(ports[0]), int(ports[1]) + 1))
 
   def start_listening_socket(self):
-    port_number = int(os.getenv(TFOS_SERVER_PORT)) if os.getenv(TFOS_SERVER_PORT) else 0
-    server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server_sock.bind(('', port_number))
-    server_sock.listen(10)
+    """Starts the registration server socket listener."""
+    port_list = self.get_server_ports()
+    for port in port_list:
+      try:
+        server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server_sock.bind(('', port))
+        server_sock.listen(10)
+        logger.info("Reservation server binding to port {}".format(port))
+        break
+      except Exception as e:
+        logger.warn("Unable to bind to port {}, error {}".format(port, e))
+        server_sock = None
+        pass
+
+    if not server_sock:
+      raise Exception("Reservation server unable to bind to any ports, port_list = {}".format(port_list))
+
     return server_sock
 
   def stop(self):
