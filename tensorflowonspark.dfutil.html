@@ -1,0 +1,348 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>tensorflowonspark.dfutil module &mdash; TensorFlowOnSpark 2.2.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="tensorflowonspark.gpu_info module" href="tensorflowonspark.gpu_info.html" />
+    <link rel="prev" title="tensorflowonspark.TFSparkNode module" href="tensorflowonspark.TFSparkNode.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> TensorFlowOnSpark
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.2.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="tensorflowonspark.html">tensorflowonspark package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="tensorflowonspark.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="tensorflowonspark.TFCluster.html">tensorflowonspark.TFCluster module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tensorflowonspark.TFManager.html">tensorflowonspark.TFManager module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tensorflowonspark.TFNode.html">tensorflowonspark.TFNode module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tensorflowonspark.TFParallel.html">tensorflowonspark.TFParallel module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tensorflowonspark.TFSparkNode.html">tensorflowonspark.TFSparkNode module</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">tensorflowonspark.dfutil module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tensorflowonspark.gpu_info.html">tensorflowonspark.gpu_info module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tensorflowonspark.marker.html">tensorflowonspark.marker module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tensorflowonspark.pipeline.html">tensorflowonspark.pipeline module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tensorflowonspark.reservation.html">tensorflowonspark.reservation module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tensorflowonspark.reservation_client.html">tensorflowonspark.reservation_client module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tensorflowonspark.util.html">tensorflowonspark.util module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">TensorFlowOnSpark</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="tensorflowonspark.html">tensorflowonspark package</a> &raquo;</li>
+        
+      <li>tensorflowonspark.dfutil module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/tensorflowonspark.dfutil.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-tensorflowonspark.dfutil">
+<span id="tensorflowonspark-dfutil-module"></span><h1>tensorflowonspark.dfutil module<a class="headerlink" href="#module-tensorflowonspark.dfutil" title="Permalink to this headline">¶</a></h1>
+<p>A collection of utility functions for loading/saving TensorFlow TFRecords files as Spark DataFrames.</p>
+<dl class="function">
+<dt id="tensorflowonspark.dfutil.fromTFExample">
+<code class="sig-name descname">fromTFExample</code><span class="sig-paren">(</span><em class="sig-param">iter</em>, <em class="sig-param">binary_features=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/dfutil.html#fromTFExample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.dfutil.fromTFExample" title="Permalink to this definition">¶</a></dt>
+<dd><p>mapPartition function to convert an RDD of serialized tf.train.Example bytestring into an RDD of Row.</p>
+<p>Note: TensorFlow represents both strings and binary types as tf.train.BytesList, and we need to
+disambiguate these types for Spark DataFrames DTypes (StringType and BinaryType), so we require a “hint”
+from the caller in the <code class="docutils literal notranslate"><span class="pre">binary_features</span></code> argument.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="field-list simple">
+<dt class="field-odd">iter</dt>
+<dd class="field-odd"><p>the RDD partition iterator</p>
+</dd>
+<dt class="field-even">binary_features</dt>
+<dd class="field-even"><p>a list of tf.train.Example features which are expected to be binary/bytearrays.</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><p>An array/iterator of DataFrame Row with features converted into columns.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorflowonspark.dfutil.infer_schema">
+<code class="sig-name descname">infer_schema</code><span class="sig-paren">(</span><em class="sig-param">example</em>, <em class="sig-param">binary_features=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/dfutil.html#infer_schema"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.dfutil.infer_schema" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a tf.train.Example, infer the Spark DataFrame schema (StructFields).</p>
+<p>Note: TensorFlow represents both strings and binary types as tf.train.BytesList, and we need to
+disambiguate these types for Spark DataFrames DTypes (StringType and BinaryType), so we require a “hint”
+from the caller in the <code class="docutils literal notranslate"><span class="pre">binary_features</span></code> argument.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="field-list simple">
+<dt class="field-odd">example</dt>
+<dd class="field-odd"><p>a tf.train.Example</p>
+</dd>
+<dt class="field-even">binary_features</dt>
+<dd class="field-even"><p>a list of tf.train.Example features which are expected to be binary/bytearrays.</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><p>A DataFrame StructType schema</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorflowonspark.dfutil.isLoadedDF">
+<code class="sig-name descname">isLoadedDF</code><span class="sig-paren">(</span><em class="sig-param">df</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/dfutil.html#isLoadedDF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.dfutil.isLoadedDF" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if the input DataFrame was produced by the loadTFRecords() method.</p>
+<p>This is primarily used by the Spark ML Pipelines APIs.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="field-list simple">
+<dt class="field-odd">df</dt>
+<dd class="field-odd"><p>Spark Dataframe</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorflowonspark.dfutil.loadTFRecords">
+<code class="sig-name descname">loadTFRecords</code><span class="sig-paren">(</span><em class="sig-param">sc</em>, <em class="sig-param">input_dir</em>, <em class="sig-param">binary_features=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/dfutil.html#loadTFRecords"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.dfutil.loadTFRecords" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load TFRecords from disk into a Spark DataFrame.</p>
+<p>This will attempt to automatically convert the tf.train.Example features into Spark DataFrame columns of equivalent types.</p>
+<p>Note: TensorFlow represents both strings and binary types as tf.train.BytesList, and we need to
+disambiguate these types for Spark DataFrames DTypes (StringType and BinaryType), so we require a “hint”
+from the caller in the <code class="docutils literal notranslate"><span class="pre">binary_features</span></code> argument.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="field-list simple">
+<dt class="field-odd">sc</dt>
+<dd class="field-odd"><p>SparkContext</p>
+</dd>
+<dt class="field-even">input_dir</dt>
+<dd class="field-even"><p>location of TFRecords on disk.</p>
+</dd>
+<dt class="field-odd">binary_features</dt>
+<dd class="field-odd"><p>a list of tf.train.Example features which are expected to be binary/bytearrays.</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><p>A Spark DataFrame mirroring the tf.train.Example schema.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorflowonspark.dfutil.saveAsTFRecords">
+<code class="sig-name descname">saveAsTFRecords</code><span class="sig-paren">(</span><em class="sig-param">df</em>, <em class="sig-param">output_dir</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/dfutil.html#saveAsTFRecords"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.dfutil.saveAsTFRecords" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save a Spark DataFrame as TFRecords.</p>
+<p>This will convert the DataFrame rows to TFRecords prior to saving.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="field-list simple">
+<dt class="field-odd">df</dt>
+<dd class="field-odd"><p>Spark DataFrame</p>
+</dd>
+<dt class="field-even">output_dir</dt>
+<dd class="field-even"><p>Path to save TFRecords</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorflowonspark.dfutil.toTFExample">
+<code class="sig-name descname">toTFExample</code><span class="sig-paren">(</span><em class="sig-param">dtypes</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/dfutil.html#toTFExample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.dfutil.toTFExample" title="Permalink to this definition">¶</a></dt>
+<dd><p>mapPartition function to convert a Spark RDD of Row into an RDD of serialized tf.train.Example bytestring.</p>
+<p>Note that tf.train.Example is a fairly flat structure with limited datatypes, e.g. tf.train.FloatList,
+tf.train.Int64List, and tf.train.BytesList, so most DataFrame types will be coerced into one of these types.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="field-list simple">
+<dt class="field-odd">dtypes</dt>
+<dd class="field-odd"><p>the DataFrame.dtypes of the source DataFrame.</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><p>A mapPartition function which converts the source DataFrame into tf.train.Example bytestrings.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="tensorflowonspark.gpu_info.html" class="btn btn-neutral float-right" title="tensorflowonspark.gpu_info module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="tensorflowonspark.TFSparkNode.html" class="btn btn-neutral float-left" title="tensorflowonspark.TFSparkNode module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Yahoo Inc / Verizon Media
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

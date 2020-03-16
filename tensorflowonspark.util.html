@@ -1,0 +1,253 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>tensorflowonspark.util module &mdash; TensorFlowOnSpark 2.2.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="tensorflowonspark.reservation_client module" href="tensorflowonspark.reservation_client.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> TensorFlowOnSpark
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.2.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="tensorflowonspark.html">tensorflowonspark package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="tensorflowonspark.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="tensorflowonspark.TFCluster.html">tensorflowonspark.TFCluster module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tensorflowonspark.TFManager.html">tensorflowonspark.TFManager module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tensorflowonspark.TFNode.html">tensorflowonspark.TFNode module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tensorflowonspark.TFParallel.html">tensorflowonspark.TFParallel module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tensorflowonspark.TFSparkNode.html">tensorflowonspark.TFSparkNode module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tensorflowonspark.dfutil.html">tensorflowonspark.dfutil module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tensorflowonspark.gpu_info.html">tensorflowonspark.gpu_info module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tensorflowonspark.marker.html">tensorflowonspark.marker module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tensorflowonspark.pipeline.html">tensorflowonspark.pipeline module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tensorflowonspark.reservation.html">tensorflowonspark.reservation module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tensorflowonspark.reservation_client.html">tensorflowonspark.reservation_client module</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">tensorflowonspark.util module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">TensorFlowOnSpark</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="tensorflowonspark.html">tensorflowonspark package</a> &raquo;</li>
+        
+      <li>tensorflowonspark.util module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/tensorflowonspark.util.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-tensorflowonspark.util">
+<span id="tensorflowonspark-util-module"></span><h1>tensorflowonspark.util module<a class="headerlink" href="#module-tensorflowonspark.util" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="tensorflowonspark.util.find_in_path">
+<code class="sig-name descname">find_in_path</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/util.html#find_in_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.util.find_in_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find a file in a given path string.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorflowonspark.util.get_ip_address">
+<code class="sig-name descname">get_ip_address</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/util.html#get_ip_address"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.util.get_ip_address" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simple utility to get host IP address.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorflowonspark.util.read_executor_id">
+<code class="sig-name descname">read_executor_id</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/util.html#read_executor_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.util.read_executor_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read worker id from a local file in the executor’s current working directory</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorflowonspark.util.single_node_env">
+<code class="sig-name descname">single_node_env</code><span class="sig-paren">(</span><em class="sig-param">num_gpus=1</em>, <em class="sig-param">worker_index=-1</em>, <em class="sig-param">nodes=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/util.html#single_node_env"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.util.single_node_env" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup environment variables for Hadoop compatibility and GPU allocation</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorflowonspark.util.write_executor_id">
+<code class="sig-name descname">write_executor_id</code><span class="sig-paren">(</span><em class="sig-param">num</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/util.html#write_executor_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.util.write_executor_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write executor_id into a local file in the executor’s current working directory</p>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="tensorflowonspark.reservation_client.html" class="btn btn-neutral float-left" title="tensorflowonspark.reservation_client module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Yahoo Inc / Verizon Media
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
