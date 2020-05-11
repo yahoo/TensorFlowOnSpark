@@ -1,6 +1,6 @@
 # ResNet Image Classification
 
-Original Source: https://github.com/tensorflow/models/tree/master/official/vision/image_classification
+Original Source: https://github.com/tensorflow/models/tree/9b8544e0aa5db64161e4f784eac9a0836736183f/official/benchmark/models
 
 This code is based on the Image Classification model from the official [TensorFlow Models](https://github.com/tensorflow/models) repository.  This example already supports different forms of distribution via the `DistributionStrategy` API, so there isn't much additional work to convert it to TensorFlowOnSpark.
 
@@ -10,17 +10,27 @@ Notes:
 
 #### Run the Single-Node Application
 
-First, make sure that you can run the example per the [original instructions](https://github.com/tensorflow/models/tree/68c3c65596b8fc624be15aef6eac3dc8952cbf23/official/vision/image_classification).  For now, we'll just use the CIFAR-10 dataset.  After cloning the [tensorflow/models](https://github.com/tensorflow/models) repository (checking out the `v2.0` tag with `git checkout v2.0`), and downloading the dataset, you should be able to run the training as follows:
+First, make sure that you can run the original example, as follows:
 ```
-# Note: these instructions have been tested with the `v2.0` tag of tensorflow/models.
+# clone the TensorFlow models repository
+git clone https://github.com/tensorflow/models
+cd models
 
-export TENSORFLOW_MODELS=/path/to/tensorflow/models
-export CIFAR_DATA=/path/to/cifar
-export PYTHONPATH=${PYTHONPATH}:${TENSORFLOW_MODELS}
+# checkout the specific revision that this example was based upon
+git checkout 9b8544e0aa5db64161e4f784eac9a0836736183f
+
+# download the CIFAR10 dataset to /tmp/cifar10_data
+python official/r1/resnet/cifar10_download_and_extract.py
+
+# run the example
+export TENSORFLOW_MODELS=$(pwd)
+export CIFAR_DATA=/tmp/cifar10_dta
+export PYTHONPATH=${TENSORFLOW_MODELS}:$PYTHONPATH
+
 python resnet_cifar_main.py --data_dir=${CIFAR_DATA} --num_gpus=0 --train_epochs=1
 ```
 
-If you have GPUs available, just set `--num_gpus` to the number of GPUs on your machine.  Note: by default, `--train_epochs=182`, which runs for a long time on a CPU machine, so for brevity, we'll just run a single epoch in these examples.
+If you have GPUs available, just set `--num_gpus` to the number of GPUs on your machine.
 
 #### Run as a Distributed TensorFlow Application
 
@@ -28,16 +38,16 @@ Next, confirm that this application is capable of being distributed.  We can tes
 ```
 # in one shell/window
 export PYTHONPATH=${PYTHONPATH}:${TENSORFLOW_MODELS}
-export TF_CONFIG='{"cluster": { "worker": ["localhost:2222", "localhost:2223"]}, "task": {"type": "worker", "index": 0}}'
+export TF_CONFIG='{"cluster": { "chief": ["localhost:2222"], "worker": ["localhost:2223"]}, "task": {"type": "chief", "index": 0}}'
 python resnet_cifar_main.py --data_dir=${CIFAR_DATA} --num_gpus=0 --ds=multi_worker_mirrored --train_epochs=1
 
 # in another shell/window
 export PYTHONPATH=${PYTHONPATH}:${TENSORFLOW_MODELS}
-export TF_CONFIG='{"cluster": { "worker": ["localhost:2222", "localhost:2223"]}, "task": {"type": "worker", "index": 1}}'
+export TF_CONFIG='{"cluster": { "chief": ["localhost:2222"], "worker": ["localhost:2223"]}, "task": {"type": "worker", "index": 0}}'
 python resnet_cifar_main.py --data_dir=${CIFAR_DATA} --num_gpus=0 --ds=multi_worker_mirrored --train_epochs=1
 ```
 
-Note that we now configure the code to use the `MultiWorkerMirroredtrategy`.  Also note that training will not begin until both nodes have started.
+Note that we now configure the code to use the `MultiWorkerMirroredStrategy`.  Also note that training will not begin until both nodes have started.
 
 ### Run as a TensorFlowOnSpark Application
 
@@ -62,7 +72,7 @@ ${SPARK_HOME}/bin/spark-submit \
 ${TFoS_HOME}/examples/resnet/resnet_cifar_spark.py \
 --cluster_size ${SPARK_WORKER_INSTANCES} \
 --epochs 1 \
---data_dir /Users/leewyang/datasets/cifar10/cifar-10-batches-bin \
+--data_dir ${CIFAR_DATA} \
 --num_gpus=0 \
 --ds=multi_worker_mirrored \
 --train_epochs 1

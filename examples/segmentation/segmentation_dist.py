@@ -27,7 +27,7 @@ tf_config = json.loads(os.environ.get('TF_CONFIG'))
 print("tf_config = ", tf_config)
 print("I'm {}:{}".format(tf_config['task']['type'], tf_config['task']['index']))
 
-dataset, info = tfds.load('oxford_iiit_pet:3.0.0', with_info=True)
+dataset, info = tfds.load('oxford_iiit_pet:3.2.0', with_info=True)
 
 
 def normalize(input_image, input_mask):
