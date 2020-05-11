@@ -1,7 +1,7 @@
 # Copyright 2019 The TensorFlow Authors.
 # Licensed under the Apache License, Version 2.0 (the "License");
 #
-#@title Licensed under the Apache License, Version 2.0 (the "License");
+# @title Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
@@ -18,16 +18,13 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 def main_fun(args, ctx):
   from tensorflow_examples.models.pix2pix import pix2pix
-  import json
-  import os
   import tensorflow_datasets as tfds
   import tensorflow as tf
-  import time
 
   print("TensorFlow version: ", tf.__version__)
   strategy = tf.distribute.experimental.MultiWorkerMirroredStrategy()
 
-  dataset, info = tfds.load('oxford_iiit_pet:3.0.0', with_info=True)
+  dataset, info = tfds.load('oxford_iiit_pet:3.2.0', with_info=True)
 
   def normalize(input_image, input_mask):
     input_image = tf.cast(input_image, tf.float32)/128.0 - 1

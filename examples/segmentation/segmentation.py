@@ -19,7 +19,7 @@ from tensorflow_examples.models.pix2pix import pix2pix
 import tensorflow_datasets as tfds
 import tensorflow as tf
 
-dataset, info = tfds.load('oxford_iiit_pet:3.0.0', with_info=True)
+dataset, info = tfds.load('oxford_iiit_pet:3.2.0', with_info=True)
 
 
 def normalize(input_image, input_mask):

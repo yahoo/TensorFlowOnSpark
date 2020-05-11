@@ -1,7 +1,5 @@
 # Adapted from: https://www.tensorflow.org/beta/tutorials/distribute/multi_worker_with_estimator
 
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 
 def main_fun(args, ctx):
   import tensorflow_datasets as tfds
@@ -30,7 +28,7 @@ def main_fun(args, ctx):
 
   def serving_input_receiver_fn():
     features = tf.compat.v1.placeholder(dtype=tf.float32, shape=[None, 28, 28, 1], name='features')
-    receiver_tensors = {'features': features}
+    receiver_tensors = {'conv2d_input': features}
     return tf.estimator.export.ServingInputReceiver(receiver_tensors, receiver_tensors)
 
   def model_fn(features, labels, mode):
@@ -39,7 +37,7 @@ def main_fun(args, ctx):
         tf.keras.layers.MaxPooling2D(),
         tf.keras.layers.Flatten(),
         tf.keras.layers.Dense(64, activation='relu'),
-        tf.keras.layers.Dense(10, activation='softmax')
+        tf.keras.layers.Dense(10)
     ])
     logits = model(features, training=False)
 
@@ -107,4 +105,4 @@ if __name__ == "__main__":
   print("args:", args)
 
   cluster = TFCluster.run(sc, main_fun, args, args.cluster_size, num_ps=0, tensorboard=args.tensorboard, input_mode=TFCluster.InputMode.TENSORFLOW, log_dir=args.model_dir, master_node='chief', eval_node=True)
-  cluster.shutdown(grace_secs=120)
+  cluster.shutdown(grace_secs=60)

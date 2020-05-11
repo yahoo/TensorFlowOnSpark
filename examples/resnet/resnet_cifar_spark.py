@@ -14,9 +14,9 @@ if __name__ == '__main__':
 
   parser = argparse.ArgumentParser()
   parser.add_argument("--cluster_size", help="number of nodes in the cluster (for Spark Standalone)", type=int, default=num_executors)
-  parser.add_argument("--num_ps", help="number of parameter servers", type=int, default=1)
+  parser.add_argument("--num_ps", help="number of parameter servers", type=int, default=0)
   parser.add_argument("--tensorboard", help="launch tensorboard process", action="store_true")
   args, rem = parser.parse_known_args()
 
-  cluster = TFCluster.run(sc, resnet_cifar_dist.main_fun, rem, args.cluster_size, args.num_ps, args.tensorboard, TFCluster.InputMode.TENSORFLOW)
+  cluster = TFCluster.run(sc, resnet_cifar_dist.main_fun, rem, args.cluster_size, args.num_ps, args.tensorboard, TFCluster.InputMode.TENSORFLOW, master_node='chief')
   cluster.shutdown()
