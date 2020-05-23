@@ -39,7 +39,7 @@ TensorFlowOnSpark was developed by Yahoo for large-scale distributed
 deep learning on our Hadoop clusters in Yahoo's private cloud.
 
 TensorFlowOnSpark provides some important benefits (see [our
-blog](http://yahoohadoop.tumblr.com/post/157196317141/open-sourcing-tensorflowonspark-distributed-deep))
+blog](https://developer.yahoo.com/blogs/157196317141/))
 over alternative deep learning solutions.
    * Easily migrate existing TensorFlow programs with <10 lines of code change.
    * Support all TensorFlow functionalities: synchronous/asynchronous training, model/data parallelism, inferencing and TensorBoard.
