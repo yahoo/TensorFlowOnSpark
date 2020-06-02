@@ -1,6 +1,6 @@
 # ResNet Image Classification
 
-Original Source: https://github.com/tensorflow/models/tree/9b8544e0aa5db64161e4f784eac9a0836736183f/official/benchmark/models
+Original Source: https://github.com/tensorflow/models/tree/master/official/benchmark/models
 
 This code is based on the Image Classification model from the official [TensorFlow Models](https://github.com/tensorflow/models) repository.  This example already supports different forms of distribution via the `DistributionStrategy` API, so there isn't much additional work to convert it to TensorFlowOnSpark.
 
@@ -17,17 +17,18 @@ git clone https://github.com/tensorflow/models
 cd models
 
 # checkout the specific revision that this example was based upon
-git checkout 9b8544e0aa5db64161e4f784eac9a0836736183f
+git checkout c25c3e882e398d287240f619d7f56ac5b2973b6e
 
 # download the CIFAR10 dataset to /tmp/cifar10_data
 python official/r1/resnet/cifar10_download_and_extract.py
 
 # run the example
 export TENSORFLOW_MODELS=$(pwd)
-export CIFAR_DATA=/tmp/cifar10_dta
+export CIFAR_DATA=/tmp/cifar10_data/cifar-10-batches-bin
 export PYTHONPATH=${TENSORFLOW_MODELS}:$PYTHONPATH
 
-python resnet_cifar_main.py --data_dir=${CIFAR_DATA} --num_gpus=0 --train_epochs=1
+# pip install tensorflow==2.1.1 tensorflow_model_optimization==0.3.0
+python ${TENSORFLOW_MODELS}/official/benchmark/models/resnet_cifar_main.py --data_dir=${CIFAR_DATA} --num_gpus=0 --train_epochs=1
 ```
 
 If you have GPUs available, just set `--num_gpus` to the number of GPUs on your machine.
@@ -37,14 +38,19 @@ If you have GPUs available, just set `--num_gpus` to the number of GPUs on your 
 Next, confirm that this application is capable of being distributed.  We can test this on a single CPU machine by using two different terminal/shell sessions, as follows:
 ```
 # in one shell/window
+export TFoS_HOME=/path/to/TensorFlowOnSpark
+export CIFAR_DATA=/tmp/cifar10_data/cifar-10-batches-bin
 export PYTHONPATH=${PYTHONPATH}:${TENSORFLOW_MODELS}
 export TF_CONFIG='{"cluster": { "chief": ["localhost:2222"], "worker": ["localhost:2223"]}, "task": {"type": "chief", "index": 0}}'
-python resnet_cifar_main.py --data_dir=${CIFAR_DATA} --num_gpus=0 --ds=multi_worker_mirrored --train_epochs=1
+python ${TFoS_HOME}/examples/resnet/resnet_cifar_main.py --data_dir=${CIFAR_DATA} --num_gpus=0 --ds=multi_worker_mirrored --train_epochs=1
 
 # in another shell/window
+# cd /path/to/tensorflow/models
+export TFoS_HOME=/path/to/TensorFlowOnSpark
+export CIFAR_DATA=/tmp/cifar10_data/cifar-10-batches-bin
 export PYTHONPATH=${PYTHONPATH}:${TENSORFLOW_MODELS}
 export TF_CONFIG='{"cluster": { "chief": ["localhost:2222"], "worker": ["localhost:2223"]}, "task": {"type": "worker", "index": 0}}'
-python resnet_cifar_main.py --data_dir=${CIFAR_DATA} --num_gpus=0 --ds=multi_worker_mirrored --train_epochs=1
+python ${TFoS_HOME}/examples/resnet/resnet_cifar_main.py --data_dir=${CIFAR_DATA} --num_gpus=0 --ds=multi_worker_mirrored --train_epochs=1
 ```
 
 Note that we now configure the code to use the `MultiWorkerMirroredStrategy`.  Also note that training will not begin until both nodes have started.
@@ -54,6 +60,8 @@ Note that we now configure the code to use the `MultiWorkerMirroredStrategy`.  A
 Finally, we can run the converted application as follows:
 ```
 export TFoS_HOME=/path/to/TensorFlowOnSpark
+export TENSORFLOW_MODELS=/path/to/tensorflow/models
+export CIFAR_DATA=/tmp/cifar10_data/cifar-10-batches-bin
 export PYTHONPATH=${PYTHONPATH}:${TENSORFLOW_MODELS}
 export MASTER=spark://$(hostname):7077
 export SPARK_WORKER_INSTANCES=2
@@ -82,7 +90,7 @@ ${SPARK_HOME}/sbin/stop-slave.sh; ${SPARK_HOME}/sbin/stop-master.sh
 ```
 
 Notes:
-- Most of the original TensorFlow code from `resnet_cifar_main.py` has been copied into `resnet_cifar_dist.py`, so you can diff the changes.
+- Most of the original TensorFlow code from `resnet_cifar_main.py` has been copied into `resnet_cifar_dist.py`, so you can diff the changes required for TensorFlowOnSpark.
 - The `def main(_)` function was changed to `def main_fun(argv, ctx)`.
 - The `absl_app.run(main)` invocation was replaced by the Spark "main" function in `resnet_cifar_spark.py`.  This file mostly contains the Spark application boilerplate along with the TensorFlowOnSpark calls to setup the TensorFlow cluster.  Note that having the separate Spark and TensorFlow files can help isolate code and avoid Spark serialization issues.
 - The Spark "main" function uses `argparse` to parse TensorFlowOnSpark-specific command line arguments, but it passes the remaining argments (in the `rem` variable) to the TensorFlow `main_fun`, which then parses those arguments via `define_cifar_flags()` and `flags.FLAGS(argv)`.

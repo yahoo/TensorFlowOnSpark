@@ -143,7 +143,7 @@ The training code will automatically export a TensorFlow SavedModel, which can b
     saved_model_cli show --dir $SAVED_MODEL --all
 
     # inference via saved_model_cli
-    saved_model_cli run --dir $SAVED_MODEL --tag_set serve --signature_def serving_default --input_exp "features=[$IMG]"
+    saved_model_cli run --dir $SAVED_MODEL --tag_set serve --signature_def serving_default --input_exp "conv2d_input=[$IMG]"
 
 #### Inference via TF-Serving
 
@@ -164,7 +164,7 @@ demonstrate the use of the REST API.  Also, [per the TensorFlow Serving instruct
     curl http://localhost:8501/v1/models/mnist/metadata
 
     # POST example for inferencing
-    curl -v -d "{\"instances\": [ {\"features\": $IMG } ]}" -X POST http://localhost:8501/v1/models/mnist:predict
+    curl -v -d "{\"instances\": [ {\"conv2d_input\": $IMG } ]}" -X POST http://localhost:8501/v1/models/mnist:predict
 
     # Stop the TF-Serving container
     docker stop $(docker ps -q)

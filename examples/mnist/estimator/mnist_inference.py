@@ -58,7 +58,7 @@ def inference(it, num_workers, args):
   output_file = tf.io.gfile.GFile("{}/part-{:05d}".format(args.output, worker_num), mode='w')
 
   for batch in ds:
-    predictions = predict(features=batch[0])
+    predictions = predict(conv2d_input=batch[0])
     labels = np.reshape(batch[1], -1).astype(np.int)
     preds = np.argmax(predictions['logits'], axis=1)
     for x in zip(labels, preds):

@@ -18,16 +18,13 @@ def main_fun(args, ctx):
 
   # Scaling MNIST data from (0, 255] to (0., 1.]
   def scale(image, label):
-    image = tf.cast(image, tf.float32)
-    image /= 255
-    return image, label
+    return tf.cast(image, tf.float32) / 255, label
 
   # workaround for https://github.com/tensorflow/datasets/issues/1405
-  datasets, info = tfds.load(name='mnist:1.0.0',
-                             with_info=True,
-                             as_supervised=True)
-
-  train_datasets_unbatched = datasets['train'].repeat().map(scale).shuffle(BUFFER_SIZE)
+  datasets = tfds.load(name='mnist', split='train', as_supervised=True)
+  options = tf.data.Options()
+  options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.DATA
+  train_datasets_unbatched = datasets.with_options(options).repeat().map(scale).shuffle(BUFFER_SIZE)
 
   def build_and_compile_cnn_model():
     model = tf.keras.Sequential([
