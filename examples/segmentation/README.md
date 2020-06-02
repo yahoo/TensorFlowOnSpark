@@ -4,7 +4,7 @@ Original Source: https://www.tensorflow.org/tutorials/images/segmentation
 
 This code is based on the [Image Segmentation](https://www.tensorflow.org/tutorials/images/segmentation) notebook example, converted to a single-node TensorFlow python app, then converted into a distributed TensorFlow app using the `MultiWorkerMirroredStrategy`, and then finally adapted for TensorFlowOnSpark.  Compare the different versions to see the conversion steps involved at each stage.
 
-Notes: 
+Notes:
 - this example assumes that Spark, TensorFlow, and TensorFlowOnSpark are already installed.
 
 #### Train via Single-Node
@@ -13,6 +13,10 @@ The [segmentation.py](segmentation.py) file contains the bulk of the code from t
 
 Run the single-node example to ensure that your environment is set up correctly.  For brevity, this example only trains a single epoch (vs. the original 20 epochs), but you can modify the source to run more epochs, if desired.
 ```
+# Run the following, if you see: "Failed to construct dataset oxford_iiit_petDataset oxford_iiit_pet cannot be loaded at version 3.2.0, only: 3.1.0."
+# pip uninstall tensorflow-datasets
+# pip install tfds-nightly
+
 # train
 python ${TFoS_HOME}/examples/segmentation/segmentation.py
 ```
