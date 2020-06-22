@@ -12,7 +12,7 @@ Notes:
 The [segmentation.py](segmentation.py) file contains the bulk of the code from the example notebook, minus any code for interactively visualizing the images and masks, since the end goal will be a non-interactive job in Spark.
 
 Run the single-node example to ensure that your environment is set up correctly.  For brevity, this example only trains a single epoch (vs. the original 20 epochs), but you can modify the source to run more epochs, if desired.
-```
+```bash
 # Run the following, if you see: "Failed to construct dataset oxford_iiit_petDataset oxford_iiit_pet cannot be loaded at version 3.2.0, only: 3.1.0."
 # pip uninstall tensorflow-datasets
 # pip install tfds-nightly
@@ -52,7 +52,7 @@ Note that training will not start until all nodes are running and connected to t
 #### Train via TensorFlowOnSpark
 
 Next, we convert the `segmentation_dist.py` file to TensorFlowOnSpark, resulting in the [segmentation_spark.py](segmentation_spark.py) file.  Then, run in a local Spark standalone cluster as follows:
-```
+```bash
 # Start a local standalone Spark cluster
 export MASTER=spark://$(hostname):7077
 export SPARK_WORKER_INSTANCES=3
@@ -75,6 +75,10 @@ ${TFoS_HOME}/examples/segmentation/segmentation_spark.py \
 --model_dir ${TFoS_HOME}/segmentation_model \
 --export_dir ${TFoS_HOME}/segmentation_export \
 --epochs 1
+
+# confirm model
+ls -lR ${TFoS_HOME}/segmentation_model
+ls -lR ${TFoS_HOME}/segmentation_export
 
 # Shutdown the Spark Standalone cluster
 ${SPARK_HOME}/sbin/stop-slave.sh; ${SPARK_HOME}/sbin/stop-master.sh
