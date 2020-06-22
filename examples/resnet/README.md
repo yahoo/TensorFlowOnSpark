@@ -58,7 +58,7 @@ Note that we now configure the code to use the `MultiWorkerMirroredStrategy`.  A
 ### Run as a TensorFlowOnSpark Application
 
 Finally, we can run the converted application as follows:
-```
+```bash
 export TFoS_HOME=/path/to/TensorFlowOnSpark
 export TENSORFLOW_MODELS=/path/to/tensorflow/models
 export CIFAR_DATA=/tmp/cifar10_data/cifar-10-batches-bin
