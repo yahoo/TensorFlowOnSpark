@@ -18,5 +18,5 @@ if __name__ == '__main__':
   parser.add_argument("--tensorboard", help="launch tensorboard process", action="store_true")
   args, rem = parser.parse_known_args()
 
-  cluster = TFCluster.run(sc, resnet_cifar_dist.main_fun, rem, args.cluster_size, args.num_ps, args.tensorboard, TFCluster.InputMode.TENSORFLOW, master_node='chief')
+  cluster = TFCluster.run(sc, resnet_cifar_dist.main_fun, rem, args.cluster_size, args.num_ps, args.tensorboard, TFCluster.InputMode.TENSORFLOW, main_node='chief')
   cluster.shutdown()

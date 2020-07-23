@@ -213,7 +213,7 @@ class TFCluster(object):
 
 
 def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mode=InputMode.TENSORFLOW,
-        log_dir=None, driver_ps_nodes=False, master_node=None, reservation_timeout=600, queues=['input', 'output', 'error'],
+        log_dir=None, driver_ps_nodes=False, main_node=None, reservation_timeout=600, queues=['input', 'output', 'error'],
         eval_node=False):
   """Starts the TensorFlowOnSpark cluster and Runs the TensorFlow "main" function on the Spark executors
 
@@ -227,7 +227,7 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
     :input_mode: TFCluster.InputMode
     :log_dir: directory to save tensorboard event logs.  If None, defaults to a fixed path on local filesystem.
     :driver_ps_nodes: run the PS nodes on the driver locally instead of on the spark executors; this help maximizing computing resources (esp. GPU). You will need to set cluster_size = num_executors + num_ps
-    :master_node: name of the "master" or "chief" node in the cluster_template, used for `tf.estimator` applications.
+    :main_node: name of the "main" or "chief" node in the cluster_template, used for `tf.estimator` applications.
     :reservation_timeout: number of seconds after which cluster reservation times out (600 sec default)
     :queues: *INTERNAL_USE*
     :eval_node: run evaluator node for distributed Tensorflow
@@ -244,13 +244,13 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
     raise Exception('running evaluator nodes is only supported in InputMode.TENSORFLOW')
 
   # compute size of TF cluster and validate against number of Spark executors
-  num_master = 1 if master_node else 0
+  num_main = 1 if main_node else 0
   num_eval = 1 if eval_node else 0
-  num_workers = max(num_executors - num_ps - num_eval - num_master, 0)
-  total_nodes = num_ps + num_master + num_eval + num_workers
+  num_workers = max(num_executors - num_ps - num_eval - num_main, 0)
+  total_nodes = num_ps + num_main + num_eval + num_workers
 
   assert total_nodes == num_executors, "TensorFlow cluster requires {} nodes, but only {} executors available".format(total_nodes, num_executors)
-  assert num_master + num_workers > 0, "TensorFlow cluster requires at least one worker or master/chief node"
+  assert num_main + num_workers > 0, "TensorFlow cluster requires at least one worker or main/chief node"
 
   # create a cluster template for scheduling TF nodes onto executors
   executors = list(range(num_executors))
@@ -259,8 +259,8 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
   if num_ps > 0:
     cluster_template['ps'] = executors[:num_ps]
     del executors[:num_ps]
-  if master_node:
-    cluster_template[master_node] = executors[:1]
+  if main_node:
+    cluster_template[main_node] = executors[:1]
     del executors[:1]
   if eval_node:
     cluster_template['evaluator'] = executors[:1]

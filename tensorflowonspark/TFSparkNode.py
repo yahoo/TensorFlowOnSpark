@@ -77,7 +77,7 @@ class TFNodeContext:
     self.job_name = job_name
     self.task_index = task_index
     self.cluster_spec = cluster_spec
-    self.num_workers = sum([len(v) for k, v in cluster_spec.items() if k == 'master' or k == 'chief' or k == 'worker'])
+    self.num_workers = sum([len(v) for k, v in cluster_spec.items() if k == 'main' or k == 'chief' or k == 'worker'])
     self.defaultFS = defaultFS
     self.working_dir = working_dir
     self.mgr = mgr
@@ -279,8 +279,8 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
       logger.debug("CLASSPATH: {0}".format(hadoop_classpath))
       os.environ['CLASSPATH'] = classpath + os.pathsep + hadoop_classpath
 
-    # start TensorBoard if requested, on 'worker:0' if available (for backwards-compatibility), otherwise on 'chief:0' or 'master:0'
-    job_names = sorted([k for k in cluster_template.keys() if k in ['chief', 'master', 'worker']])
+    # start TensorBoard if requested, on 'worker:0' if available (for backwards-compatibility), otherwise on 'chief:0' or 'main:0'
+    job_names = sorted([k for k in cluster_template.keys() if k in ['chief', 'main', 'worker']])
     tb_job_name = 'worker' if 'worker' in job_names else job_names[0]
     tb_pid = 0
     tb_port = 0
@@ -363,8 +363,8 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
     sorted_cluster_info = sorted(cluster_info, key=lambda k: k['executor_id'])
     cluster_spec = _get_cluster_spec(sorted_cluster_info)
 
-    # update TF_CONFIG if cluster spec has a 'master' node (i.e. tf.estimator)
-    if 'master' in cluster_spec or 'chief' in cluster_spec:
+    # update TF_CONFIG if cluster spec has a 'main' node (i.e. tf.estimator)
+    if 'main' in cluster_spec or 'chief' in cluster_spec:
       tf_config = json.dumps({
         'cluster': cluster_spec,
         'task': {'type': job_name, 'index': task_index},

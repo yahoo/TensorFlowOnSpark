@@ -10,8 +10,8 @@ class SparkTest(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
-    master = os.getenv('MASTER')
-    assert master is not None, "Please start a Spark standalone cluster and export MASTER to your env."
+    main = os.getenv('MASTER')
+    assert main is not None, "Please start a Spark standalone cluster and export MASTER to your env."
 
     num_workers = os.getenv('SPARK_WORKER_INSTANCES')
     assert num_workers is not None, "Please export SPARK_WORKER_INSTANCES to your env."
@@ -21,7 +21,7 @@ class SparkTest(unittest.TestCase):
     assert spark_jars, "Please add path to tensorflow/ecosystem/hadoop jar to SPARK_CLASSPATH."
 
     cls.conf = SparkConf().set('spark.jars', spark_jars)
-    cls.sc = SparkContext(master, cls.__name__, conf=cls.conf)
+    cls.sc = SparkContext(main, cls.__name__, conf=cls.conf)
     cls.spark = SparkSession.builder.getOrCreate()
 
   @classmethod

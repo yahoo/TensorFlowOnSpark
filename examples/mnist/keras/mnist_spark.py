@@ -102,7 +102,7 @@ if __name__ == '__main__':
 
   images_labels = sc.textFile(args.images_labels).map(parse)
 
-  cluster = TFCluster.run(sc, main_fun, args, args.cluster_size, num_ps=0, tensorboard=args.tensorboard, input_mode=TFCluster.InputMode.SPARK, master_node='chief')
+  cluster = TFCluster.run(sc, main_fun, args, args.cluster_size, num_ps=0, tensorboard=args.tensorboard, input_mode=TFCluster.InputMode.SPARK, main_node='chief')
   # Note: need to feed extra data to ensure that each worker receives sufficient data to complete epochs
   # to compensate for variability in partition sizes and spark scheduling
   cluster.train(images_labels, args.epochs)

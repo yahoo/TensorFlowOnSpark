@@ -127,17 +127,17 @@ class HasInputMode(Params):
     return self.getOrDefault(self.input_mode)
 
 
-class HasMasterNode(Params):
-  master_node = Param(Params._dummy(), "master_node", "Job name of master/chief worker node", typeConverter=TypeConverters.toString)
+class HasMainNode(Params):
+  main_node = Param(Params._dummy(), "main_node", "Job name of main/chief worker node", typeConverter=TypeConverters.toString)
 
   def __init__(self):
-    super(HasMasterNode, self).__init__()
+    super(HasMainNode, self).__init__()
 
-  def setMasterNode(self, value):
-    return self._set(master_node=value)
+  def setMainNode(self, value):
+    return self._set(main_node=value)
 
-  def getMasterNode(self):
-    return self.getOrDefault(self.master_node)
+  def getMainNode(self):
+    return self.getOrDefault(self.main_node)
 
 
 class HasModelDir(Params):
@@ -349,7 +349,7 @@ class TFParams(Params):
 
 
 class TFEstimator(Estimator, TFParams, HasInputMapping,
-                  HasClusterSize, HasNumPS, HasInputMode, HasMasterNode, HasProtocol, HasGraceSecs,
+                  HasClusterSize, HasNumPS, HasInputMode, HasMainNode, HasProtocol, HasGraceSecs,
                   HasTensorboard, HasModelDir, HasExportDir, HasTFRecordDir,
                   HasBatchSize, HasEpochs, HasReaders, HasSteps):
   """Spark ML Estimator which launches a TensorFlowOnSpark cluster for distributed training.
@@ -371,13 +371,13 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
     self.train_fn = train_fn
     self.args = Namespace(tf_args)
 
-    master_node = 'chief' if version.parse(TF_VERSION) >= version.parse("2.0.0") else None
+    main_node = 'chief' if version.parse(TF_VERSION) >= version.parse("2.0.0") else None
     self._setDefault(input_mapping={},
                      cluster_size=1,
                      num_ps=0,
                      driver_ps_nodes=False,
                      input_mode=TFCluster.InputMode.SPARK,
-                     master_node=master_node,
+                     main_node=main_node,
                      protocol='grpc',
                      tensorboard=False,
                      model_dir=None,
@@ -407,7 +407,7 @@ class TFEstimator(Estimator, TFParams, HasInputMapping,
 
     tf_args = self.args.argv if self.args.argv else local_args
     cluster = TFCluster.run(sc, self.train_fn, tf_args, local_args.cluster_size, local_args.num_ps,
-                            local_args.tensorboard, TFCluster.InputMode.SPARK, master_node=local_args.master_node, driver_ps_nodes=local_args.driver_ps_nodes)
+                            local_args.tensorboard, TFCluster.InputMode.SPARK, main_node=local_args.main_node, driver_ps_nodes=local_args.driver_ps_nodes)
     # feed data, using a deterministic order for input columns (lexicographic by key)
     input_cols = sorted(self.getInputMapping())
     cluster.train(dataset.select(input_cols).rdd, local_args.epochs)

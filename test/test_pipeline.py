@@ -151,7 +151,7 @@ class PipelineTest(test.SparkTest):
                   .setModelDir(self.model_dir) \
                   .setExportDir(self.export_dir) \
                   .setClusterSize(self.num_workers) \
-                  .setMasterNode("chief") \
+                  .setMainNode("chief") \
                   .setNumPS(0) \
                   .setBatchSize(1) \
                   .setEpochs(1)
@@ -203,7 +203,7 @@ class PipelineTest(test.SparkTest):
 #            cost = tf.reduce_mean(input_tensor=tf.square(y_ - y), name='cost')
 #            optimizer = tf.compat.v1.train.GradientDescentOptimizer(0.1).minimize(cost, global_step)
 #
-#          with tf.compat.v1.train.MonitoredTrainingSession(master=server.target,
+#          with tf.compat.v1.train.MonitoredTrainingSession(main=server.target,
 #                                                           is_chief=(ctx.task_index == 0),
 #                                                           checkpoint_dir=args.model_dir,
 #                                                           save_checkpoint_steps=20) as sess:
