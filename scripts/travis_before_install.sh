@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 # TensorFlow 2.0.0 is tested/supported on Ubuntu 16 (xenial) or later
 # But Travis' xenial build env uses JDK11, while Spark requires JDK8
@@ -10,10 +10,13 @@ sudo apt-get install -y openjdk-8-jdk --no-install-recommends
 sudo update-java-alternatives -s java-1.8.0-openjdk-amd64
 
 # Download and install Spark
-curl -LO http://www-us.apache.org/dist/spark/spark-2.4.5/spark-2.4.5-bin-hadoop2.7.tgz
+export SPARK_VERSION=2.4.6
+curl -LO http://www-us.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop2.7.tgz
 export SPARK_HOME=./spark
 mkdir $SPARK_HOME
-tar -xf spark-2.4.5-bin-hadoop2.7.tgz -C $SPARK_HOME --strip-components=1
+tar -xf spark-${SPARK_VERSION}-bin-hadoop2.7.tgz -C $SPARK_HOME --strip-components=1
+
+# Setup environment
 export SPARK_LOCAL_IP=127.0.0.1
 export SPARK_CLASSPATH=./lib/tensorflow-hadoop-1.0-SNAPSHOT.jar
 export PATH=$SPARK_HOME/bin:$PATH
