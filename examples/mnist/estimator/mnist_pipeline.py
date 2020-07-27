@@ -57,8 +57,8 @@ def main_fun(args, ctx):
       return ds.map(scale).batch(BATCH_SIZE)
 
   def serving_input_receiver_fn():
-    features = tf.compat.v1.placeholder(dtype=tf.float32, shape=[None, 28, 28, 1], name='features')
-    receiver_tensors = {'features': features}
+    features = tf.compat.v1.placeholder(dtype=tf.float32, shape=[None, 28, 28, 1], name='conv2d_input')
+    receiver_tensors = {'conv2d_input': features}
     return tf.estimator.export.ServingInputReceiver(receiver_tensors, receiver_tensors)
 
   def model_fn(features, labels, mode):
@@ -179,7 +179,7 @@ if __name__ == "__main__":
   else:  # args.mode == 'inference':
     # using a trained/exported model
     model = TFModel(args) \
-        .setInputMapping({'image': 'features'}) \
+        .setInputMapping({'image': 'conv2d_input'}) \
         .setOutputMapping({'logits': 'prediction'}) \
         .setSignatureDefKey('serving_default') \
         .setExportDir(args.export_dir) \
