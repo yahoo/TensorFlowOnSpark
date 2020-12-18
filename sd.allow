@@ -1,0 +1,4 @@
+version: 1
+push:
+  - screwdriver:6384
+  - screwdriver:6384pr

@@ -1,0 +1,53 @@
+# Copyright 2017, Verizon Inc.
+# Licensed under the terms of the apache license.  See the LICENSE file in the project root for terms
+
+version: 4
+shared:
+  environment:
+    PACKAGE_DIRECTORY: tensorflowonspark
+    SPARK_HOME: ${SD_ROOT_DIR}/spark
+    TOX_ARGS: '--verbose'
+    TOX_ENVLIST: py37
+  annotations:
+    screwdriver.cd/cpu: HIGH
+    screwdriver.cd/ram: HIGH
+
+jobs:
+  validate_test:
+    template: python/validate_unittest
+    requires: [~commit, ~pr]
+    steps:
+      - prevalidate_code: |
+          source scripts/install_spark.sh
+
+  validate_lint:
+    template: python/validate_lint
+    requires: [~commit, ~pr]
+
+  validate_codestyle:
+    template: python/validate_codestyle
+    requires: [~commit, ~pr]
+
+  validate_safetydb:
+    template: python/validate_safety
+    requires: [~commit, ~pr]
+
+#  validate_security:
+#    template: python/validate_security
+#    requires: [~commit, ~pr]
+
+  publish_test_pypi:
+    template: python/package_python
+    environment:
+      PUBLISH: True
+      TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
+    requires: [validate_test, validate_lint, validate_codestyle, validate_safetydb, generate_version]
+    steps:
+      - update_version: |
+          echo 'using version from setup.cfg'
+
+#  publish_pypi:
+#    template: python/package_python
+#    environment:
+#      PUBLISH: True
+#    requires: [verify_test_package]
