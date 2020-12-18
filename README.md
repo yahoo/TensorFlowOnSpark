@@ -7,7 +7,7 @@ Please see LICENSE file in the project root for terms.
 > _TensorFlowOnSpark brings scalable deep learning to Apache Hadoop and Apache Spark
 clusters._
 
-[![Build Status](https://cd.screwdriver.cd/pipelines/6384/badge?nocache=true)](https://cd.screwdriver.cd/pipelines/6384)
+[![Build Status](https://cd.screwdriver.cd/pipelines/6384/badge)](https://cd.screwdriver.cd/pipelines/6384)
 [![Package](https://img.shields.io/badge/package-pypi-blue.svg)](https://pypi.org/project/tensorflowonspark/)
 [![Downloads](https://img.shields.io/pypi/dm/tensorflowonspark.svg)](https://img.shields.io/pypi/dm/tensorflowonspark.svg)
 [![Documentation](https://img.shields.io/badge/Documentation-latest-blue.svg)](https://yahoo.github.io/TensorFlowOnSpark/)
