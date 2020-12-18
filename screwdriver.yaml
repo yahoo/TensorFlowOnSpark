@@ -41,7 +41,7 @@ jobs:
     environment:
       PUBLISH: True
       TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
-    requires: [validate_test, validate_lint, validate_codestyle, validate_safetydb]
+    requires: [~tag:/^v\.*/]
     steps:
       - update_version: |
           echo 'using version from setup.cfg'
@@ -51,6 +51,13 @@ jobs:
     environment:
       PUBLISH: True
     requires: [publish_test_pypi]
+    steps:
+      - update_version: |
+          echo 'using version from setup.cfg'
+
+  publish_documentation:
+    template: python/documentation
+    requires: [publish_pypi]
     steps:
       - update_version: |
           echo 'using version from setup.cfg'
