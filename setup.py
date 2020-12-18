@@ -1,29 +1,26 @@
-from setuptools import setup
+#!/usr/bin/env python
+# Copyright 2017, Verizon Inc.
+# Licensed under the terms of the apache license.  See the LICENSE file in the project root for terms
+"""
+Package setup file for python module 'tensorflowonspark'
+"""
+import setuptools
+import sys
 
-with open('README.md') as f:
-  long_description = f.read()
 
-setup(
-  name='tensorflowonspark',
-  packages=['tensorflowonspark'],
-  version='2.2.1',
-  description='Deep learning with TensorFlow on Apache Spark clusters',
-  long_description=long_description,
-  long_description_content_type='text/markdown',
-  author='Yahoo, Inc.',
-  url='https://github.com/yahoo/TensorFlowOnSpark',
-  keywords=['tensorflowonspark', 'tensorflow', 'spark', 'machine learning', 'yahoo'],
-  install_requires=['packaging'],
-  license='Apache 2.0',
-  classifiers=[
-    'Intended Audience :: Developers',
-    'Intended Audience :: Science/Research',
-    'License :: OSI Approved :: Apache Software License',
-    'Topic :: Software Development :: Libraries',
-    'Programming Language :: Python :: 2',
-    'Programming Language :: Python :: 2.7',
-    'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.5',
-    'Programming Language :: Python :: 3.6'
-  ]
-)
+def setuptools_version_supported():
+    major, minor, patch = setuptools.__version__.split('.')
+    if int(major) > 38:
+        return True
+    return False
+
+
+if __name__ == '__main__':
+    # Check for a working version of setuptools here because earlier versions did not
+    # support python_requires.
+    if not setuptools_version_supported():
+        print('Setuptools version 38.0.0 or higher is needed to install this package')
+        sys.exit(1)
+
+    # We're being run from the command line so call setup with our arguments
+    setuptools.setup()
