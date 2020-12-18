@@ -7,7 +7,10 @@ Please see LICENSE file in the project root for terms.
 > _TensorFlowOnSpark brings scalable deep learning to Apache Hadoop and Apache Spark
 clusters._
 
-[![Build Status](https://travis-ci.org/yahoo/TensorFlowOnSpark.svg?branch=master)](https://travis-ci.org/yahoo/TensorFlowOnSpark) [![PyPI version](https://badge.fury.io/py/tensorflowonspark.svg)](https://badge.fury.io/py/tensorflowonspark)
+[![Build Status](https://cd.screwdriver.cd/pipelines/6384/badge?nocache=true)](https://cd.screwdriver.cd/pipelines/6384)
+[![Package](https://img.shields.io/badge/package-pypi-blue.svg)](https://pypi.org/project/tensorflowonspark/)
+[![Downloads](https://img.shields.io/pypi/dm/tensorflowonspark.svg)](https://img.shields.io/pypi/dm/tensorflowonspark.svg)
+[![Documentation](https://img.shields.io/badge/Documentation-latest-blue.svg)](https://yahoo.github.io/TensorFlowOnSpark/)
 
 By combining salient features from the [TensorFlow](https://www.tensorflow.org) deep learning framework with [Apache Spark](http://spark.apache.org) and [Apache Hadoop](http://hadoop.apache.org), TensorFlowOnSpark enables distributed
 deep learning on a cluster of GPU and CPU servers.
