@@ -224,7 +224,7 @@ def run(flags_obj):
         steps_per_epoch=steps_per_epoch)
     callbacks.append(lr_callback)
 
-  # if mutliple epochs, ignore the train_steps flag.
+  # if multiple epochs, ignore the train_steps flag.
   if train_epochs <= 1 and flags_obj.train_steps:
     steps_per_epoch = min(flags_obj.train_steps, steps_per_epoch)
     train_epochs = 1
