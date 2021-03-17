@@ -20,7 +20,7 @@ class SparkTest(unittest.TestCase):
     spark_jars = os.getenv('SPARK_CLASSPATH')
     assert spark_jars, "Please add path to tensorflow/ecosystem/hadoop jar to SPARK_CLASSPATH."
 
-    cls.conf = SparkConf().set('spark.jars', spark_jars)
+    cls.conf = SparkConf().set('spark.jars', spark_jars).set('spark.scheduler.barrier.maxConcurrentTasksCheck.maxFailures', 3)
     cls.sc = SparkContext(master, cls.__name__, conf=cls.conf)
     cls.spark = SparkSession.builder.getOrCreate()
 
