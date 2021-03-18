@@ -20,7 +20,7 @@ export SPARK_CLASSPATH=${TFoS_HOME}/lib/tensorflow-hadoop-1.0-SNAPSHOT.jar
 ```
 2. Run script to automatically start Spark Standalone cluster, run all tests, and shutdown the cluster, OR
 ```bash
-cd ${TFoS_HOME}/test
+cd ${TFoS_HOME}/tests
 ./run_tests.sh
 ```
 3. OPTIONAL: manually start/stop the Spark Standalone cluster (when iterating on code).
@@ -32,7 +32,7 @@ export TOTAL_CORES=$((${CORES_PER_WORKER}*${SPARK_WORKER_INSTANCES}))
 ${SPARK_HOME}/sbin/start-master.sh; ${SPARK_HOME}/sbin/start-slave.sh -c ${CORES_PER_WORKER} -m 3G ${MASTER}
 
 # Develop code, run tests, repeat...
-cd ${TFoS_HOME}/test
+cd ${TFoS_HOME}/tests
 python -m unittest discover
 
 # Stop Spark Standalone cluster when done
