@@ -57,7 +57,7 @@ jobs:
 
   publish_documentation:
     template: python/documentation
-    requires: [publish_pypi]
+    requires: [~commit]
     steps:
       - update_version: |
           echo 'using version from setup.cfg'
