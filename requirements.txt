@@ -5,6 +5,4 @@ py4j
 pyspark
 scipy
 setuptools
-sphinx
-sphinx_rtd_theme
 tensorflow

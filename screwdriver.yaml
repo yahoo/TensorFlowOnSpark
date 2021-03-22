@@ -40,8 +40,11 @@ jobs:
     template: python/documentation
     environment:
       DOCUMENTATION_PUBLISH: False
-    requires: [~commit, ~pr]
+    requires: [~pr]
     steps:
+      - install_dependencies:
+          $BASE_PYTHON -m screwdrivercd.installdeps
+          $BASE_PYTHON -m pip install sphinx_rtd_theme
       - update_version: |
           echo 'using version from setup.cfg'
 
