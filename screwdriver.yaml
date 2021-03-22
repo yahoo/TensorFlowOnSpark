@@ -36,6 +36,15 @@ jobs:
 #    template: python/validate_security
 #    requires: [~commit, ~pr]
 
+  validate_documentation:
+    template: python/documentation
+    environment:
+      DOCUMENTATION_PUBLISH: False
+    requires: [~commit, ~pr]
+    steps:
+      - update_version: |
+          echo 'using version from setup.cfg'
+
   publish_test_pypi:
     template: python/package_python
     environment:
