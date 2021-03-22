@@ -57,6 +57,8 @@ jobs:
 
   publish_documentation:
     template: python/documentation
+    environment:
+      DOCUMENTATION_PUBLISH: True
     requires: [~commit]
     steps:
       - update_version: |
