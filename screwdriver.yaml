@@ -42,11 +42,13 @@ jobs:
       DOCUMENTATION_PUBLISH: False
     requires: [~pr]
     steps:
-      - install_dependencies:
-          $BASE_PYTHON -m screwdrivercd.installdeps
-          $BASE_PYTHON -m pip install sphinx_rtd_theme
       - update_version: |
           echo 'using version from setup.cfg'
+      - publish_documentation: |
+          echo "BASE_PYTHON: ${BASE_PYTHON}"
+          $BASE_PYTHON -m pip install sphinx_rtd_theme
+          $BASE_PYTHON -m pip list
+          $BASE_PYTHON -m screwdrivercd.documentation
 
   publish_test_pypi:
     template: python/package_python
