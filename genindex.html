@@ -1,39 +1,41 @@
 
 
-
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Index &mdash; TensorFlowOnSpark 2.2.1 documentation</title>
+  <title>Index &mdash; TensorFlowOnSpark 2.2.3 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
   
 
   
   
-  
+
   
 
   
-  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
-        <script src="_static/language_data.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
     
-
-  
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="#" />
     <link rel="search" title="Search" href="search.html" /> 
 </head>
@@ -59,7 +61,7 @@
             
             
               <div class="version">
-                2.2.1
+                2.2.3
               </div>
             
           
@@ -76,6 +78,7 @@
           
         </div>
 
+        
         <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
           
             
@@ -91,6 +94,7 @@
             
           
         </div>
+        
       </div>
     </nav>
 
@@ -125,18 +129,20 @@
 
 
 
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
     
-      <li><a href="index.html">Docs</a> &raquo;</li>
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
         
       <li>Index</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
-            
+          
         
       </li>
     
@@ -164,11 +170,14 @@
  | <a href="#L"><strong>L</strong></a>
  | <a href="#M"><strong>M</strong></a>
  | <a href="#N"><strong>N</strong></a>
+ | <a href="#O"><strong>O</strong></a>
+ | <a href="#P"><strong>P</strong></a>
  | <a href="#Q"><strong>Q</strong></a>
  | <a href="#R"><strong>R</strong></a>
  | <a href="#S"><strong>S</strong></a>
  | <a href="#T"><strong>T</strong></a>
  | <a href="#W"><strong>W</strong></a>
+ | <a href="#Y"><strong>Y</strong></a>
  
 </div>
 <h2 id="A">A</h2>
@@ -178,8 +187,12 @@
 </li>
       <li><a href="tensorflowonspark.reservation.html#tensorflowonspark.reservation.Reservations.add">add() (Reservations method)</a>
 </li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.TFParams.args">args (TFParams attribute)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.Namespace.argv">argv (Namespace attribute)</a>
+</li>
       <li><a href="tensorflowonspark.reservation.html#tensorflowonspark.reservation.Client.await_reservations">await_reservations() (Client method)</a>
 
       <ul>
@@ -198,6 +211,10 @@
         <li><a href="tensorflowonspark.TFNode.html#tensorflowonspark.TFNode.batch_results">(in module tensorflowonspark.TFNode)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasBatchSize.batch_size">batch_size (HasBatchSize attribute)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -220,6 +237,8 @@
 </li>
       <li><a href="tensorflowonspark.TFCluster.html#tensorflowonspark.TFCluster.TFCluster.cluster_meta">cluster_meta (TFCluster attribute)</a>
 </li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasClusterSize.cluster_size">cluster_size (HasClusterSize attribute)</a>
+</li>
       <li><a href="tensorflowonspark.TFManager.html#tensorflowonspark.TFManager.connect">connect() (in module tensorflowonspark.TFManager)</a>
 </li>
   </ul></td>
@@ -238,6 +257,8 @@
 </li>
       <li><a href="tensorflowonspark.reservation.html#tensorflowonspark.reservation.Reservations.done">done() (Reservations method)</a>
 </li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasNumPS.driver_ps_nodes">driver_ps_nodes (HasNumPS attribute)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -246,8 +267,14 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="tensorflowonspark.marker.html#tensorflowonspark.marker.EndPartition">EndPartition (class in tensorflowonspark.marker)</a>
 </li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasEpochs.epochs">epochs (HasEpochs attribute)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasExportDir.export_dir">export_dir (HasExportDir attribute)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.TFEstimator.export_fn">export_fn (TFEstimator attribute)</a>
+</li>
       <li><a href="tensorflowonspark.TFNode.html#tensorflowonspark.TFNode.export_saved_model">export_saved_model() (in module tensorflowonspark.TFNode)</a>
 
       <ul>
@@ -278,9 +305,9 @@
 </li>
       <li><a href="tensorflowonspark.gpu_info.html#tensorflowonspark.gpu_info.get_gpus">get_gpus() (in module tensorflowonspark.gpu_info)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="tensorflowonspark.util.html#tensorflowonspark.util.get_ip_address">get_ip_address() (in module tensorflowonspark.util)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.get_meta_graph_def">get_meta_graph_def() (in module tensorflowonspark.pipeline)</a>
 </li>
       <li><a href="tensorflowonspark.reservation.html#tensorflowonspark.reservation.Client.get_reservations">get_reservations() (Client method)</a>
 </li>
@@ -288,12 +315,92 @@
 </li>
       <li><a href="tensorflowonspark.reservation.html#tensorflowonspark.reservation.Server.get_server_ports">get_server_ports() (Server method)</a>
 </li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasBatchSize.getBatchSize">getBatchSize() (HasBatchSize method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasClusterSize.getClusterSize">getClusterSize() (HasClusterSize method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasNumPS.getDriverPSNodes">getDriverPSNodes() (HasNumPS method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasEpochs.getEpochs">getEpochs() (HasEpochs method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasExportDir.getExportDir">getExportDir() (HasExportDir method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasGraceSecs.getGraceSecs">getGraceSecs() (HasGraceSecs method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasInputMapping.getInputMapping">getInputMapping() (HasInputMapping method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasInputMode.getInputMode">getInputMode() (HasInputMode method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasMasterNode.getMasterNode">getMasterNode() (HasMasterNode method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasModelDir.getModelDir">getModelDir() (HasModelDir method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasNumPS.getNumPS">getNumPS() (HasNumPS method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasOutputMapping.getOutputMapping">getOutputMapping() (HasOutputMapping method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasProtocol.getProtocol">getProtocol() (HasProtocol method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasReaders.getReaders">getReaders() (HasReaders method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasSignatureDefKey.getSignatureDefKey">getSignatureDefKey() (HasSignatureDefKey method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasSteps.getSteps">getSteps() (HasSteps method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasTagSet.getTagSet">getTagSet() (HasTagSet method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasTensorboard.getTensorboard">getTensorboard() (HasTensorboard method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasTFRecordDir.getTFRecordDir">getTFRecordDir() (HasTFRecordDir method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasGraceSecs.grace_secs">grace_secs (HasGraceSecs attribute)</a>
+</li>
   </ul></td>
 </tr></table>
 
 <h2 id="H">H</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasBatchSize">HasBatchSize (class in tensorflowonspark.pipeline)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasClusterSize">HasClusterSize (class in tensorflowonspark.pipeline)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasEpochs">HasEpochs (class in tensorflowonspark.pipeline)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasExportDir">HasExportDir (class in tensorflowonspark.pipeline)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasGraceSecs">HasGraceSecs (class in tensorflowonspark.pipeline)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasInputMapping">HasInputMapping (class in tensorflowonspark.pipeline)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasInputMode">HasInputMode (class in tensorflowonspark.pipeline)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasMasterNode">HasMasterNode (class in tensorflowonspark.pipeline)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasModelDir">HasModelDir (class in tensorflowonspark.pipeline)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasNumPS">HasNumPS (class in tensorflowonspark.pipeline)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasOutputMapping">HasOutputMapping (class in tensorflowonspark.pipeline)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasProtocol">HasProtocol (class in tensorflowonspark.pipeline)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasReaders">HasReaders (class in tensorflowonspark.pipeline)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasSignatureDefKey">HasSignatureDefKey (class in tensorflowonspark.pipeline)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasSteps">HasSteps (class in tensorflowonspark.pipeline)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasTagSet">HasTagSet (class in tensorflowonspark.pipeline)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasTensorboard">HasTensorboard (class in tensorflowonspark.pipeline)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasTFRecordDir">HasTFRecordDir (class in tensorflowonspark.pipeline)</a>
+</li>
       <li><a href="tensorflowonspark.TFNode.html#tensorflowonspark.TFNode.hdfs_path">hdfs_path() (in module tensorflowonspark.TFNode)</a>
 </li>
   </ul></td>
@@ -310,10 +417,16 @@
         <li><a href="tensorflowonspark.TFCluster.html#tensorflowonspark.TFCluster.TFCluster.inference">(TFCluster method)</a>
 </li>
       </ul></li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasInputMapping.input_mapping">input_mapping (HasInputMapping attribute)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="tensorflowonspark.TFCluster.html#tensorflowonspark.TFCluster.TFCluster.input_mode">input_mode (TFCluster attribute)</a>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasInputMode.input_mode">input_mode (HasInputMode attribute)</a>
+
+      <ul>
+        <li><a href="tensorflowonspark.TFCluster.html#tensorflowonspark.TFCluster.TFCluster.input_mode">(TFCluster attribute)</a>
 </li>
+      </ul></li>
       <li><a href="tensorflowonspark.TFCluster.html#tensorflowonspark.TFCluster.InputMode">InputMode (class in tensorflowonspark.TFCluster)</a>
 </li>
       <li><a href="tensorflowonspark.gpu_info.html#tensorflowonspark.gpu_info.is_gpu_available">is_gpu_available() (in module tensorflowonspark.gpu_info)</a>
@@ -336,20 +449,55 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="tensorflowonspark.marker.html#tensorflowonspark.marker.Marker">Marker (class in tensorflowonspark.marker)</a>
 </li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasMasterNode.master_node">master_node (HasMasterNode attribute)</a>
+</li>
       <li><a href="tensorflowonspark.gpu_info.html#tensorflowonspark.gpu_info.MAX_RETRIES">MAX_RETRIES (in module tensorflowonspark.gpu_info)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.TFParams.merge_args_params">merge_args_params() (TFParams method)</a>
+</li>
       <li><a href="tensorflowonspark.reservation.html#tensorflowonspark.reservation.MessageSocket">MessageSocket (class in tensorflowonspark.reservation)</a>
 </li>
       <li><a href="tensorflowonspark.TFSparkNode.html#tensorflowonspark.TFSparkNode.TFSparkNode.mgr">mgr (TFSparkNode attribute)</a>
 </li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasModelDir.model_dir">model_dir (HasModelDir attribute)</a>
+</li>
+      <li>
+    module
+
+      <ul>
+        <li><a href="tensorflowonspark.html#module-tensorflowonspark">tensorflowonspark</a>
+</li>
+        <li><a href="tensorflowonspark.dfutil.html#module-tensorflowonspark.dfutil">tensorflowonspark.dfutil</a>
+</li>
+        <li><a href="tensorflowonspark.gpu_info.html#module-tensorflowonspark.gpu_info">tensorflowonspark.gpu_info</a>
+</li>
+        <li><a href="tensorflowonspark.marker.html#module-tensorflowonspark.marker">tensorflowonspark.marker</a>
+</li>
+        <li><a href="tensorflowonspark.pipeline.html#module-tensorflowonspark.pipeline">tensorflowonspark.pipeline</a>
+</li>
+        <li><a href="tensorflowonspark.reservation.html#module-tensorflowonspark.reservation">tensorflowonspark.reservation</a>
+</li>
+        <li><a href="tensorflowonspark.TFCluster.html#module-tensorflowonspark.TFCluster">tensorflowonspark.TFCluster</a>
+</li>
+        <li><a href="tensorflowonspark.TFManager.html#module-tensorflowonspark.TFManager">tensorflowonspark.TFManager</a>
+</li>
+        <li><a href="tensorflowonspark.TFNode.html#module-tensorflowonspark.TFNode">tensorflowonspark.TFNode</a>
+</li>
+        <li><a href="tensorflowonspark.TFParallel.html#module-tensorflowonspark.TFParallel">tensorflowonspark.TFParallel</a>
+</li>
+        <li><a href="tensorflowonspark.TFSparkNode.html#module-tensorflowonspark.TFSparkNode">tensorflowonspark.TFSparkNode</a>
+</li>
+        <li><a href="tensorflowonspark.util.html#module-tensorflowonspark.util">tensorflowonspark.util</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
 <h2 id="N">N</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.Namespace">Namespace (class in tensorflowonspark.pipeline)</a>
+</li>
       <li><a href="tensorflowonspark.TFNode.html#tensorflowonspark.TFNode.DataFeed.next_batch">next_batch() (DataFeed method)</a>
 
       <ul>
@@ -361,6 +509,24 @@
       <li><a href="tensorflowonspark.TFCluster.html#tensorflowonspark.TFCluster.TFCluster.nodeRDD">nodeRDD (TFCluster attribute)</a>
 </li>
       <li><a href="tensorflowonspark.TFCluster.html#tensorflowonspark.TFCluster.TFCluster.num_executors">num_executors (TFCluster attribute)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasNumPS.num_ps">num_ps (HasNumPS attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="O">O</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasOutputMapping.output_mapping">output_mapping (HasOutputMapping attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="P">P</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasProtocol.protocol">protocol (HasProtocol attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -378,16 +544,18 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="tensorflowonspark.util.html#tensorflowonspark.util.read_executor_id">read_executor_id() (in module tensorflowonspark.util)</a>
 </li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasReaders.readers">readers (HasReaders attribute)</a>
+</li>
       <li><a href="tensorflowonspark.reservation.html#tensorflowonspark.reservation.MessageSocket.receive">receive() (MessageSocket method)</a>
 </li>
       <li><a href="tensorflowonspark.reservation.html#tensorflowonspark.reservation.Client.register">register() (Client method)</a>
 </li>
       <li><a href="tensorflowonspark.reservation.html#tensorflowonspark.reservation.Reservations.remaining">remaining() (Reservations method)</a>
 </li>
-      <li><a href="tensorflowonspark.reservation.html#tensorflowonspark.reservation.Client.request_stop">request_stop() (Client method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="tensorflowonspark.reservation.html#tensorflowonspark.reservation.Client.request_stop">request_stop() (Client method)</a>
+</li>
       <li><a href="tensorflowonspark.reservation.html#tensorflowonspark.reservation.Reservations">Reservations (class in tensorflowonspark.reservation)</a>
 </li>
       <li><a href="tensorflowonspark.reservation.html#tensorflowonspark.reservation.Server.reservations">reservations (Server attribute)</a>
@@ -418,6 +586,46 @@
 </li>
       <li><a href="tensorflowonspark.reservation.html#tensorflowonspark.reservation.Client.server_addr">server_addr (Client attribute)</a>
 </li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasBatchSize.setBatchSize">setBatchSize() (HasBatchSize method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasClusterSize.setClusterSize">setClusterSize() (HasClusterSize method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasNumPS.setDriverPSNodes">setDriverPSNodes() (HasNumPS method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasEpochs.setEpochs">setEpochs() (HasEpochs method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasExportDir.setExportDir">setExportDir() (HasExportDir method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasGraceSecs.setGraceSecs">setGraceSecs() (HasGraceSecs method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasInputMapping.setInputMapping">setInputMapping() (HasInputMapping method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasInputMode.setInputMode">setInputMode() (HasInputMode method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasMasterNode.setMasterNode">setMasterNode() (HasMasterNode method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasModelDir.setModelDir">setModelDir() (HasModelDir method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasNumPS.setNumPS">setNumPS() (HasNumPS method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasOutputMapping.setOutputMapping">setOutputMapping() (HasOutputMapping method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasProtocol.setProtocol">setProtocol() (HasProtocol method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasReaders.setReaders">setReaders() (HasReaders method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasSignatureDefKey.setSignatureDefKey">setSignatureDefKey() (HasSignatureDefKey method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasSteps.setSteps">setSteps() (HasSteps method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasTagSet.setTagSet">setTagSet() (HasTagSet method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasTensorboard.setTensorboard">setTensorboard() (HasTensorboard method)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasTFRecordDir.setTFRecordDir">setTFRecordDir() (HasTFRecordDir method)</a>
+</li>
       <li><a href="tensorflowonspark.TFNode.html#tensorflowonspark.TFNode.DataFeed.should_stop">should_stop() (DataFeed method)</a>
 </li>
       <li><a href="tensorflowonspark.TFSparkNode.html#tensorflowonspark.TFSparkNode.shutdown">shutdown() (in module tensorflowonspark.TFSparkNode)</a>
@@ -426,10 +634,14 @@
         <li><a href="tensorflowonspark.TFCluster.html#tensorflowonspark.TFCluster.TFCluster.shutdown">(TFCluster method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="tensorflowonspark.util.html#tensorflowonspark.util.single_node_env">single_node_env() (in module tensorflowonspark.util)</a>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasSignatureDefKey.signature_def_key">signature_def_key (HasSignatureDefKey attribute)</a>
 </li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.single_node_env">single_node_env() (in module tensorflowonspark.pipeline)</a>
+
+      <ul>
+        <li><a href="tensorflowonspark.util.html#tensorflowonspark.util.single_node_env">(in module tensorflowonspark.util)</a>
+</li>
+      </ul></li>
       <li><a href="tensorflowonspark.reservation.html#tensorflowonspark.reservation.Client.sock">sock (Client attribute)</a>
 </li>
       <li><a href="tensorflowonspark.TFCluster.html#tensorflowonspark.TFCluster.InputMode.SPARK">SPARK (InputMode attribute)</a>
@@ -448,6 +660,8 @@
       </ul></li>
       <li><a href="tensorflowonspark.reservation.html#tensorflowonspark.reservation.Server.start_listening_socket">start_listening_socket() (Server method)</a>
 </li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasSteps.steps">steps (HasSteps attribute)</a>
+</li>
       <li><a href="tensorflowonspark.reservation.html#tensorflowonspark.reservation.Server.stop">stop() (Server method)</a>
 </li>
   </ul></td>
@@ -456,34 +670,100 @@
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasTagSet.tag_set">tag_set (HasTagSet attribute)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasTensorboard.tensorboard">tensorboard (HasTensorboard attribute)</a>
+</li>
       <li><a href="tensorflowonspark.TFCluster.html#tensorflowonspark.TFCluster.TFCluster.tensorboard_url">tensorboard_url() (TFCluster method)</a>
 </li>
       <li><a href="tensorflowonspark.TFCluster.html#tensorflowonspark.TFCluster.InputMode.TENSORFLOW">TENSORFLOW (InputMode attribute)</a>
 </li>
-      <li><a href="tensorflowonspark.html#module-tensorflowonspark">tensorflowonspark (module)</a>
+      <li>
+    tensorflowonspark
+
+      <ul>
+        <li><a href="tensorflowonspark.html#module-tensorflowonspark">module</a>
 </li>
-      <li><a href="tensorflowonspark.dfutil.html#module-tensorflowonspark.dfutil">tensorflowonspark.dfutil (module)</a>
+      </ul></li>
+      <li>
+    tensorflowonspark.dfutil
+
+      <ul>
+        <li><a href="tensorflowonspark.dfutil.html#module-tensorflowonspark.dfutil">module</a>
 </li>
-      <li><a href="tensorflowonspark.gpu_info.html#module-tensorflowonspark.gpu_info">tensorflowonspark.gpu_info (module)</a>
+      </ul></li>
+      <li>
+    tensorflowonspark.gpu_info
+
+      <ul>
+        <li><a href="tensorflowonspark.gpu_info.html#module-tensorflowonspark.gpu_info">module</a>
 </li>
-      <li><a href="tensorflowonspark.marker.html#module-tensorflowonspark.marker">tensorflowonspark.marker (module)</a>
+      </ul></li>
+      <li>
+    tensorflowonspark.marker
+
+      <ul>
+        <li><a href="tensorflowonspark.marker.html#module-tensorflowonspark.marker">module</a>
 </li>
-      <li><a href="tensorflowonspark.reservation.html#module-tensorflowonspark.reservation">tensorflowonspark.reservation (module)</a>
+      </ul></li>
+      <li>
+    tensorflowonspark.pipeline
+
+      <ul>
+        <li><a href="tensorflowonspark.pipeline.html#module-tensorflowonspark.pipeline">module</a>
 </li>
-      <li><a href="tensorflowonspark.TFCluster.html#module-tensorflowonspark.TFCluster">tensorflowonspark.TFCluster (module)</a>
+      </ul></li>
+      <li>
+    tensorflowonspark.reservation
+
+      <ul>
+        <li><a href="tensorflowonspark.reservation.html#module-tensorflowonspark.reservation">module</a>
 </li>
-      <li><a href="tensorflowonspark.TFManager.html#module-tensorflowonspark.TFManager">tensorflowonspark.TFManager (module)</a>
+      </ul></li>
+      <li>
+    tensorflowonspark.TFCluster
+
+      <ul>
+        <li><a href="tensorflowonspark.TFCluster.html#module-tensorflowonspark.TFCluster">module</a>
 </li>
-      <li><a href="tensorflowonspark.TFNode.html#module-tensorflowonspark.TFNode">tensorflowonspark.TFNode (module)</a>
+      </ul></li>
+      <li>
+    tensorflowonspark.TFManager
+
+      <ul>
+        <li><a href="tensorflowonspark.TFManager.html#module-tensorflowonspark.TFManager">module</a>
 </li>
-      <li><a href="tensorflowonspark.TFParallel.html#module-tensorflowonspark.TFParallel">tensorflowonspark.TFParallel (module)</a>
+      </ul></li>
+      <li>
+    tensorflowonspark.TFNode
+
+      <ul>
+        <li><a href="tensorflowonspark.TFNode.html#module-tensorflowonspark.TFNode">module</a>
 </li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="tensorflowonspark.TFSparkNode.html#module-tensorflowonspark.TFSparkNode">tensorflowonspark.TFSparkNode (module)</a>
+      <li>
+    tensorflowonspark.TFParallel
+
+      <ul>
+        <li><a href="tensorflowonspark.TFParallel.html#module-tensorflowonspark.TFParallel">module</a>
 </li>
-      <li><a href="tensorflowonspark.util.html#module-tensorflowonspark.util">tensorflowonspark.util (module)</a>
+      </ul></li>
+      <li>
+    tensorflowonspark.TFSparkNode
+
+      <ul>
+        <li><a href="tensorflowonspark.TFSparkNode.html#module-tensorflowonspark.TFSparkNode">module</a>
 </li>
+      </ul></li>
+      <li>
+    tensorflowonspark.util
+
+      <ul>
+        <li><a href="tensorflowonspark.util.html#module-tensorflowonspark.util">module</a>
+</li>
+      </ul></li>
       <li><a href="tensorflowonspark.TFNode.html#tensorflowonspark.TFNode.DataFeed.terminate">terminate() (DataFeed method)</a>
 
       <ul>
@@ -492,11 +772,23 @@
       </ul></li>
       <li><a href="tensorflowonspark.TFCluster.html#tensorflowonspark.TFCluster.TFCluster">TFCluster (class in tensorflowonspark.TFCluster)</a>
 </li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.TFEstimator">TFEstimator (class in tensorflowonspark.pipeline)</a>
+</li>
       <li><a href="tensorflowonspark.TFManager.html#tensorflowonspark.TFManager.TFManager">TFManager (class in tensorflowonspark.TFManager)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.TFModel">TFModel (class in tensorflowonspark.pipeline)</a>
 </li>
       <li><a href="tensorflowonspark.TFSparkNode.html#tensorflowonspark.TFSparkNode.TFNodeContext">TFNodeContext (class in tensorflowonspark.TFSparkNode)</a>
 </li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.TFParams">TFParams (class in tensorflowonspark.pipeline)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.HasTFRecordDir.tfrecord_dir">tfrecord_dir (HasTFRecordDir attribute)</a>
+</li>
       <li><a href="tensorflowonspark.TFSparkNode.html#tensorflowonspark.TFSparkNode.TFSparkNode">TFSparkNode (class in tensorflowonspark.TFSparkNode)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.TFTypeConverters">TFTypeConverters (class in tensorflowonspark.pipeline)</a>
+</li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.TFTypeConverters.toDict">toDict() (TFTypeConverters static method)</a>
 </li>
       <li><a href="tensorflowonspark.dfutil.html#tensorflowonspark.dfutil.toTFExample">toTFExample() (in module tensorflowonspark.dfutil)</a>
 </li>
@@ -506,6 +798,8 @@
         <li><a href="tensorflowonspark.TFCluster.html#tensorflowonspark.TFCluster.TFCluster.train">(TFCluster method)</a>
 </li>
       </ul></li>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.TFEstimator.train_fn">train_fn (TFEstimator attribute)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -521,26 +815,39 @@
   </ul></td>
 </tr></table>
 
+<h2 id="Y">Y</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="tensorflowonspark.pipeline.html#tensorflowonspark.pipeline.yield_batch">yield_batch() (in module tensorflowonspark.pipeline)</a>
+</li>
+  </ul></td>
+</tr></table>
+
 
 
            </div>
            
           </div>
           <footer>
-  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2020, Yahoo Inc / Verizon Media
+        &#169; Copyright 2020, Yahoo Inc / Verizon Media.
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
-
         </div>
       </div>
 
@@ -548,7 +855,6 @@
 
   </div>
   
-
 
   <script type="text/javascript">
       jQuery(function () {

@@ -1,38 +1,41 @@
 
 
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>tensorflowonspark.TFParallel module &mdash; TensorFlowOnSpark 2.2.1 documentation</title>
+  <title>tensorflowonspark.TFParallel module &mdash; TensorFlowOnSpark 2.2.3 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
   
 
   
   
-  
+
   
 
   
-  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
-        <script src="_static/language_data.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
     
-
-  
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="tensorflowonspark.TFSparkNode module" href="tensorflowonspark.TFSparkNode.html" />
@@ -60,7 +63,7 @@
             
             
               <div class="version">
-                2.2.1
+                2.2.3
               </div>
             
           
@@ -77,6 +80,7 @@
           
         </div>
 
+        
         <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
           
             
@@ -109,6 +113,7 @@
             
           
         </div>
+        
       </div>
     </nav>
 
@@ -143,11 +148,13 @@
 
 
 
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
     
-      <li><a href="index.html">Docs</a> &raquo;</li>
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
         
           <li><a href="tensorflowonspark.html">tensorflowonspark package</a> &raquo;</li>
         
@@ -156,7 +163,7 @@
     
       <li class="wy-breadcrumbs-aside">
         
-            
+          
             <a href="_sources/tensorflowonspark.TFParallel.rst.txt" rel="nofollow"> View page source</a>
           
         
@@ -172,9 +179,9 @@
             
   <div class="section" id="tensorflowonspark-tfparallel-module">
 <h1>tensorflowonspark.TFParallel module<a class="headerlink" href="#tensorflowonspark-tfparallel-module" title="Permalink to this headline">¶</a></h1>
-<span class="target" id="module-tensorflowonspark.TFParallel"></span><dl class="function">
+<span class="target" id="module-tensorflowonspark.TFParallel"></span><dl class="py function">
 <dt id="tensorflowonspark.TFParallel.run">
-<code class="sig-name descname">run</code><span class="sig-paren">(</span><em class="sig-param">sc</em>, <em class="sig-param">map_fn</em>, <em class="sig-param">tf_args</em>, <em class="sig-param">num_executors</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFParallel.html#run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorflowonspark.TFParallel.run" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">run</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">map_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tf_args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_executors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_barrier</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFParallel.html#run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFParallel.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Runs the user map_fn as parallel, independent instances of TF on the Spark executors.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="field-list simple">
@@ -190,6 +197,9 @@
 <dt class="field-even">num_executors</dt>
 <dd class="field-even"><p>number of Spark executors.  This should match your Spark job’s <code class="docutils literal notranslate"><span class="pre">--num_executors</span></code>.</p>
 </dd>
+<dt class="field-odd">use_barrier</dt>
+<dd class="field-odd"><p>Boolean indicating if TFParallel should use Spark barrier execution mode to wait for all executors.</p>
+</dd>
 </dl>
 </dd>
 <dt>Returns:</dt><dd><p>None</p>
@@ -204,29 +214,29 @@
            
           </div>
           <footer>
-  
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="tensorflowonspark.TFSparkNode.html" class="btn btn-neutral float-right" title="tensorflowonspark.TFSparkNode module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="tensorflowonspark.TFNode.html" class="btn btn-neutral float-left" title="tensorflowonspark.TFNode module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
+        <a href="tensorflowonspark.TFSparkNode.html" class="btn btn-neutral float-right" title="tensorflowonspark.TFSparkNode module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="tensorflowonspark.TFNode.html" class="btn btn-neutral float-left" title="tensorflowonspark.TFNode module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2020, Yahoo Inc / Verizon Media
+        &#169; Copyright 2020, Yahoo Inc / Verizon Media.
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
-
         </div>
       </div>
 
@@ -234,7 +244,6 @@
 
   </div>
   
-
 
   <script type="text/javascript">
       jQuery(function () {
