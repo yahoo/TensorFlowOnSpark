@@ -36,6 +36,18 @@ jobs:
 #    template: python/validate_security
 #    requires: [~commit, ~pr]
 
+  validate_documentation:
+    template: python/documentation
+    environment:
+      DOCUMENTATION_PUBLISH: False
+    requires: [~pr]
+    steps:
+      - update_version: |
+          echo 'using version from setup.cfg'
+      - publish_documentation: |
+          $BASE_PYTHON -m pip install sphinx_rtd_theme
+          $BASE_PYTHON -m screwdrivercd.documentation
+
   publish_test_pypi:
     template: python/package_python
     environment:
@@ -61,3 +73,6 @@ jobs:
     steps:
       - update_version: |
           echo 'using version from setup.cfg'
+      - publish_documentation: |
+          $BASE_PYTHON -m pip install sphinx_rtd_theme
+          $BASE_PYTHON -m screwdrivercd.documentation
