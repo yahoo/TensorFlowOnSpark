@@ -45,7 +45,7 @@ jobs:
       - update_version: |
           echo 'using version from setup.cfg'
       - publish_documentation: |
-          $BASE_PYTHON -m pip install sphinx_rtd_theme
+          $BASE_PYTHON -m pip install sphinx_rtd_theme tensorflow
           $BASE_PYTHON -m screwdrivercd.documentation
 
   publish_test_pypi:
@@ -74,5 +74,5 @@ jobs:
       - update_version: |
           echo 'using version from setup.cfg'
       - publish_documentation: |
-          $BASE_PYTHON -m pip install sphinx_rtd_theme
+          $BASE_PYTHON -m pip install sphinx_rtd_theme tensorflow
           $BASE_PYTHON -m screwdrivercd.documentation
