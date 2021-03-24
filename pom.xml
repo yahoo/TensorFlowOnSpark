@@ -10,13 +10,6 @@
     <name>tensorflowonspark</name>
     <description>Spark Scala inferencing for TensorFlowOnSpark</description>
 
-    <distributionManagement>
-        <repository>
-            <id>bintray-tensorflowonspark-repo</id>
-            <url>https://api.bintray.com/maven/yahoo/maven/tensorflowonspark</url>
-        </repository>
-    </distributionManagement>
-
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
