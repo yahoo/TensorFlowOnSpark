@@ -214,7 +214,7 @@ class TFCluster(object):
 
 def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mode=InputMode.TENSORFLOW,
         log_dir=None, driver_ps_nodes=False, master_node=None, reservation_timeout=600, queues=['input', 'output', 'error'],
-        eval_node=False):
+        eval_node=False, release_port=True):
   """Starts the TensorFlowOnSpark cluster and Runs the TensorFlow "main" function on the Spark executors
 
   Args:
@@ -231,6 +231,7 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
     :reservation_timeout: number of seconds after which cluster reservation times out (600 sec default)
     :queues: *INTERNAL_USE*
     :eval_node: run evaluator node for distributed Tensorflow
+    :release_port: automatically release reserved port prior to invoking user's map_function.  If False, user's map_function must invoke ctx.release_port() prior to starting TF GRPC server.
 
   Returns:
     A TFCluster object representing the started cluster.
@@ -291,7 +292,8 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
     'num_executors': num_executors,
     'default_fs': defaultFS,
     'working_dir': working_dir,
-    'server_addr': server_addr
+    'server_addr': server_addr,
+    'release_port': release_port
   }
   if driver_ps_nodes:
     nodeRDD = sc.parallelize(range(num_ps, num_executors), num_executors - num_ps)
@@ -324,7 +326,7 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
                                                 queues,
                                                 background=(input_mode == InputMode.SPARK)))
     except Exception as e:
-      logger.error("Exception in TF background thread")
+      logger.error("Exception in TF background thread: {}".format(e))
       status['error'] = str(e)
 
   t = threading.Thread(target=_start, args=(tf_status,))

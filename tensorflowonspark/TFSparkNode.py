@@ -70,8 +70,9 @@ class TFNodeContext:
     :defaultFS: string representation of default FileSystem, e.g. ``file://`` or ``hdfs://<namenode>:8020/``.
     :working_dir: the current working directory for local filesystems, or YARN containers.
     :mgr: TFManager instance for this Python worker.
+    :tmp_socket: temporary socket used to select random port for TF GRPC server.
   """
-  def __init__(self, executor_id=0, job_name='', task_index=0, cluster_spec={}, defaultFS='file://', working_dir='.', mgr=None):
+  def __init__(self, executor_id=0, job_name='', task_index=0, cluster_spec={}, defaultFS='file://', working_dir='.', mgr=None, tmp_socket=None):
     self.worker_num = executor_id       # for backwards-compatibility
     self.executor_id = executor_id
     self.job_name = job_name
@@ -81,6 +82,7 @@ class TFNodeContext:
     self.defaultFS = defaultFS
     self.working_dir = working_dir
     self.mgr = mgr
+    self.tmp_socket = tmp_socket
 
   def absolute_path(self, path):
     """Convenience function to access ``TFNode.hdfs_path`` directly from this object instance."""
@@ -97,6 +99,10 @@ class TFNodeContext:
   def get_data_feed(self, train_mode=True, qname_in='input', qname_out='output', input_mapping=None):
     """Convenience function to access ``TFNode.DataFeed`` directly from this object instance."""
     return TFNode.DataFeed(self.mgr, train_mode, qname_in, qname_out, input_mapping)
+
+  def release_port(self):
+    """Convenience function to access ``TFNode.release_assigned_port`` directly from this object instance."""
+    return TFNode.release_port(self)
 
 
 class TFSparkNode(object):
@@ -378,11 +384,21 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
     _get_gpus(cluster_spec=cluster_spec)
 
     # create a context object to hold metadata for TF
-    ctx = TFNodeContext(executor_id, job_name, task_index, cluster_spec, cluster_meta['default_fs'], cluster_meta['working_dir'], TFSparkNode.mgr)
+    ctx = TFNodeContext(executor_id,
+                        job_name,
+                        task_index,
+                        cluster_spec,
+                        cluster_meta['default_fs'],
+                        cluster_meta['working_dir'],
+                        TFSparkNode.mgr,
+                        tmp_sock if not cluster_meta.get('release_port', True) else None)
 
     # release port reserved for TF as late as possible
     if tmp_sock is not None:
-      tmp_sock.close()
+      if cluster_meta.get('release_port', True):
+        tmp_sock.close()
+      else:
+        logger.warning("User code must invoke ctx.release_port() prior to starting TF GRPC server")
 
     # Background mode relies reuse of python worker in Spark.
     if background:
