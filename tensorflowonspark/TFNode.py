@@ -208,6 +208,16 @@ def export_saved_model(sess, export_dir, tag_set, signatures):
   builder.save()
 
 
+def release_port(ctx):
+  """Closes the temporary socket created to assign a port to the TF node."""
+  if ctx.tmp_socket is not None:
+    logger.info("Releasing assigned port: {}".format(ctx.tmp_socket.getsockname()))
+    ctx.tmp_socket.close()
+    ctx.tmp_socket = None
+  else:
+    logger.warning("release_port() invoked with no bound socket.")
+
+
 def batch_results(mgr, results, qname='output'):
   """*DEPRECATED*. Use TFNode.DataFeed class instead."""
   raise Exception("DEPRECATED: Use TFNode.DataFeed class instead")
