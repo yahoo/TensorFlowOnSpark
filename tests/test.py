@@ -16,14 +16,17 @@ class SparkTest(unittest.TestCase):
     num_workers = os.getenv('SPARK_WORKER_INSTANCES')
     assert num_workers is not None, "Please export SPARK_WORKER_INSTANCES to your env."
     cls.num_workers = int(num_workers)
-
-    spark_jars = os.getenv('SPARK_CLASSPATH')
-    assert spark_jars, "Please add path to tensorflow/ecosystem/hadoop jar to SPARK_CLASSPATH."
-
-    cls.conf = SparkConf().set('spark.jars', spark_jars).set('spark.scheduler.barrier.maxConcurrentTasksCheck.maxFailures', 3)
-
+    cls.conf = cls.getSparkConf()
     cls.sc = SparkContext(master, cls.__name__, conf=cls.conf)
     cls.spark = SparkSession.builder.getOrCreate()
+
+  @classmethod
+  def getSparkConf(cls):
+    spark_jars = os.getenv('SPARK_CLASSPATH')
+    assert spark_jars, "Please add path to tensorflow/ecosystem/hadoop jar to SPARK_CLASSPATH."
+    return SparkConf() \
+      .set('spark.jars', spark_jars) \
+      .set('spark.scheduler.barrier.maxConcurrentTasksCheck.maxFailures', 3)
 
   @classmethod
   def tearDownClass(cls):
