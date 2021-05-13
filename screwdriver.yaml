@@ -28,8 +28,8 @@ jobs:
     template: python/validate_codestyle
     requires: [~commit, ~pr]
 
-  validate_safetydb:
-    template: python/validate_safety
+  validate_dependencies:
+    template: python/validate_dependencies
     requires: [~commit, ~pr]
 
 #  validate_security:
