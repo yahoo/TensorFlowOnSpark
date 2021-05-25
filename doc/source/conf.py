@@ -28,9 +28,9 @@ copyright = '2020, Yahoo Inc / Verizon Media'
 author = 'Yahoo Inc'
 
 # The short X.Y version
-version = '2.2.3'
+version = '2.2.4'
 # The full version, including alpha/beta/rc tags
-release = '2.2.3'
+release = '2.2.4'
 
 
 # -- General configuration ---------------------------------------------------
