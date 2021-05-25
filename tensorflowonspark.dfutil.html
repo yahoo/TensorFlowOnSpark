@@ -7,12 +7,14 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>tensorflowonspark.dfutil module &mdash; TensorFlowOnSpark 2.2.3 documentation</title>
+  <title>tensorflowonspark.dfutil module &mdash; TensorFlowOnSpark 2.2.4 documentation</title>
   
 
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
 
   
   
@@ -29,6 +31,7 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
@@ -63,7 +66,7 @@
             
             
               <div class="version">
-                2.2.3
+                2.2.4
               </div>
             
           
@@ -181,8 +184,8 @@
 <span id="tensorflowonspark-dfutil-module"></span><h1>tensorflowonspark.dfutil module<a class="headerlink" href="#module-tensorflowonspark.dfutil" title="Permalink to this headline">¶</a></h1>
 <p>A collection of utility functions for loading/saving TensorFlow TFRecords files as Spark DataFrames.</p>
 <dl class="py function">
-<dt id="tensorflowonspark.dfutil.fromTFExample">
-<code class="sig-name descname"><span class="pre">fromTFExample</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binary_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/dfutil.html#fromTFExample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.dfutil.fromTFExample" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.dfutil.fromTFExample">
+<span class="sig-name descname"><span class="pre">fromTFExample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binary_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/dfutil.html#fromTFExample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.dfutil.fromTFExample" title="Permalink to this definition">¶</a></dt>
 <dd><p>mapPartition function to convert an RDD of serialized tf.train.Example bytestring into an RDD of Row.</p>
 <p>Note: TensorFlow represents both strings and binary types as tf.train.BytesList, and we need to
 disambiguate these types for Spark DataFrames DTypes (StringType and BinaryType), so we require a “hint”
@@ -203,8 +206,8 @@ from the caller in the <code class="docutils literal notranslate"><span class="p
 </dd></dl>
 
 <dl class="py function">
-<dt id="tensorflowonspark.dfutil.infer_schema">
-<code class="sig-name descname"><span class="pre">infer_schema</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">example</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binary_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/dfutil.html#infer_schema"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.dfutil.infer_schema" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.dfutil.infer_schema">
+<span class="sig-name descname"><span class="pre">infer_schema</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">example</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binary_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/dfutil.html#infer_schema"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.dfutil.infer_schema" title="Permalink to this definition">¶</a></dt>
 <dd><p>Given a tf.train.Example, infer the Spark DataFrame schema (StructFields).</p>
 <p>Note: TensorFlow represents both strings and binary types as tf.train.BytesList, and we need to
 disambiguate these types for Spark DataFrames DTypes (StringType and BinaryType), so we require a “hint”
@@ -225,8 +228,8 @@ from the caller in the <code class="docutils literal notranslate"><span class="p
 </dd></dl>
 
 <dl class="py function">
-<dt id="tensorflowonspark.dfutil.isLoadedDF">
-<code class="sig-name descname"><span class="pre">isLoadedDF</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/dfutil.html#isLoadedDF"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.dfutil.isLoadedDF" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.dfutil.isLoadedDF">
+<span class="sig-name descname"><span class="pre">isLoadedDF</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/dfutil.html#isLoadedDF"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.dfutil.isLoadedDF" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns True if the input DataFrame was produced by the loadTFRecords() method.</p>
 <p>This is primarily used by the Spark ML Pipelines APIs.</p>
 <dl class="simple">
@@ -240,8 +243,8 @@ from the caller in the <code class="docutils literal notranslate"><span class="p
 </dd></dl>
 
 <dl class="py function">
-<dt id="tensorflowonspark.dfutil.loadTFRecords">
-<code class="sig-name descname"><span class="pre">loadTFRecords</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binary_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/dfutil.html#loadTFRecords"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.dfutil.loadTFRecords" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.dfutil.loadTFRecords">
+<span class="sig-name descname"><span class="pre">loadTFRecords</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binary_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/dfutil.html#loadTFRecords"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.dfutil.loadTFRecords" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load TFRecords from disk into a Spark DataFrame.</p>
 <p>This will attempt to automatically convert the tf.train.Example features into Spark DataFrame columns of equivalent types.</p>
 <p>Note: TensorFlow represents both strings and binary types as tf.train.BytesList, and we need to
@@ -266,8 +269,8 @@ from the caller in the <code class="docutils literal notranslate"><span class="p
 </dd></dl>
 
 <dl class="py function">
-<dt id="tensorflowonspark.dfutil.saveAsTFRecords">
-<code class="sig-name descname"><span class="pre">saveAsTFRecords</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/dfutil.html#saveAsTFRecords"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.dfutil.saveAsTFRecords" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.dfutil.saveAsTFRecords">
+<span class="sig-name descname"><span class="pre">saveAsTFRecords</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/dfutil.html#saveAsTFRecords"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.dfutil.saveAsTFRecords" title="Permalink to this definition">¶</a></dt>
 <dd><p>Save a Spark DataFrame as TFRecords.</p>
 <p>This will convert the DataFrame rows to TFRecords prior to saving.</p>
 <dl class="simple">
@@ -284,8 +287,8 @@ from the caller in the <code class="docutils literal notranslate"><span class="p
 </dd></dl>
 
 <dl class="py function">
-<dt id="tensorflowonspark.dfutil.toTFExample">
-<code class="sig-name descname"><span class="pre">toTFExample</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dtypes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/dfutil.html#toTFExample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.dfutil.toTFExample" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.dfutil.toTFExample">
+<span class="sig-name descname"><span class="pre">toTFExample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dtypes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/dfutil.html#toTFExample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.dfutil.toTFExample" title="Permalink to this definition">¶</a></dt>
 <dd><p>mapPartition function to convert a Spark RDD of Row into an RDD of serialized tf.train.Example bytestring.</p>
 <p>Note that tf.train.Example is a fairly flat structure with limited datatypes, e.g. tf.train.FloatList,
 tf.train.Int64List, and tf.train.BytesList, so most DataFrame types will be coerced into one of these types.</p>

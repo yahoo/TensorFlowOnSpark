@@ -7,12 +7,14 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>tensorflowonspark.util module &mdash; TensorFlowOnSpark 2.2.3 documentation</title>
+  <title>tensorflowonspark.util module &mdash; TensorFlowOnSpark 2.2.4 documentation</title>
   
 
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
 
   
   
@@ -29,6 +31,7 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
@@ -62,7 +65,7 @@
             
             
               <div class="version">
-                2.2.3
+                2.2.4
               </div>
             
           
@@ -179,32 +182,32 @@
   <div class="section" id="module-tensorflowonspark.util">
 <span id="tensorflowonspark-util-module"></span><h1>tensorflowonspark.util module<a class="headerlink" href="#module-tensorflowonspark.util" title="Permalink to this headline">¶</a></h1>
 <dl class="py function">
-<dt id="tensorflowonspark.util.find_in_path">
-<code class="sig-name descname"><span class="pre">find_in_path</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/util.html#find_in_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.util.find_in_path" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.util.find_in_path">
+<span class="sig-name descname"><span class="pre">find_in_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/util.html#find_in_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.util.find_in_path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Find a file in a given path string.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt id="tensorflowonspark.util.get_ip_address">
-<code class="sig-name descname"><span class="pre">get_ip_address</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/util.html#get_ip_address"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.util.get_ip_address" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.util.get_ip_address">
+<span class="sig-name descname"><span class="pre">get_ip_address</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/util.html#get_ip_address"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.util.get_ip_address" title="Permalink to this definition">¶</a></dt>
 <dd><p>Simple utility to get host IP address.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt id="tensorflowonspark.util.read_executor_id">
-<code class="sig-name descname"><span class="pre">read_executor_id</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/util.html#read_executor_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.util.read_executor_id" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.util.read_executor_id">
+<span class="sig-name descname"><span class="pre">read_executor_id</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/util.html#read_executor_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.util.read_executor_id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read worker id from a local file in the executor’s current working directory</p>
 </dd></dl>
 
 <dl class="py function">
-<dt id="tensorflowonspark.util.single_node_env">
-<code class="sig-name descname"><span class="pre">single_node_env</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_gpus</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">worker_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/util.html#single_node_env"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.util.single_node_env" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.util.single_node_env">
+<span class="sig-name descname"><span class="pre">single_node_env</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_gpus</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">worker_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/util.html#single_node_env"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.util.single_node_env" title="Permalink to this definition">¶</a></dt>
 <dd><p>Setup environment variables for Hadoop compatibility and GPU allocation</p>
 </dd></dl>
 
 <dl class="py function">
-<dt id="tensorflowonspark.util.write_executor_id">
-<code class="sig-name descname"><span class="pre">write_executor_id</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/util.html#write_executor_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.util.write_executor_id" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.util.write_executor_id">
+<span class="sig-name descname"><span class="pre">write_executor_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/util.html#write_executor_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.util.write_executor_id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write executor_id into a local file in the executor’s current working directory</p>
 </dd></dl>
 

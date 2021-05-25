@@ -7,12 +7,14 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>tensorflowonspark.TFSparkNode &mdash; TensorFlowOnSpark 2.2.3 documentation</title>
+  <title>tensorflowonspark.TFSparkNode &mdash; TensorFlowOnSpark 2.2.4 documentation</title>
   
 
   
   <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
 
   
   
@@ -29,6 +31,7 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
         <script src="../../_static/jquery.js"></script>
         <script src="../../_static/underscore.js"></script>
         <script src="../../_static/doctools.js"></script>
@@ -61,7 +64,7 @@
             
             
               <div class="version">
-                2.2.3
+                2.2.4
               </div>
             
           
@@ -227,8 +230,9 @@
 <span class="sd">    :defaultFS: string representation of default FileSystem, e.g. ``file://`` or ``hdfs://&lt;namenode&gt;:8020/``.</span>
 <span class="sd">    :working_dir: the current working directory for local filesystems, or YARN containers.</span>
 <span class="sd">    :mgr: TFManager instance for this Python worker.</span>
+<span class="sd">    :tmp_socket: temporary socket used to select random port for TF GRPC server.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">executor_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">job_name</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">task_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">cluster_spec</span><span class="o">=</span><span class="p">{},</span> <span class="n">defaultFS</span><span class="o">=</span><span class="s1">&#39;file://&#39;</span><span class="p">,</span> <span class="n">working_dir</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">mgr</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+  <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">executor_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">job_name</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">task_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">cluster_spec</span><span class="o">=</span><span class="p">{},</span> <span class="n">defaultFS</span><span class="o">=</span><span class="s1">&#39;file://&#39;</span><span class="p">,</span> <span class="n">working_dir</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">mgr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tmp_socket</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">worker_num</span> <span class="o">=</span> <span class="n">executor_id</span>       <span class="c1"># for backwards-compatibility</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">executor_id</span> <span class="o">=</span> <span class="n">executor_id</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">job_name</span> <span class="o">=</span> <span class="n">job_name</span>
@@ -238,6 +242,7 @@
     <span class="bp">self</span><span class="o">.</span><span class="n">defaultFS</span> <span class="o">=</span> <span class="n">defaultFS</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">working_dir</span> <span class="o">=</span> <span class="n">working_dir</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">mgr</span> <span class="o">=</span> <span class="n">mgr</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">tmp_socket</span> <span class="o">=</span> <span class="n">tmp_socket</span>
 
 <div class="viewcode-block" id="TFNodeContext.absolute_path"><a class="viewcode-back" href="../../tensorflowonspark.TFSparkNode.html#tensorflowonspark.TFSparkNode.TFNodeContext.absolute_path">[docs]</a>  <span class="k">def</span> <span class="nf">absolute_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Convenience function to access ``TFNode.hdfs_path`` directly from this object instance.&quot;&quot;&quot;</span>
@@ -253,7 +258,11 @@
 
 <div class="viewcode-block" id="TFNodeContext.get_data_feed"><a class="viewcode-back" href="../../tensorflowonspark.TFSparkNode.html#tensorflowonspark.TFSparkNode.TFNodeContext.get_data_feed">[docs]</a>  <span class="k">def</span> <span class="nf">get_data_feed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_mode</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">qname_in</span><span class="o">=</span><span class="s1">&#39;input&#39;</span><span class="p">,</span> <span class="n">qname_out</span><span class="o">=</span><span class="s1">&#39;output&#39;</span><span class="p">,</span> <span class="n">input_mapping</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Convenience function to access ``TFNode.DataFeed`` directly from this object instance.&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">TFNode</span><span class="o">.</span><span class="n">DataFeed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mgr</span><span class="p">,</span> <span class="n">train_mode</span><span class="p">,</span> <span class="n">qname_in</span><span class="p">,</span> <span class="n">qname_out</span><span class="p">,</span> <span class="n">input_mapping</span><span class="p">)</span></div></div>
+    <span class="k">return</span> <span class="n">TFNode</span><span class="o">.</span><span class="n">DataFeed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mgr</span><span class="p">,</span> <span class="n">train_mode</span><span class="p">,</span> <span class="n">qname_in</span><span class="p">,</span> <span class="n">qname_out</span><span class="p">,</span> <span class="n">input_mapping</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TFNodeContext.release_port"><a class="viewcode-back" href="../../tensorflowonspark.TFSparkNode.html#tensorflowonspark.TFSparkNode.TFNodeContext.release_port">[docs]</a>  <span class="k">def</span> <span class="nf">release_port</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convenience function to access ``TFNode.release_assigned_port`` directly from this object instance.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">TFNode</span><span class="o">.</span><span class="n">release_port</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="TFSparkNode"><a class="viewcode-back" href="../../tensorflowonspark.TFSparkNode.html#tensorflowonspark.TFSparkNode.TFSparkNode">[docs]</a><span class="k">class</span> <span class="nc">TFSparkNode</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -535,11 +544,21 @@
     <span class="n">_get_gpus</span><span class="p">(</span><span class="n">cluster_spec</span><span class="o">=</span><span class="n">cluster_spec</span><span class="p">)</span>
 
     <span class="c1"># create a context object to hold metadata for TF</span>
-    <span class="n">ctx</span> <span class="o">=</span> <span class="n">TFNodeContext</span><span class="p">(</span><span class="n">executor_id</span><span class="p">,</span> <span class="n">job_name</span><span class="p">,</span> <span class="n">task_index</span><span class="p">,</span> <span class="n">cluster_spec</span><span class="p">,</span> <span class="n">cluster_meta</span><span class="p">[</span><span class="s1">&#39;default_fs&#39;</span><span class="p">],</span> <span class="n">cluster_meta</span><span class="p">[</span><span class="s1">&#39;working_dir&#39;</span><span class="p">],</span> <span class="n">TFSparkNode</span><span class="o">.</span><span class="n">mgr</span><span class="p">)</span>
+    <span class="n">ctx</span> <span class="o">=</span> <span class="n">TFNodeContext</span><span class="p">(</span><span class="n">executor_id</span><span class="p">,</span>
+                        <span class="n">job_name</span><span class="p">,</span>
+                        <span class="n">task_index</span><span class="p">,</span>
+                        <span class="n">cluster_spec</span><span class="p">,</span>
+                        <span class="n">cluster_meta</span><span class="p">[</span><span class="s1">&#39;default_fs&#39;</span><span class="p">],</span>
+                        <span class="n">cluster_meta</span><span class="p">[</span><span class="s1">&#39;working_dir&#39;</span><span class="p">],</span>
+                        <span class="n">TFSparkNode</span><span class="o">.</span><span class="n">mgr</span><span class="p">,</span>
+                        <span class="n">tmp_sock</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">cluster_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;release_port&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
 
     <span class="c1"># release port reserved for TF as late as possible</span>
     <span class="k">if</span> <span class="n">tmp_sock</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-      <span class="n">tmp_sock</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+      <span class="k">if</span> <span class="n">cluster_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;release_port&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span>
+        <span class="n">tmp_sock</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+      <span class="k">else</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;User code must invoke ctx.release_port() prior to starting TF GRPC server&quot;</span><span class="p">)</span>
 
     <span class="c1"># Background mode relies reuse of python worker in Spark.</span>
     <span class="k">if</span> <span class="n">background</span><span class="p">:</span>

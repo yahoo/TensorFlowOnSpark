@@ -7,12 +7,14 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>tensorflowonspark.gpu_info module &mdash; TensorFlowOnSpark 2.2.3 documentation</title>
+  <title>tensorflowonspark.gpu_info module &mdash; TensorFlowOnSpark 2.2.4 documentation</title>
   
 
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
 
   
   
@@ -29,6 +31,7 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
@@ -63,7 +66,7 @@
             
             
               <div class="version">
-                2.2.3
+                2.2.4
               </div>
             
           
@@ -180,14 +183,14 @@
   <div class="section" id="module-tensorflowonspark.gpu_info">
 <span id="tensorflowonspark-gpu-info-module"></span><h1>tensorflowonspark.gpu_info module<a class="headerlink" href="#module-tensorflowonspark.gpu_info" title="Permalink to this headline">¶</a></h1>
 <dl class="py data">
-<dt id="tensorflowonspark.gpu_info.MAX_RETRIES">
-<code class="sig-name descname"><span class="pre">MAX_RETRIES</span></code><em class="property"> <span class="pre">=</span> <span class="pre">3</span></em><a class="headerlink" href="#tensorflowonspark.gpu_info.MAX_RETRIES" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.gpu_info.MAX_RETRIES">
+<span class="sig-name descname"><span class="pre">MAX_RETRIES</span></span><em class="property"> <span class="pre">=</span> <span class="pre">3</span></em><a class="headerlink" href="#tensorflowonspark.gpu_info.MAX_RETRIES" title="Permalink to this definition">¶</a></dt>
 <dd><p>Maximum retries to allocate GPUs</p>
 </dd></dl>
 
 <dl class="py function">
-<dt id="tensorflowonspark.gpu_info.get_gpus">
-<code class="sig-name descname"><span class="pre">get_gpus</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_gpu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">worker_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'string'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/gpu_info.html#get_gpus"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.gpu_info.get_gpus" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.gpu_info.get_gpus">
+<span class="sig-name descname"><span class="pre">get_gpus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_gpu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">worker_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'string'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/gpu_info.html#get_gpus"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.gpu_info.get_gpus" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get list of free GPUs according to nvidia-smi.</p>
 <p>This will retry for <code class="docutils literal notranslate"><span class="pre">MAX_RETRIES</span></code> times until the requested number of GPUs are available.</p>
 <dl class="simple">
@@ -206,8 +209,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="tensorflowonspark.gpu_info.is_gpu_available">
-<code class="sig-name descname"><span class="pre">is_gpu_available</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/gpu_info.html#is_gpu_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.gpu_info.is_gpu_available" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.gpu_info.is_gpu_available">
+<span class="sig-name descname"><span class="pre">is_gpu_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/gpu_info.html#is_gpu_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.gpu_info.is_gpu_available" title="Permalink to this definition">¶</a></dt>
 <dd><p>Determine if GPUs are available on the host</p>
 </dd></dl>
 

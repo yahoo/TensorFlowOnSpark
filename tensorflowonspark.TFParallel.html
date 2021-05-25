@@ -7,12 +7,14 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>tensorflowonspark.TFParallel module &mdash; TensorFlowOnSpark 2.2.3 documentation</title>
+  <title>tensorflowonspark.TFParallel module &mdash; TensorFlowOnSpark 2.2.4 documentation</title>
   
 
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
 
   
   
@@ -29,6 +31,7 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
@@ -63,7 +66,7 @@
             
             
               <div class="version">
-                2.2.3
+                2.2.4
               </div>
             
           
@@ -180,8 +183,8 @@
   <div class="section" id="tensorflowonspark-tfparallel-module">
 <h1>tensorflowonspark.TFParallel module<a class="headerlink" href="#tensorflowonspark-tfparallel-module" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-tensorflowonspark.TFParallel"></span><dl class="py function">
-<dt id="tensorflowonspark.TFParallel.run">
-<code class="sig-name descname"><span class="pre">run</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">map_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tf_args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_executors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_barrier</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFParallel.html#run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFParallel.run" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFParallel.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">map_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tf_args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_executors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_barrier</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFParallel.html#run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFParallel.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Runs the user map_fn as parallel, independent instances of TF on the Spark executors.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="field-list simple">

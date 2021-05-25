@@ -7,12 +7,14 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>tensorflowonspark.TFNode &mdash; TensorFlowOnSpark 2.2.3 documentation</title>
+  <title>tensorflowonspark.TFNode &mdash; TensorFlowOnSpark 2.2.4 documentation</title>
   
 
   
   <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
 
   
   
@@ -29,6 +31,7 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
         <script src="../../_static/jquery.js"></script>
         <script src="../../_static/underscore.js"></script>
         <script src="../../_static/doctools.js"></script>
@@ -61,7 +64,7 @@
             
             
               <div class="version">
-                2.2.3
+                2.2.4
               </div>
             
           
@@ -363,6 +366,16 @@
       <span class="n">clear_devices</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
   <span class="n">g</span><span class="o">.</span><span class="n">finalize</span><span class="p">()</span>
   <span class="n">builder</span><span class="o">.</span><span class="n">save</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="release_port"><a class="viewcode-back" href="../../tensorflowonspark.TFNode.html#tensorflowonspark.TFNode.release_port">[docs]</a><span class="k">def</span> <span class="nf">release_port</span><span class="p">(</span><span class="n">ctx</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Closes the temporary socket created to assign a port to the TF node.&quot;&quot;&quot;</span>
+  <span class="k">if</span> <span class="n">ctx</span><span class="o">.</span><span class="n">tmp_socket</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Releasing assigned port: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">tmp_socket</span><span class="o">.</span><span class="n">getsockname</span><span class="p">()))</span>
+    <span class="n">ctx</span><span class="o">.</span><span class="n">tmp_socket</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">ctx</span><span class="o">.</span><span class="n">tmp_socket</span> <span class="o">=</span> <span class="kc">None</span>
+  <span class="k">else</span><span class="p">:</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;release_port() invoked with no bound socket.&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="batch_results"><a class="viewcode-back" href="../../tensorflowonspark.TFNode.html#tensorflowonspark.TFNode.batch_results">[docs]</a><span class="k">def</span> <span class="nf">batch_results</span><span class="p">(</span><span class="n">mgr</span><span class="p">,</span> <span class="n">results</span><span class="p">,</span> <span class="n">qname</span><span class="o">=</span><span class="s1">&#39;output&#39;</span><span class="p">):</span>

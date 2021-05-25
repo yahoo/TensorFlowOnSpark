@@ -7,12 +7,14 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>tensorflowonspark.TFNode module &mdash; TensorFlowOnSpark 2.2.3 documentation</title>
+  <title>tensorflowonspark.TFNode module &mdash; TensorFlowOnSpark 2.2.4 documentation</title>
   
 
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
 
   
   
@@ -29,6 +31,7 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
@@ -63,7 +66,7 @@
             
             
               <div class="version">
-                2.2.3
+                2.2.4
               </div>
             
           
@@ -186,8 +189,8 @@
 <li><p>managing input/output data for <em>InputMode.SPARK</em>.</p></li>
 </ul>
 <dl class="py class">
-<dt id="tensorflowonspark.TFNode.DataFeed">
-<em class="property"><span class="pre">class</span> </em><code class="sig-name descname"><span class="pre">DataFeed</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mgr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qname_in</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'input'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qname_out</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'output'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_mapping</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFNode.html#DataFeed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFNode.DataFeed" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFNode.DataFeed">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">DataFeed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mgr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qname_in</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'input'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qname_out</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'output'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_mapping</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFNode.html#DataFeed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFNode.DataFeed" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>This class manages the <em>InputMode.SPARK</em> data feeding process from the perspective of the TensorFlow application.</p>
 <dl class="simple">
@@ -211,8 +214,8 @@
 </dd>
 </dl>
 <dl class="py method">
-<dt id="tensorflowonspark.TFNode.DataFeed.batch_results">
-<code class="sig-name descname"><span class="pre">batch_results</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFNode.html#DataFeed.batch_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFNode.DataFeed.batch_results" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFNode.DataFeed.batch_results">
+<span class="sig-name descname"><span class="pre">batch_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFNode.html#DataFeed.batch_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFNode.DataFeed.batch_results" title="Permalink to this definition">¶</a></dt>
 <dd><p>Push a batch of output results to the Spark output RDD of <code class="docutils literal notranslate"><span class="pre">TFCluster.inference()</span></code>.</p>
 <p>Note: this currently expects a one-to-one mapping of input to output data, so the length of the <code class="docutils literal notranslate"><span class="pre">results</span></code> array should match the length of
 the previously retrieved batch of input data.</p>
@@ -227,8 +230,8 @@ the previously retrieved batch of input data.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="tensorflowonspark.TFNode.DataFeed.next_batch">
-<code class="sig-name descname"><span class="pre">next_batch</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFNode.html#DataFeed.next_batch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFNode.DataFeed.next_batch" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFNode.DataFeed.next_batch">
+<span class="sig-name descname"><span class="pre">next_batch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFNode.html#DataFeed.next_batch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFNode.DataFeed.next_batch" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets a batch of items from the input RDD.</p>
 <p>If multiple tensors are provided per row in the input RDD, e.g. tuple of (tensor1, tensor2, …, tensorN) and:</p>
 <ul class="simple">
@@ -251,14 +254,14 @@ with tensor names as keys and arrays of length <code class="docutils literal not
 </dd></dl>
 
 <dl class="py method">
-<dt id="tensorflowonspark.TFNode.DataFeed.should_stop">
-<code class="sig-name descname"><span class="pre">should_stop</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFNode.html#DataFeed.should_stop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFNode.DataFeed.should_stop" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFNode.DataFeed.should_stop">
+<span class="sig-name descname"><span class="pre">should_stop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFNode.html#DataFeed.should_stop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFNode.DataFeed.should_stop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Check if the feed process was told to stop (by a call to <code class="docutils literal notranslate"><span class="pre">terminate</span></code>).</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="tensorflowonspark.TFNode.DataFeed.terminate">
-<code class="sig-name descname"><span class="pre">terminate</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFNode.html#DataFeed.terminate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFNode.DataFeed.terminate" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFNode.DataFeed.terminate">
+<span class="sig-name descname"><span class="pre">terminate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFNode.html#DataFeed.terminate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFNode.DataFeed.terminate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Terminate data feeding early.</p>
 <p>Since TensorFlow applications can often terminate on conditions unrelated to the training data (e.g. steps, accuracy, etc),
 this method signals the data feeding process to ignore any further incoming data.  Note that Spark itself does not have a mechanism
@@ -269,14 +272,14 @@ of this, you should size your input data accordingly to avoid excessive overhead
 </dd></dl>
 
 <dl class="py function">
-<dt id="tensorflowonspark.TFNode.batch_results">
-<code class="sig-name descname"><span class="pre">batch_results</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mgr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">results</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'output'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFNode.html#batch_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFNode.batch_results" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFNode.batch_results">
+<span class="sig-name descname"><span class="pre">batch_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mgr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">results</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'output'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFNode.html#batch_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFNode.batch_results" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>DEPRECATED</em>. Use TFNode.DataFeed class instead.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt id="tensorflowonspark.TFNode.export_saved_model">
-<code class="sig-name descname"><span class="pre">export_saved_model</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sess</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag_set</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">signatures</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFNode.html#export_saved_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFNode.export_saved_model" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFNode.export_saved_model">
+<span class="sig-name descname"><span class="pre">export_saved_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sess</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag_set</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">signatures</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFNode.html#export_saved_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFNode.export_saved_model" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convenience function to export a saved_model using provided arguments</p>
 <p>The caller specifies the saved_model signatures in a simplified python dictionary form, as follows:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">signatures</span> <span class="o">=</span> <span class="p">{</span>
@@ -312,8 +315,8 @@ of this, you should size your input data accordingly to avoid excessive overhead
 </dd></dl>
 
 <dl class="py function">
-<dt id="tensorflowonspark.TFNode.hdfs_path">
-<code class="sig-name descname"><span class="pre">hdfs_path</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ctx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFNode.html#hdfs_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFNode.hdfs_path" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFNode.hdfs_path">
+<span class="sig-name descname"><span class="pre">hdfs_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ctx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFNode.html#hdfs_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFNode.hdfs_path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convenience function to create a Tensorflow-compatible absolute HDFS path from relative paths</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="field-list simple">
@@ -331,14 +334,20 @@ of this, you should size your input data accordingly to avoid excessive overhead
 </dd></dl>
 
 <dl class="py function">
-<dt id="tensorflowonspark.TFNode.next_batch">
-<code class="sig-name descname"><span class="pre">next_batch</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mgr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'input'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFNode.html#next_batch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFNode.next_batch" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFNode.next_batch">
+<span class="sig-name descname"><span class="pre">next_batch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mgr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'input'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFNode.html#next_batch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFNode.next_batch" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>DEPRECATED</em>. Use TFNode.DataFeed class instead.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt id="tensorflowonspark.TFNode.start_cluster_server">
-<code class="sig-name descname"><span class="pre">start_cluster_server</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ctx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_gpus</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rdma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFNode.html#start_cluster_server"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFNode.start_cluster_server" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFNode.release_port">
+<span class="sig-name descname"><span class="pre">release_port</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ctx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFNode.html#release_port"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFNode.release_port" title="Permalink to this definition">¶</a></dt>
+<dd><p>Closes the temporary socket created to assign a port to the TF node.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tensorflowonspark.TFNode.start_cluster_server">
+<span class="sig-name descname"><span class="pre">start_cluster_server</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ctx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_gpus</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rdma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFNode.html#start_cluster_server"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFNode.start_cluster_server" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function that wraps the creation of TensorFlow <code class="docutils literal notranslate"><span class="pre">tf.train.Server</span></code> for a node in a distributed TensorFlow cluster.</p>
 <p>This is intended to be invoked from within the TF <code class="docutils literal notranslate"><span class="pre">map_fun</span></code>, replacing explicit code to instantiate <code class="docutils literal notranslate"><span class="pre">tf.train.ClusterSpec</span></code>
 and <code class="docutils literal notranslate"><span class="pre">tf.train.Server</span></code> objects.</p>
@@ -362,8 +371,8 @@ and <code class="docutils literal notranslate"><span class="pre">tf.train.Server
 </dd></dl>
 
 <dl class="py function">
-<dt id="tensorflowonspark.TFNode.terminate">
-<code class="sig-name descname"><span class="pre">terminate</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mgr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'input'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFNode.html#terminate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFNode.terminate" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFNode.terminate">
+<span class="sig-name descname"><span class="pre">terminate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mgr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'input'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFNode.html#terminate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFNode.terminate" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>DEPRECATED</em>. Use TFNode.DataFeed class instead.</p>
 </dd></dl>
 

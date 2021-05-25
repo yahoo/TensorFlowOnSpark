@@ -7,12 +7,14 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>tensorflowonspark.TFCluster module &mdash; TensorFlowOnSpark 2.2.3 documentation</title>
+  <title>tensorflowonspark.TFCluster module &mdash; TensorFlowOnSpark 2.2.4 documentation</title>
   
 
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
 
   
   
@@ -29,6 +31,7 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
@@ -63,7 +66,7 @@
             
             
               <div class="version">
-                2.2.3
+                2.2.4
               </div>
             
           
@@ -190,55 +193,55 @@ nodes will tie up their executors, so they won’t receive any subsequent data f
 queues of the worker nodes.</p></li>
 </ol>
 <dl class="py class">
-<dt id="tensorflowonspark.TFCluster.InputMode">
-<em class="property"><span class="pre">class</span> </em><code class="sig-name descname"><span class="pre">InputMode</span></code><a class="reference internal" href="_modules/tensorflowonspark/TFCluster.html#InputMode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFCluster.InputMode" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFCluster.InputMode">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">InputMode</span></span><a class="reference internal" href="_modules/tensorflowonspark/TFCluster.html#InputMode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFCluster.InputMode" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Enum for the input modes of data feeding.</p>
 <dl class="py attribute">
-<dt id="tensorflowonspark.TFCluster.InputMode.SPARK">
-<code class="sig-name descname"><span class="pre">SPARK</span></code><em class="property"> <span class="pre">=</span> <span class="pre">1</span></em><a class="headerlink" href="#tensorflowonspark.TFCluster.InputMode.SPARK" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFCluster.InputMode.SPARK">
+<span class="sig-name descname"><span class="pre">SPARK</span></span><em class="property"> <span class="pre">=</span> <span class="pre">1</span></em><a class="headerlink" href="#tensorflowonspark.TFCluster.InputMode.SPARK" title="Permalink to this definition">¶</a></dt>
 <dd><p>Spark is responsible for feeding data to the TensorFlow application via an RDD.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="tensorflowonspark.TFCluster.InputMode.TENSORFLOW">
-<code class="sig-name descname"><span class="pre">TENSORFLOW</span></code><em class="property"> <span class="pre">=</span> <span class="pre">0</span></em><a class="headerlink" href="#tensorflowonspark.TFCluster.InputMode.TENSORFLOW" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFCluster.InputMode.TENSORFLOW">
+<span class="sig-name descname"><span class="pre">TENSORFLOW</span></span><em class="property"> <span class="pre">=</span> <span class="pre">0</span></em><a class="headerlink" href="#tensorflowonspark.TFCluster.InputMode.TENSORFLOW" title="Permalink to this definition">¶</a></dt>
 <dd><p>TensorFlow application is responsible for reading any data.</p>
 </dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
-<dt id="tensorflowonspark.TFCluster.TFCluster">
-<em class="property"><span class="pre">class</span> </em><code class="sig-name descname"><span class="pre">TFCluster</span></code><a class="reference internal" href="_modules/tensorflowonspark/TFCluster.html#TFCluster"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFCluster.TFCluster">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">TFCluster</span></span><a class="reference internal" href="_modules/tensorflowonspark/TFCluster.html#TFCluster"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <dl class="py attribute">
-<dt id="tensorflowonspark.TFCluster.TFCluster.cluster_id">
-<code class="sig-name descname"><span class="pre">cluster_id</span></code><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.cluster_id" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFCluster.TFCluster.cluster_id">
+<span class="sig-name descname"><span class="pre">cluster_id</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.cluster_id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Unique ID for this cluster, used to invalidate state for new clusters.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="tensorflowonspark.TFCluster.TFCluster.cluster_info">
-<code class="sig-name descname"><span class="pre">cluster_info</span></code><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.cluster_info" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFCluster.TFCluster.cluster_info">
+<span class="sig-name descname"><span class="pre">cluster_info</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.cluster_info" title="Permalink to this definition">¶</a></dt>
 <dd><p>Cluster node reservations</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="tensorflowonspark.TFCluster.TFCluster.cluster_meta">
-<code class="sig-name descname"><span class="pre">cluster_meta</span></code><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.cluster_meta" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFCluster.TFCluster.cluster_meta">
+<span class="sig-name descname"><span class="pre">cluster_meta</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.cluster_meta" title="Permalink to this definition">¶</a></dt>
 <dd><p>Cluster metadata dictionary, e.g. cluster_id, defaultFS, reservation.Server address, etc.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="tensorflowonspark.TFCluster.TFCluster.defaultFS">
-<code class="sig-name descname"><span class="pre">defaultFS</span></code><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.defaultFS" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFCluster.TFCluster.defaultFS">
+<span class="sig-name descname"><span class="pre">defaultFS</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.defaultFS" title="Permalink to this definition">¶</a></dt>
 <dd><p>Default FileSystem string, e.g. <code class="docutils literal notranslate"><span class="pre">file://</span></code> or <code class="docutils literal notranslate"><span class="pre">hdfs://&lt;namenode&gt;/</span></code></p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="tensorflowonspark.TFCluster.TFCluster.inference">
-<code class="sig-name descname"><span class="pre">inference</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataRDD</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feed_timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'input'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFCluster.html#TFCluster.inference"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.inference" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFCluster.TFCluster.inference">
+<span class="sig-name descname"><span class="pre">inference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataRDD</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feed_timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'input'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFCluster.html#TFCluster.inference"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.inference" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>For InputMode.SPARK only</em>: Feeds Spark RDD partitions into the TensorFlow worker nodes and returns an RDD of results</p>
 <p>It is the responsibility of the TensorFlow “main” function to interpret the rows of the RDD and provide valid data for the output RDD.</p>
 <p>This will use the distributed TensorFlow cluster for inferencing, so the TensorFlow “main” function should be capable of inferencing.
@@ -262,44 +265,44 @@ Per Spark design, the output RDD will be lazily-executed only when a Spark actio
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="tensorflowonspark.TFCluster.TFCluster.input_mode">
-<code class="sig-name descname"><span class="pre">input_mode</span></code><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.input_mode" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFCluster.TFCluster.input_mode">
+<span class="sig-name descname"><span class="pre">input_mode</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.input_mode" title="Permalink to this definition">¶</a></dt>
 <dd><p>TFCluster.InputMode for this cluster</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="tensorflowonspark.TFCluster.TFCluster.nodeRDD">
-<code class="sig-name descname"><span class="pre">nodeRDD</span></code><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.nodeRDD" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFCluster.TFCluster.nodeRDD">
+<span class="sig-name descname"><span class="pre">nodeRDD</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.nodeRDD" title="Permalink to this definition">¶</a></dt>
 <dd><p>RDD representing the nodes of the cluster, i.e. <code class="docutils literal notranslate"><span class="pre">sc.parallelize(range(num_executors),</span> <span class="pre">num_executors)</span></code></p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="tensorflowonspark.TFCluster.TFCluster.num_executors">
-<code class="sig-name descname"><span class="pre">num_executors</span></code><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.num_executors" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFCluster.TFCluster.num_executors">
+<span class="sig-name descname"><span class="pre">num_executors</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.num_executors" title="Permalink to this definition">¶</a></dt>
 <dd><p>Number of executors in the Spark job (and therefore, the number of nodes in the TensorFlow cluster).</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="tensorflowonspark.TFCluster.TFCluster.queues">
-<code class="sig-name descname"><span class="pre">queues</span></code><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.queues" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFCluster.TFCluster.queues">
+<span class="sig-name descname"><span class="pre">queues</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.queues" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>INTERNAL_USE</em></p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="tensorflowonspark.TFCluster.TFCluster.sc">
-<code class="sig-name descname"><span class="pre">sc</span></code><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.sc" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFCluster.TFCluster.sc">
+<span class="sig-name descname"><span class="pre">sc</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.sc" title="Permalink to this definition">¶</a></dt>
 <dd><p>SparkContext</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="tensorflowonspark.TFCluster.TFCluster.server">
-<code class="sig-name descname"><span class="pre">server</span></code><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.server" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFCluster.TFCluster.server">
+<span class="sig-name descname"><span class="pre">server</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.server" title="Permalink to this definition">¶</a></dt>
 <dd><p>reservation.Server for this cluster</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="tensorflowonspark.TFCluster.TFCluster.shutdown">
-<code class="sig-name descname"><span class="pre">shutdown</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ssc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grace_secs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">259200</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFCluster.html#TFCluster.shutdown"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.shutdown" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFCluster.TFCluster.shutdown">
+<span class="sig-name descname"><span class="pre">shutdown</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ssc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grace_secs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">259200</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFCluster.html#TFCluster.shutdown"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.shutdown" title="Permalink to this definition">¶</a></dt>
 <dd><p>Stops the distributed TensorFlow cluster.</p>
 <p>For InputMode.SPARK, this will be executed AFTER the <cite>TFCluster.train()</cite> or <cite>TFCluster.inference()</cite> method completes.
 For InputMode.TENSORFLOW, this will be executed IMMEDIATELY after <cite>TFCluster.run()</cite> and will wait until the TF worker nodes complete.</p>
@@ -320,14 +323,14 @@ For InputMode.TENSORFLOW, this will be executed IMMEDIATELY after <cite>TFCluste
 </dd></dl>
 
 <dl class="py method">
-<dt id="tensorflowonspark.TFCluster.TFCluster.tensorboard_url">
-<code class="sig-name descname"><span class="pre">tensorboard_url</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFCluster.html#TFCluster.tensorboard_url"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.tensorboard_url" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFCluster.TFCluster.tensorboard_url">
+<span class="sig-name descname"><span class="pre">tensorboard_url</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFCluster.html#TFCluster.tensorboard_url"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.tensorboard_url" title="Permalink to this definition">¶</a></dt>
 <dd><p>Utility function to get the Tensorboard URL</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="tensorflowonspark.TFCluster.TFCluster.train">
-<code class="sig-name descname"><span class="pre">train</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataRDD</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_epochs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feed_timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'input'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFCluster.html#TFCluster.train"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.train" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFCluster.TFCluster.train">
+<span class="sig-name descname"><span class="pre">train</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataRDD</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_epochs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feed_timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'input'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFCluster.html#TFCluster.train"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.train" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>For InputMode.SPARK only</em>.  Feeds Spark RDD partitions into the TensorFlow worker nodes</p>
 <p>It is the responsibility of the TensorFlow “main” function to interpret the rows of the RDD.</p>
 <p>Since epochs are implemented via <code class="docutils literal notranslate"><span class="pre">RDD.union()</span></code> and the entire RDD must generally be processed in full, it is recommended
@@ -353,16 +356,16 @@ for more details.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="tensorflowonspark.TFCluster.TFCluster.working_dir">
-<code class="sig-name descname"><span class="pre">working_dir</span></code><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.working_dir" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFCluster.TFCluster.working_dir">
+<span class="sig-name descname"><span class="pre">working_dir</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#tensorflowonspark.TFCluster.TFCluster.working_dir" title="Permalink to this definition">¶</a></dt>
 <dd><p>Current working directory</p>
 </dd></dl>
 
 </dd></dl>
 
 <dl class="py function">
-<dt id="tensorflowonspark.TFCluster.run">
-<code class="sig-name descname"><span class="pre">run</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">map_fun</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tf_args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_executors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_ps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tensorboard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">driver_ps_nodes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">master_node</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reservation_timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">queues</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['input',</span> <span class="pre">'output',</span> <span class="pre">'error']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eval_node</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFCluster.html#run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFCluster.run" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tensorflowonspark.TFCluster.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">map_fun</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tf_args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_executors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_ps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tensorboard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">driver_ps_nodes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">master_node</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reservation_timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">queues</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['input',</span> <span class="pre">'output',</span> <span class="pre">'error']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eval_node</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">release_port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/TFCluster.html#run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.TFCluster.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Starts the TensorFlowOnSpark cluster and Runs the TensorFlow “main” function on the Spark executors</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="field-list simple">
@@ -404,6 +407,9 @@ for more details.</p>
 </dd>
 <dt class="field-odd">eval_node</dt>
 <dd class="field-odd"><p>run evaluator node for distributed Tensorflow</p>
+</dd>
+<dt class="field-even">release_port</dt>
+<dd class="field-even"><p>automatically release reserved port prior to invoking user’s map_function.  If False, user’s map_function must invoke ctx.release_port() prior to starting TF GRPC server.</p>
 </dd>
 </dl>
 </dd>
