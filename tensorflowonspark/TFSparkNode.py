@@ -189,20 +189,21 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
       # note: num_gpus arg is only used (if supplied) to limit/truncate visible devices
       if _has_spark_resource_api():
         from pyspark import TaskContext
-        context = TaskContext()
-        resources = context.resources()
-        if resources and 'gpu' in resources:
-          # get all GPUs assigned by resource manager
-          gpus = context.resources()['gpu'].addresses
-          logger.info("Spark gpu resources: {}".format(gpus))
-          if user_requested:
-            if requested_gpus < len(gpus):
-              # override/truncate list, if explicitly configured
-              logger.warn("Requested {} GPU(s), but {} available".format(requested_gpus, len(gpus)))
-              gpus = gpus[:requested_gpus]
-          else:
-            # implicitly requested by Spark 3
-            requested_gpus = len(gpus)
+        context = TaskContext.get()
+        if context:
+          resources = context.resources()
+          if resources and 'gpu' in resources:
+            # get all GPUs assigned by resource manager
+            gpus = context.resources()['gpu'].addresses
+            logger.info("Spark gpu resources: {}".format(gpus))
+            if user_requested:
+              if requested_gpus < len(gpus):
+                # override/truncate list, if explicitly configured
+                logger.warn("Requested {} GPU(s), but {} available".format(requested_gpus, len(gpus)))
+                gpus = gpus[:requested_gpus]
+            else:
+              # implicitly requested by Spark 3
+              requested_gpus = len(gpus)
 
       # if not in K8s pod and GPUs available, just use original allocation code (defaulting to 1 GPU if available)
       # Note: for K8s, there is a bug with the Nvidia device_plugin which can show GPUs for non-GPU pods that are hosted on GPU nodes
@@ -348,15 +349,15 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
         port = tmp_sock.getsockname()[1]
 
       node_meta = {
-          'executor_id': executor_id,
-          'host': host,
-          'job_name': job_name,
-          'task_index': task_index,
-          'port': port,
-          'tb_pid': tb_pid,
-          'tb_port': tb_port,
-          'addr': addr,
-          'authkey': authkey
+        'executor_id': executor_id,
+        'host': host,
+        'job_name': job_name,
+        'task_index': task_index,
+        'port': port,
+        'tb_pid': tb_pid,
+        'tb_port': tb_port,
+        'addr': addr,
+        'authkey': authkey
       }
       # register node metadata with server
       logger.info("TFSparkNode.reserve: {0}".format(node_meta))
