@@ -112,6 +112,7 @@ class TFSparkNodeTest(unittest.TestCase):
     mock_available.return_value = True
     mock_get_gpus.return_value = ['0']
     mock_spark_resources.return_value = True
+    mock_context.get.return_value = mock_context.return_value
     mock_context_instance = mock_context.return_value
     mock_context_instance.resources.return_value = {'gpu': type("ResourceInformation", (object,), {"addresses": ['0']})}
 
