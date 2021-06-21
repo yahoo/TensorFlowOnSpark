@@ -252,6 +252,16 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
     util.write_executor_id(executor_id)
     port = 0
 
+    # check server to see if this task is being retried (i.e. already reserved)
+    client = reservation.Client(cluster_meta['server_addr'])
+    cluster_info = client.get_reservations()
+    node_meta = None
+    for node in cluster_info:
+      (nhost, nexec) = (node['host'], node['executor_id'])
+      if nhost == host and nexec == executor_id:
+        node_meta = node
+        port = node['port']
+
     # check for existing TFManagers
     if TFSparkNode.mgr is not None and str(TFSparkNode.mgr.get('state')) != "'stopped'":
       if TFSparkNode.cluster_id == cluster_id:
@@ -325,46 +335,35 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
 
       tb_pid = tb_proc.pid
 
-    # check server to see if this task is being retried (i.e. already reserved)
-    client = reservation.Client(cluster_meta['server_addr'])
-    cluster_info = client.get_reservations()
     tmp_sock = None
-    node_meta = None
-    for node in cluster_info:
-      (nhost, nexec) = (node['host'], node['executor_id'])
-      if nhost == host and nexec == executor_id:
-        node_meta = node
-        port = node['port']
 
-    # if not already done, register everything we need to set up the cluster
-    if node_meta is None:
-      if 'TENSORFLOW_PORT' in os.environ:
-        # use port defined in env var
-        port = int(os.environ['TENSORFLOW_PORT'])
-      else:
-        # otherwise, find a free port
-        tmp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        tmp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        tmp_sock.bind(('', port))
-        port = tmp_sock.getsockname()[1]
+    if 'TENSORFLOW_PORT' in os.environ:
+      # use port defined in env var
+      port = int(os.environ['TENSORFLOW_PORT'])
+    else:
+      # otherwise, find a free port
+      tmp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+      tmp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+      tmp_sock.bind(('', port))
+      port = tmp_sock.getsockname()[1]
 
-      node_meta = {
-        'executor_id': executor_id,
-        'host': host,
-        'job_name': job_name,
-        'task_index': task_index,
-        'port': port,
-        'tb_pid': tb_pid,
-        'tb_port': tb_port,
-        'addr': addr,
-        'authkey': authkey
-      }
-      # register node metadata with server
-      logger.info("TFSparkNode.reserve: {0}".format(node_meta))
-      client.register(node_meta)
-      # wait for other nodes to finish reservations
-      cluster_info = client.await_reservations()
-      client.close()
+    node_meta = {
+      'executor_id': executor_id,
+      'host': host,
+      'job_name': job_name,
+      'task_index': task_index,
+      'port': port,
+      'tb_pid': tb_pid,
+      'tb_port': tb_port,
+      'addr': addr,
+      'authkey': authkey
+    }
+    # always (re-)register node metadata with server
+    logger.info("TFSparkNode.reserve: {0}".format(node_meta))
+    client.register(node_meta)
+    # wait for other nodes to finish reservations
+    cluster_info = client.await_reservations()
+    client.close()
 
     # construct a TensorFlow clusterspec from cluster_info
     sorted_cluster_info = sorted(cluster_info, key=lambda k: k['executor_id'])

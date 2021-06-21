@@ -35,8 +35,9 @@ class Reservations:
     :required: expected number of nodes in the cluster.
   """
 
-  def __init__(self, required):
+  def __init__(self, required, primary_keys):
     self.required = required
+    self.primary_keys = primary_keys
     self.lock = threading.RLock()
     self.reservations = []
 
@@ -64,6 +65,15 @@ class Reservations:
     with self.lock:
       return self.required - len(self.reservations)
 
+  def upsert(self, meta):
+    """Updates a reservation that matches the values for the primary_keys, or inserts if not found."""
+    with self.lock:
+      items = list(filter(lambda x: all(x[key] == meta[key] for key in self.primary_keys), self.reservations))
+      if len(items) > 1:
+        raise Exception(f"Multiple items matched the primary keys: {self.primary_keys}, items: {items}")
+      if len(items) == 1:
+        self.reservations.remove(items[0])
+      self.reservations.append(meta)
 
 class MessageSocket(object):
   """Abstract class w/ length-prefixed socket send/receive functions."""
@@ -106,9 +116,9 @@ class Server(MessageSocket):
   reservations = None             #: List of reservations managed by this server.
   done = False                    #: boolean indicating if server should be shutdown.
 
-  def __init__(self, count):
+  def __init__(self, count, primary_keys=[]):
     assert count > 0, "Expected number of reservations should be greater than zero"
-    self.reservations = Reservations(count)
+    self.reservations = Reservations(count, primary_keys)
 
   def await_reservations(self, sc, status={}, timeout=600):
     """Block until all reservations are received."""
@@ -131,7 +141,7 @@ class Server(MessageSocket):
     logger.debug("received: {0}".format(msg))
     msg_type = msg['type']
     if msg_type == 'REG':
-      self.reservations.add(msg['data'])
+      self.reservations.upsert(msg['data'])
       MessageSocket.send(self, sock, 'OK')
     elif msg_type == 'QUERY':
       MessageSocket.send(self, sock, self.reservations.done())

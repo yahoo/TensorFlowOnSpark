@@ -11,7 +11,7 @@ from unittest import mock
 class ReservationTest(unittest.TestCase):
   def test_reservation_class(self):
     """Test core reservation class, expecting 2 reservations"""
-    r = Reservations(2)
+    r = Reservations(required=2, primary_keys=['node'])
     self.assertFalse(r.done())
 
     # add first reservation
@@ -24,9 +24,18 @@ class ReservationTest(unittest.TestCase):
     self.assertTrue(r.done())
     self.assertEqual(r.remaining(), 0)
 
+    # update first reservation
+    r.upsert({'node': 1, 'data': 'foo'})
+    self.assertTrue(r.done())
+    self.assertEqual(r.remaining(), 0)
+
     # get final list
     reservations = r.get()
     self.assertEqual(len(reservations), 2)
+
+    # check upserted data
+    node1 = list(filter(lambda x: x['node'] == 1, reservations))[0]
+    self.assertEqual(node1['data'], 'foo')
 
   def test_reservation_server(self):
     """Test reservation server, expecting 1 reservation"""
@@ -52,12 +61,12 @@ class ReservationTest(unittest.TestCase):
     self.assertEqual(s.done, True)
 
   def test_reservation_environment_exists_get_server_ip_return_environment_value(self):
-      tfos_server = Server(5)
+      tfos_server = Server(1)
       with mock.patch.dict(os.environ, {'TFOS_SERVER_HOST': 'my_host_ip'}):
         assert tfos_server.get_server_ip() == "my_host_ip"
 
   def test_reservation_environment_not_exists_get_server_ip_return_actual_host_ip(self):
-    tfos_server = Server(5)
+    tfos_server = Server(1)
     assert tfos_server.get_server_ip() == util.get_ip_address()
 
   def test_reservation_environment_exists_start_listening_socket_return_socket_listening_to_environment_port_value(self):
@@ -95,7 +104,7 @@ class ReservationTest(unittest.TestCase):
   def test_reservation_server_multi(self):
     """Test reservation server, expecting multiple reservations"""
     num_clients = 4
-    s = Server(num_clients)
+    s = Server(count=num_clients, primary_keys=['node'])
     addr = s.start()
 
     def reserve(num):

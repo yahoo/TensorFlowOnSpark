@@ -185,13 +185,16 @@ class TFCluster(object):
     logger.info("Shutting down cluster")
     # shutdown queues and managers for "PS" executors.
     # note: we have to connect/shutdown from the spark driver, because these executors are "busy" and won't accept any other tasks.
-    for node in ps_list + eval_list:
-      addr = node['addr']
-      authkey = node['authkey']
-      m = TFManager.connect(addr, authkey)
-      q = m.get_queue('control')
-      q.put(None)
-      q.join()
+    # re-query cluster_info in case there were any updates
+    cluster_info = self.server.reservations.get()
+    for node in cluster_info:
+      if node['job_name'] in ['ps', 'evaluator']:
+        addr = node['addr']
+        authkey = node['authkey']
+        m = TFManager.connect(addr, authkey)
+        q = m.get_queue('control')
+        q.put(None)
+        q.join()
 
     # wait for all jobs to finish
     while True:
@@ -281,7 +284,7 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
   working_dir = os.getcwd()
 
   # start a server to listen for reservations and broadcast cluster_spec
-  server = reservation.Server(num_executors)
+  server = reservation.Server(num_executors, ['executor_id', 'host', 'job_name', 'task_index'])
   server_addr = server.start()
 
   # start TF nodes on all executors
