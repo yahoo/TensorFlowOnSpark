@@ -60,7 +60,7 @@ export CORES_PER_WORKER=1
 export TOTAL_CORES=$((${CORES_PER_WORKER}*${SPARK_WORKER_INSTANCES}))
 export TFoS_HOME=<path/to/TensorFlowOnSpark>
 
-${SPARK_HOME}/sbin/start-master.sh; ${SPARK_HOME}/sbin/start-slave.sh -c $CORES_PER_WORKER -m 3G ${MASTER}
+${SPARK_HOME}/sbin/start-master.sh; ${SPARK_HOME}/sbin/start-worker.sh -c $CORES_PER_WORKER -m 3G ${MASTER}
 
 # remove any old artifacts
 rm -Rf ${TFoS_HOME}/segmentation_model.h5 ${TFoS_HOME}/segmentation_model ${TFoS_HOME}/segmentation_export
@@ -81,7 +81,7 @@ ls -lR ${TFoS_HOME}/segmentation_model
 ls -lR ${TFoS_HOME}/segmentation_export
 
 # Shutdown the Spark Standalone cluster
-${SPARK_HOME}/sbin/stop-slave.sh; ${SPARK_HOME}/sbin/stop-master.sh
+${SPARK_HOME}/sbin/stop-worker.sh; ${SPARK_HOME}/sbin/stop-master.sh
 ```
 
 Once again, this only trains a single epoch and doesn't adjust for the increased cluster size.  Feel free to experiment on your own.

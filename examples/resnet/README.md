@@ -69,7 +69,7 @@ export CORES_PER_WORKER=1
 export TOTAL_CORES=$((${CORES_PER_WORKER}*${SPARK_WORKER_INSTANCES}))
 
 # start spark cluster
-${SPARK_HOME}/sbin/start-master.sh; ${SPARK_HOME}/sbin/start-slave.sh -c $CORES_PER_WORKER -m 3G ${MASTER}
+${SPARK_HOME}/sbin/start-master.sh; ${SPARK_HOME}/sbin/start-worker.sh -c $CORES_PER_WORKER -m 3G ${MASTER}
 
 # train and evaluate
 ${SPARK_HOME}/bin/spark-submit \
@@ -86,7 +86,7 @@ ${TFoS_HOME}/examples/resnet/resnet_cifar_spark.py \
 --train_epochs 1
 
 # shutdown spark
-${SPARK_HOME}/sbin/stop-slave.sh; ${SPARK_HOME}/sbin/stop-master.sh
+${SPARK_HOME}/sbin/stop-worker.sh; ${SPARK_HOME}/sbin/stop-master.sh
 ```
 
 Notes:

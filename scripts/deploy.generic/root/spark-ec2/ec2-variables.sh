@@ -19,7 +19,7 @@
 
 # These variables are automatically filled in by the spark-ec2 script.
 export MASTERS="{{master_list}}"
-export SLAVES="{{slave_list}}"
+export SLAVES="{{worker_list}}"
 export HDFS_DATA_DIRS="{{hdfs_data_dirs}}"
 export MAPRED_LOCAL_DIRS="{{mapred_local_dirs}}"
 export SPARK_LOCAL_DIRS="{{spark_local_dirs}}"
