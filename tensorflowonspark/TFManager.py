@@ -7,11 +7,9 @@ from __future__ import division
 from __future__ import nested_scopes
 from __future__ import print_function
 
-import multiprocessing as mp
 from multiprocessing.managers import BaseManager
 from multiprocessing import JoinableQueue
 
-mp.set_start_method('fork')
 
 class TFManager(BaseManager):
   """Python multiprocessing.Manager for distributed, multi-process communication."""
