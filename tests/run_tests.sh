@@ -16,13 +16,13 @@ fi
 export MASTER=spark://$(hostname):7077
 export SPARK_WORKER_INSTANCES=2; export CORES_PER_WORKER=1
 export TOTAL_CORES=$((${CORES_PER_WORKER}*${SPARK_WORKER_INSTANCES}))
-${SPARK_HOME}/sbin/start-master.sh; ${SPARK_HOME}/sbin/start-slave.sh -c ${CORES_PER_WORKER} -m 1G ${MASTER}
+${SPARK_HOME}/sbin/start-master.sh; ${SPARK_HOME}/sbin/start-worker.sh -c ${CORES_PER_WORKER} -m 1G ${MASTER}
 
 # Run tests
 python -m unittest discover -s $DIR
 EXIT_CODE=$?
 
 # Stop Spark Standalone Cluster
-${SPARK_HOME}/sbin/stop-slave.sh; ${SPARK_HOME}/sbin/stop-master.sh
+${SPARK_HOME}/sbin/stop-worker.sh; ${SPARK_HOME}/sbin/stop-master.sh
 
 exit $EXIT_CODE

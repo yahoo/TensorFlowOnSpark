@@ -14,7 +14,7 @@ export CORES_PER_WORKER=1
 export TOTAL_CORES=$((${CORES_PER_WORKER}*${SPARK_WORKER_INSTANCES}))
 export TFoS_HOME=<path/to/TensorFlowOnSpark>
 
-${SPARK_HOME}/sbin/start-master.sh; ${SPARK_HOME}/sbin/start-slave.sh -c $CORES_PER_WORKER -m 3G ${MASTER}
+${SPARK_HOME}/sbin/start-master.sh; ${SPARK_HOME}/sbin/start-worker.sh -c $CORES_PER_WORKER -m 3G ${MASTER}
 ```
 
 #### Train via InputMode.TENSORFLOW
@@ -299,5 +299,5 @@ kill $PID
 
 #### Shutdown the Spark Standalone cluster
 ```bash
-${SPARK_HOME}/sbin/stop-slave.sh; ${SPARK_HOME}/sbin/stop-master.sh
+${SPARK_HOME}/sbin/stop-worker.sh; ${SPARK_HOME}/sbin/stop-master.sh
 ```
