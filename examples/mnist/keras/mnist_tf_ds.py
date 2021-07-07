@@ -87,9 +87,7 @@ def main_fun(args, ctx):
     multi_worker_model = build_and_compile_cnn_model()
   multi_worker_model.fit(x=train_datasets, epochs=args.epochs, steps_per_epoch=steps_per_epoch, callbacks=callbacks)
 
-  from tensorflow_estimator.python.estimator.export import export_lib
-  export_dir = export_lib.get_timestamped_export_dir(args.export_dir)
-  compat.export_saved_model(multi_worker_model, export_dir, ctx.job_name == 'chief')
+  compat.export_saved_model(multi_worker_model, args.export_dir, ctx.job_name == 'chief')
 
 
 if __name__ == '__main__':

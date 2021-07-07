@@ -65,9 +65,7 @@ def main_fun(args, ctx):
 
   multi_worker_model.fit(x=ds, epochs=args.epochs, steps_per_epoch=max_steps_per_worker, callbacks=callbacks)
 
-  from tensorflow_estimator.python.estimator.export import export_lib
-  export_dir = export_lib.get_timestamped_export_dir(args.export_dir)
-  compat.export_saved_model(multi_worker_model, export_dir, ctx.job_name == 'chief')
+  compat.export_saved_model(multi_worker_model, args.export_dir, ctx.job_name == 'chief')
 
   # terminating feed tells spark to skip processing further partitions
   tf_feed.terminate()
