@@ -127,11 +127,14 @@ class TFCluster(object):
     """
     logger.info("Waiting for TensorFlow nodes to complete...")
 
-    # identify ps/chief/workers/eval nodes
-    ps_list, chief_list, worker_list, eval_list = [], [], [], []
+    # get lists of nodes by job_name
+    nodes = {job_name: [] for job_name in ('ps', 'chief', 'worker', 'evaluator')}
     for node in self.cluster_info:
       job_name = node['job_name']
-      (ps_list if job_name == 'ps' else chief_list if job_name == 'chief' else eval_list if job_name == 'evaluator' else worker_list).append(node)
+      nodes[job_name].append(node)
+
+    # nodes that run indefinitely, e.g. using server.join() or infinite loop
+    persistent_nodes = self.cluster_meta['persistent_nodes']
 
     # setup execution timeout
     if timeout > 0:
@@ -154,11 +157,8 @@ class TFCluster(object):
           break
     elif self.input_mode == InputMode.TENSORFLOW:
       # in TENSORFLOW mode, there is no "data feeding" job, only a "start" job, so we must wait for the TensorFlow workers
-      # to complete all tasks, while accounting for any PS (or "join" worker) tasks which run indefinitely.
-      expected_remaining_tasks = len(ps_list) + len(eval_list)
-      if self.cluster_meta['stop_workers']:
-        expected_remaining_tasks += len(worker_list)
-
+      # to complete all tasks, while accounting for any tasks which run indefinitely, e.g. 'ps', 'evalutor'
+      expected_remaining_tasks = sum([len(v) for k, v in nodes.items() if k in persistent_nodes])
       count = 0
       while count < 3:
         st = self.sc.statusTracker()
@@ -176,8 +176,8 @@ class TFCluster(object):
     # shutdown queues and managers for "worker" executors.
     # note: in SPARK mode, this job will immediately queue up behind the "data feeding" job.
     # in TENSORFLOW mode, this will only run after all workers have finished.
-    if not self.cluster_meta['stop_workers']:
-      workers = len(worker_list)
+    if 'worker' not in self.cluster_meta['persistent_nodes']:
+      workers = len(nodes['worker'])
       workerRDD = self.sc.parallelize(range(workers), workers)
       workerRDD.foreachPartition(TFSparkNode.shutdown(self.cluster_info, grace_secs, self.queues))
 
@@ -191,10 +191,9 @@ class TFCluster(object):
     logger.info("Shutting down cluster")
     # shutdown queues and managers for "PS" (and "join" worker) executors.
     # note: we have to connect/shutdown from the spark driver, because these executors are "busy" and won't accept any other tasks.
-    node_list = ps_list + eval_list
-    if self.cluster_meta['stop_workers']:
-      node_list += worker_list
-    for node in node_list:
+    persistent_node_groups = [v for k, v in nodes.items() if k in persistent_nodes]
+    persistent_nodes = [x for sublist in persistent_node_groups for x in sublist]
+    for node in persistent_nodes:
       addr = node['addr']
       authkey = node['authkey']
       m = TFManager.connect(addr, authkey)
@@ -223,7 +222,7 @@ class TFCluster(object):
 
 def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mode=InputMode.TENSORFLOW,
         log_dir=None, driver_ps_nodes=False, master_node=None, reservation_timeout=600, queues=['input', 'output', 'control', 'error'],
-        eval_node=False, release_port=True, stop_workers=False):
+        eval_node=False, release_port=True, persistent_nodes=['ps', 'evaluator']):
   """Starts the TensorFlowOnSpark cluster and Runs the TensorFlow "main" function on the Spark executors
 
   Args:
@@ -241,7 +240,7 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
     :queues: *INTERNAL_USE*
     :eval_node: run evaluator node for distributed Tensorflow
     :release_port: automatically release reserved port prior to invoking user's map_function.  If False, user's map_function must invoke ctx.release_port() prior to starting TF GRPC server.
-    :stop_workers: stop worker nodes after chief node finishes, required when using ParameterServerStrategy with worker nodes that just run `server.join()`.  Default is false.
+    :persistent_nodes: lists of job_types that run forever, e.g. using server.join() or infinite loop, which require a special control channel to shutdown.  Default is ['ps', 'evaluator'].
 
   Returns:
     A TFCluster object representing the started cluster.
@@ -304,7 +303,7 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
     'working_dir': working_dir,
     'server_addr': server_addr,
     'release_port': release_port,
-    'stop_workers': stop_workers
+    'persistent_nodes': persistent_nodes
   }
   if driver_ps_nodes:
     nodeRDD = sc.parallelize(range(num_ps, num_executors), num_executors - num_ps)

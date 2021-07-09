@@ -25,7 +25,7 @@ class TFSparkNodeTest(unittest.TestCase):
       'working_dir': '.',
       'server_addr': self.server_addr,
       'release_port': True,
-      'stop_workers': False
+      'persistent_nodes': ['ps', 'evaluator']
     }
     self.tensorboard = False
     self.log_dir = None
