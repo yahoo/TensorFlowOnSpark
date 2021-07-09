@@ -23,7 +23,9 @@ class TFSparkNodeTest(unittest.TestCase):
       'num_executors': 1,
       'default_fs': 'file://',
       'working_dir': '.',
-      'server_addr': self.server_addr
+      'server_addr': self.server_addr,
+      'release_port': True,
+      'stop_workers': False
     }
     self.tensorboard = False
     self.log_dir = None

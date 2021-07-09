@@ -141,7 +141,7 @@ class PipelineTest(test.SparkTest):
       tf_feed.terminate()
 
     # create a Spark DataFrame of training examples (features, labels)
-    rdd = self.sc.parallelize(self.train_examples, 2)
+    rdd = self.sc.parallelize(self.train_examples, self.num_workers)
     trainDF = rdd.toDF(['col1', 'col2'])
 
     # train and export model

@@ -265,12 +265,16 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
     # use a random uuid as the authkey
     authkey = uuid.uuid4().bytes
     addr = None
-    if job_name in ('ps', 'evaluator'):
-      # PS nodes must be remotely accessible in order to shutdown from Spark driver.
-      TFSparkNode.mgr = TFManager.start(authkey, ['control', 'error'], 'remote')
+    remote_nodes = ['ps', 'evaluator']
+    if cluster_meta['stop_workers']:
+      remote_nodes += ['worker']
+
+    if job_name in remote_nodes:
+      # nodes that run forever and need to be remotely accessible in order to shutdown from Spark driver.
+      TFSparkNode.mgr = TFManager.start(authkey, queues, 'remote')
       addr = (host, TFSparkNode.mgr.address[1])
     else:
-      # worker nodes only need to be locally accessible within the executor for data feeding
+      # nodes that only need to be locally accessible within the executor for data feeding
       TFSparkNode.mgr = TFManager.start(authkey, queues)
       addr = TFSparkNode.mgr.address
 
@@ -425,18 +429,18 @@ def run(fn, tf_args, cluster_meta, tensorboard, log_dir, queues, background):
       except Exception:
         errq.put(traceback.format_exc())
 
-    if job_name in ('ps', 'evaluator') or background:
+    if job_name in remote_nodes or background:
       # invoke the TensorFlow main function in a background thread
       logger.info("Starting TensorFlow {0}:{1} as {2} on cluster node {3} on background process".format(
         job_name, task_index, job_name, executor_id))
 
       p = multiprocessing.Process(target=wrapper_fn_background, args=(tf_args, ctx))
-      if job_name in ('ps', 'evaluator'):
+      if job_name in remote_nodes:
         p.daemon = True
       p.start()
 
-      # for ps and evaluator nodes, wait indefinitely in foreground thread for a "control" event (None == "stop")
-      if job_name in ('ps', 'evaluator'):
+      # for remote nodes, wait indefinitely in foreground thread for a "control" event (None == "stop")
+      if job_name in remote_nodes:
         queue = TFSparkNode.mgr.get_queue('control')
         equeue = TFSparkNode.mgr.get_queue('error')
         done = False

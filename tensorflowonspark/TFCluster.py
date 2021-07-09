@@ -127,10 +127,11 @@ class TFCluster(object):
     """
     logger.info("Waiting for TensorFlow nodes to complete...")
 
-    # identify ps/workers
-    ps_list, worker_list, eval_list = [], [], []
+    # identify ps/chief/workers/eval nodes
+    ps_list, chief_list, worker_list, eval_list = [], [], [], []
     for node in self.cluster_info:
-      (ps_list if node['job_name'] == 'ps' else eval_list if node['job_name'] == 'evaluator' else worker_list).append(node)
+      job_name = node['job_name']
+      (ps_list if job_name == 'ps' else chief_list if job_name == 'chief' else eval_list if job_name == 'evaluator' else worker_list).append(node)
 
     # setup execution timeout
     if timeout > 0:
@@ -153,7 +154,11 @@ class TFCluster(object):
           break
     elif self.input_mode == InputMode.TENSORFLOW:
       # in TENSORFLOW mode, there is no "data feeding" job, only a "start" job, so we must wait for the TensorFlow workers
-      # to complete all tasks, while accounting for any PS tasks which run indefinitely.
+      # to complete all tasks, while accounting for any PS (or "join" worker) tasks which run indefinitely.
+      expected_remaining_tasks = len(ps_list) + len(eval_list)
+      if self.cluster_meta['stop_workers']:
+        expected_remaining_tasks += len(worker_list)
+
       count = 0
       while count < 3:
         st = self.sc.statusTracker()
@@ -163,7 +168,7 @@ class TFCluster(object):
         stages = st.getActiveStageIds()
         for i in stages:
           si = st.getStageInfo(i)
-          if si.numActiveTasks == len(ps_list) + len(eval_list):
+          if si.numActiveTasks == expected_remaining_tasks:
             # if we only have PS tasks left, check that we see this condition a couple times
             count += 1
         time.sleep(5)
@@ -171,9 +176,10 @@ class TFCluster(object):
     # shutdown queues and managers for "worker" executors.
     # note: in SPARK mode, this job will immediately queue up behind the "data feeding" job.
     # in TENSORFLOW mode, this will only run after all workers have finished.
-    workers = len(worker_list)
-    workerRDD = self.sc.parallelize(range(workers), workers)
-    workerRDD.foreachPartition(TFSparkNode.shutdown(self.cluster_info, grace_secs, self.queues))
+    if not self.cluster_meta['stop_workers']:
+      workers = len(worker_list)
+      workerRDD = self.sc.parallelize(range(workers), workers)
+      workerRDD.foreachPartition(TFSparkNode.shutdown(self.cluster_info, grace_secs, self.queues))
 
     # exit Spark application w/ err status if TF job had any errors
     if 'error' in tf_status:
@@ -183,9 +189,12 @@ class TFCluster(object):
       sys.exit(1)
 
     logger.info("Shutting down cluster")
-    # shutdown queues and managers for "PS" executors.
+    # shutdown queues and managers for "PS" (and "join" worker) executors.
     # note: we have to connect/shutdown from the spark driver, because these executors are "busy" and won't accept any other tasks.
-    for node in ps_list + eval_list:
+    node_list = ps_list + eval_list
+    if self.cluster_meta['stop_workers']:
+      node_list += worker_list
+    for node in node_list:
       addr = node['addr']
       authkey = node['authkey']
       m = TFManager.connect(addr, authkey)
@@ -213,8 +222,8 @@ class TFCluster(object):
 
 
 def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mode=InputMode.TENSORFLOW,
-        log_dir=None, driver_ps_nodes=False, master_node=None, reservation_timeout=600, queues=['input', 'output', 'error'],
-        eval_node=False, release_port=True):
+        log_dir=None, driver_ps_nodes=False, master_node=None, reservation_timeout=600, queues=['input', 'output', 'control', 'error'],
+        eval_node=False, release_port=True, stop_workers=False):
   """Starts the TensorFlowOnSpark cluster and Runs the TensorFlow "main" function on the Spark executors
 
   Args:
@@ -232,6 +241,7 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
     :queues: *INTERNAL_USE*
     :eval_node: run evaluator node for distributed Tensorflow
     :release_port: automatically release reserved port prior to invoking user's map_function.  If False, user's map_function must invoke ctx.release_port() prior to starting TF GRPC server.
+    :stop_workers: stop worker nodes after chief node finishes, required when using ParameterServerStrategy with worker nodes that just run `server.join()`.  Default is false.
 
   Returns:
     A TFCluster object representing the started cluster.
@@ -293,7 +303,8 @@ def run(sc, map_fun, tf_args, num_executors, num_ps, tensorboard=False, input_mo
     'default_fs': defaultFS,
     'working_dir': working_dir,
     'server_addr': server_addr,
-    'release_port': release_port
+    'release_port': release_port,
+    'stop_workers': stop_workers
   }
   if driver_ps_nodes:
     nodeRDD = sc.parallelize(range(num_ps, num_executors), num_executors - num_ps)
