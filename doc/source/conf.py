@@ -24,7 +24,7 @@ autodoc_mock_imports = ["pyspark", "tensorflow"]
 # -- Project information -----------------------------------------------------
 
 project = 'TensorFlowOnSpark'
-copyright = '2020, Yahoo Inc / Verizon Media'
+copyright = '2020, Yahoo Inc'
 author = 'Yahoo Inc'
 
 # The short X.Y version

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright 2017, Verizon Inc.
+# Copyright 2017, Yahoo Inc.
 # Licensed under the terms of the apache license.  See the LICENSE file in the project root for terms
 """
 Package setup file for python module 'tensorflowonspark'
