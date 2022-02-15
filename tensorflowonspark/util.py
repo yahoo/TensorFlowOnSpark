@@ -30,7 +30,7 @@ def single_node_env(num_gpus=1, worker_index=-1, nodes=[]):
 
   if gpu_info.is_gpu_available() and num_gpus > 0:
     # reserve GPU(s), if requested
-    if worker_index >= 0 and len(nodes) > 0:
+    if worker_index >= 0 and nodes and len(nodes) > 0:
       # compute my index relative to other nodes on the same host, if known
       my_addr = nodes[worker_index]
       my_host = my_addr.split(':')[0]

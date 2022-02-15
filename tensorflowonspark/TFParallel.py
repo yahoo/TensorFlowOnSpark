@@ -47,7 +47,7 @@ def run(sc, map_fn, tf_args, num_executors, use_barrier=True):
       nodes = [t.address for t in tasks]
       num_workers = len(nodes)
     else:
-      nodes = None
+      nodes = []
       num_workers = num_executors
 
     # use the placement info to help allocate GPUs

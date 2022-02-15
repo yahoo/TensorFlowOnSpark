@@ -23,7 +23,10 @@ from six.moves.queue import Empty
 from . import compat, marker
 
 logger = logging.getLogger(__name__)
-TF_VERSION = pkg_resources.get_distribution('tensorflow').version
+try:
+  TF_VERSION = pkg_resources.get_distribution('tensorflow').version
+except:
+  TF_VERSION = pkg_resources.get_distribution('tensorflow-cpu').version
 
 
 def hdfs_path(ctx, path):
