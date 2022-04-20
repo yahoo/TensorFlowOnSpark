@@ -25,7 +25,7 @@ from . import compat, marker
 logger = logging.getLogger(__name__)
 try:
   TF_VERSION = pkg_resources.get_distribution('tensorflow').version
-except:
+except pkg_resources.DistributionNotFound:
   TF_VERSION = pkg_resources.get_distribution('tensorflow-cpu').version
 
 
