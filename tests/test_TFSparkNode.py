@@ -46,8 +46,10 @@ class TFSparkNodeTest(unittest.TestCase):
     map_fn = TFSparkNode.run(fn, tf_args, self.cluster_meta, self.tensorboard, self.log_dir, self.queues, self.background)
     map_fn([0])
 
-  def test_gpu_unavailable(self):
+  @patch('tensorflowonspark.gpu_info.is_gpu_available')
+  def test_gpu_unavailable(self, mock_available):
     """Request GPU with no GPUs available, expecting an exception"""
+    mock_available.return_value = False
     self.parser.add_argument("--num_gpus", help="number of gpus to use", type=int)
     tf_args = self.parser.parse_args(["--num_gpus", "1"])
 

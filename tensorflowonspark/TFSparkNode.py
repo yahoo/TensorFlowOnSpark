@@ -31,7 +31,10 @@ from . import reservation
 from . import util
 
 logger = logging.getLogger(__name__)
-TF_VERSION = pkg_resources.get_distribution('tensorflow').version
+try:
+  TF_VERSION = pkg_resources.get_distribution('tensorflow').version
+except pkg_resources.DistributionNotFound:
+  TF_VERSION = pkg_resources.get_distribution('tensorflow-cpu').version
 
 
 def _has_spark_resource_api():
@@ -502,7 +505,7 @@ def train(cluster_info, cluster_meta, feed_timeout=600, qname='input'):
       joinThr = Thread(target=queue.join)
       joinThr.start()
       timeout = feed_timeout
-      while (joinThr.isAlive()):
+      while (joinThr.is_alive()):
         if (not equeue.empty()):
           e_str = equeue.get()
           raise Exception("Exception in worker:\n" + e_str)
@@ -570,7 +573,7 @@ def inference(cluster_info, feed_timeout=600, qname='input'):
     joinThr = Thread(target=queue_in.join)
     joinThr.start()
     timeout = feed_timeout
-    while (joinThr.isAlive()):
+    while (joinThr.is_alive()):
       if (not equeue.empty()):
         e_str = equeue.get()
         raise Exception("Exception in worker:\n" + e_str)

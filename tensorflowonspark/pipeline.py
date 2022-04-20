@@ -31,7 +31,10 @@ from packaging import version
 
 
 logger = logging.getLogger(__name__)
-TF_VERSION = pkg_resources.get_distribution('tensorflow').version
+try:
+  TF_VERSION = pkg_resources.get_distribution('tensorflow').version
+except pkg_resources.DistributionNotFound:
+  TF_VERSION = pkg_resources.get_distribution('tensorflow-cpu').version
 
 
 # TensorFlowOnSpark Params
