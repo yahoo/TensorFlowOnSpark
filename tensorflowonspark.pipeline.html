@@ -1,77 +1,37 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>tensorflowonspark.pipeline module &mdash; TensorFlowOnSpark 2.2.4 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-
-  
-  
-
-  
-  
-
-  
-
-  
+  <title>tensorflowonspark.pipeline module &mdash; TensorFlowOnSpark 2.2.5 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-
-    
+    <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="tensorflowonspark.reservation module" href="tensorflowonspark.reservation.html" />
     <link rel="prev" title="tensorflowonspark.marker module" href="tensorflowonspark.marker.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="index.html" class="icon icon-home"> TensorFlowOnSpark
-          
-
-          
           </a>
-
-          
-            
-            
               <div class="version">
-                2.2.4
+                2.2.5
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -79,19 +39,8 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Contents:</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="tensorflowonspark.html">tensorflowonspark package</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="tensorflowonspark.html#submodules">Submodules</a><ul class="current">
@@ -113,75 +62,33 @@
 </li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">TensorFlowOnSpark</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-        
           <li><a href="tensorflowonspark.html">tensorflowonspark package</a> &raquo;</li>
-        
       <li>tensorflowonspark.pipeline module</li>
-    
-    
       <li class="wy-breadcrumbs-aside">
-        
-          
             <a href="_sources/tensorflowonspark.pipeline.rst.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="module-tensorflowonspark.pipeline">
-<span id="tensorflowonspark-pipeline-module"></span><h1>tensorflowonspark.pipeline module<a class="headerlink" href="#module-tensorflowonspark.pipeline" title="Permalink to this headline">¶</a></h1>
+             
+  <section id="module-tensorflowonspark.pipeline">
+<span id="tensorflowonspark-pipeline-module"></span><h1>tensorflowonspark.pipeline module<a class="headerlink" href="#module-tensorflowonspark.pipeline" title="Permalink to this headline"></a></h1>
 <p>This module extends the TensorFlowOnSpark API to support Spark ML Pipelines.</p>
 <p>It provides a TFEstimator class to fit a TFModel using TensorFlow.  The TFEstimator will actually spawn a TensorFlowOnSpark cluster
 to conduct distributed training, but due to architectural limitations, the TFModel will only run single-node TensorFlow instances
@@ -189,414 +96,319 @@ when inferencing on the executors.  The executors will run in parallel, so the T
 of each executor.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasBatchSize">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HasBatchSize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasBatchSize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasBatchSize" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.</span></code></p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasBatchSize.batch_size">
-<span class="sig-name descname"><span class="pre">batch_size</span></span><a class="headerlink" href="#tensorflowonspark.pipeline.HasBatchSize.batch_size" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HasBatchSize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasBatchSize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasBatchSize" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.Params</span></code></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasBatchSize.getBatchSize">
-<span class="sig-name descname"><span class="pre">getBatchSize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasBatchSize.getBatchSize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasBatchSize.getBatchSize" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getBatchSize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasBatchSize.getBatchSize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasBatchSize.getBatchSize" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasBatchSize.setBatchSize">
-<span class="sig-name descname"><span class="pre">setBatchSize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasBatchSize.setBatchSize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasBatchSize.setBatchSize" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setBatchSize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasBatchSize.setBatchSize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasBatchSize.setBatchSize" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasClusterSize">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HasClusterSize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasClusterSize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasClusterSize" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.</span></code></p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasClusterSize.cluster_size">
-<span class="sig-name descname"><span class="pre">cluster_size</span></span><a class="headerlink" href="#tensorflowonspark.pipeline.HasClusterSize.cluster_size" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HasClusterSize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasClusterSize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasClusterSize" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.Params</span></code></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasClusterSize.getClusterSize">
-<span class="sig-name descname"><span class="pre">getClusterSize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasClusterSize.getClusterSize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasClusterSize.getClusterSize" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getClusterSize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasClusterSize.getClusterSize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasClusterSize.getClusterSize" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasClusterSize.setClusterSize">
-<span class="sig-name descname"><span class="pre">setClusterSize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasClusterSize.setClusterSize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasClusterSize.setClusterSize" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setClusterSize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasClusterSize.setClusterSize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasClusterSize.setClusterSize" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasEpochs">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HasEpochs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasEpochs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasEpochs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.</span></code></p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasEpochs.epochs">
-<span class="sig-name descname"><span class="pre">epochs</span></span><a class="headerlink" href="#tensorflowonspark.pipeline.HasEpochs.epochs" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HasEpochs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasEpochs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasEpochs" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.Params</span></code></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasEpochs.getEpochs">
-<span class="sig-name descname"><span class="pre">getEpochs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasEpochs.getEpochs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasEpochs.getEpochs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getEpochs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasEpochs.getEpochs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasEpochs.getEpochs" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasEpochs.setEpochs">
-<span class="sig-name descname"><span class="pre">setEpochs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasEpochs.setEpochs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasEpochs.setEpochs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setEpochs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasEpochs.setEpochs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasEpochs.setEpochs" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasExportDir">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HasExportDir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasExportDir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasExportDir" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.</span></code></p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasExportDir.export_dir">
-<span class="sig-name descname"><span class="pre">export_dir</span></span><a class="headerlink" href="#tensorflowonspark.pipeline.HasExportDir.export_dir" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HasExportDir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasExportDir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasExportDir" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.Params</span></code></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasExportDir.getExportDir">
-<span class="sig-name descname"><span class="pre">getExportDir</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasExportDir.getExportDir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasExportDir.getExportDir" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getExportDir</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasExportDir.getExportDir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasExportDir.getExportDir" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasExportDir.setExportDir">
-<span class="sig-name descname"><span class="pre">setExportDir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasExportDir.setExportDir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasExportDir.setExportDir" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setExportDir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasExportDir.setExportDir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasExportDir.setExportDir" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasGraceSecs">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HasGraceSecs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasGraceSecs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasGraceSecs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.</span></code></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HasGraceSecs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasGraceSecs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasGraceSecs" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.Params</span></code></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasGraceSecs.getGraceSecs">
-<span class="sig-name descname"><span class="pre">getGraceSecs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasGraceSecs.getGraceSecs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasGraceSecs.getGraceSecs" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasGraceSecs.grace_secs">
-<span class="sig-name descname"><span class="pre">grace_secs</span></span><a class="headerlink" href="#tensorflowonspark.pipeline.HasGraceSecs.grace_secs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getGraceSecs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasGraceSecs.getGraceSecs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasGraceSecs.getGraceSecs" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasGraceSecs.setGraceSecs">
-<span class="sig-name descname"><span class="pre">setGraceSecs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasGraceSecs.setGraceSecs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasGraceSecs.setGraceSecs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setGraceSecs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasGraceSecs.setGraceSecs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasGraceSecs.setGraceSecs" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasInputMapping">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HasInputMapping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasInputMapping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasInputMapping" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.</span></code></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HasInputMapping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasInputMapping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasInputMapping" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.Params</span></code></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasInputMapping.getInputMapping">
-<span class="sig-name descname"><span class="pre">getInputMapping</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasInputMapping.getInputMapping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasInputMapping.getInputMapping" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasInputMapping.input_mapping">
-<span class="sig-name descname"><span class="pre">input_mapping</span></span><a class="headerlink" href="#tensorflowonspark.pipeline.HasInputMapping.input_mapping" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getInputMapping</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasInputMapping.getInputMapping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasInputMapping.getInputMapping" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasInputMapping.setInputMapping">
-<span class="sig-name descname"><span class="pre">setInputMapping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasInputMapping.setInputMapping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasInputMapping.setInputMapping" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setInputMapping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasInputMapping.setInputMapping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasInputMapping.setInputMapping" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasInputMode">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HasInputMode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasInputMode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasInputMode" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.</span></code></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HasInputMode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasInputMode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasInputMode" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.Params</span></code></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasInputMode.getInputMode">
-<span class="sig-name descname"><span class="pre">getInputMode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasInputMode.getInputMode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasInputMode.getInputMode" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasInputMode.input_mode">
-<span class="sig-name descname"><span class="pre">input_mode</span></span><a class="headerlink" href="#tensorflowonspark.pipeline.HasInputMode.input_mode" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getInputMode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasInputMode.getInputMode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasInputMode.getInputMode" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasInputMode.setInputMode">
-<span class="sig-name descname"><span class="pre">setInputMode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasInputMode.setInputMode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasInputMode.setInputMode" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setInputMode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasInputMode.setInputMode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasInputMode.setInputMode" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasMasterNode">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HasMasterNode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasMasterNode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasMasterNode" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.</span></code></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HasMasterNode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasMasterNode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasMasterNode" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.Params</span></code></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasMasterNode.getMasterNode">
-<span class="sig-name descname"><span class="pre">getMasterNode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasMasterNode.getMasterNode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasMasterNode.getMasterNode" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasMasterNode.master_node">
-<span class="sig-name descname"><span class="pre">master_node</span></span><a class="headerlink" href="#tensorflowonspark.pipeline.HasMasterNode.master_node" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getMasterNode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasMasterNode.getMasterNode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasMasterNode.getMasterNode" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasMasterNode.setMasterNode">
-<span class="sig-name descname"><span class="pre">setMasterNode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasMasterNode.setMasterNode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasMasterNode.setMasterNode" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setMasterNode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasMasterNode.setMasterNode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasMasterNode.setMasterNode" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasModelDir">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HasModelDir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasModelDir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasModelDir" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.</span></code></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HasModelDir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasModelDir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasModelDir" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.Params</span></code></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasModelDir.getModelDir">
-<span class="sig-name descname"><span class="pre">getModelDir</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasModelDir.getModelDir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasModelDir.getModelDir" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasModelDir.model_dir">
-<span class="sig-name descname"><span class="pre">model_dir</span></span><a class="headerlink" href="#tensorflowonspark.pipeline.HasModelDir.model_dir" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getModelDir</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasModelDir.getModelDir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasModelDir.getModelDir" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasModelDir.setModelDir">
-<span class="sig-name descname"><span class="pre">setModelDir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasModelDir.setModelDir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasModelDir.setModelDir" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setModelDir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasModelDir.setModelDir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasModelDir.setModelDir" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasNumPS">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HasNumPS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasNumPS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasNumPS" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.</span></code></p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasNumPS.driver_ps_nodes">
-<span class="sig-name descname"><span class="pre">driver_ps_nodes</span></span><a class="headerlink" href="#tensorflowonspark.pipeline.HasNumPS.driver_ps_nodes" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HasNumPS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasNumPS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasNumPS" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.Params</span></code></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasNumPS.getDriverPSNodes">
-<span class="sig-name descname"><span class="pre">getDriverPSNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasNumPS.getDriverPSNodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasNumPS.getDriverPSNodes" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getDriverPSNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasNumPS.getDriverPSNodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasNumPS.getDriverPSNodes" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasNumPS.getNumPS">
-<span class="sig-name descname"><span class="pre">getNumPS</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasNumPS.getNumPS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasNumPS.getNumPS" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasNumPS.num_ps">
-<span class="sig-name descname"><span class="pre">num_ps</span></span><a class="headerlink" href="#tensorflowonspark.pipeline.HasNumPS.num_ps" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getNumPS</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasNumPS.getNumPS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasNumPS.getNumPS" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasNumPS.setDriverPSNodes">
-<span class="sig-name descname"><span class="pre">setDriverPSNodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasNumPS.setDriverPSNodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasNumPS.setDriverPSNodes" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setDriverPSNodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasNumPS.setDriverPSNodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasNumPS.setDriverPSNodes" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasNumPS.setNumPS">
-<span class="sig-name descname"><span class="pre">setNumPS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasNumPS.setNumPS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasNumPS.setNumPS" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setNumPS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasNumPS.setNumPS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasNumPS.setNumPS" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasOutputMapping">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HasOutputMapping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasOutputMapping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasOutputMapping" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.</span></code></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HasOutputMapping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasOutputMapping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasOutputMapping" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.Params</span></code></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasOutputMapping.getOutputMapping">
-<span class="sig-name descname"><span class="pre">getOutputMapping</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasOutputMapping.getOutputMapping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasOutputMapping.getOutputMapping" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasOutputMapping.output_mapping">
-<span class="sig-name descname"><span class="pre">output_mapping</span></span><a class="headerlink" href="#tensorflowonspark.pipeline.HasOutputMapping.output_mapping" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getOutputMapping</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasOutputMapping.getOutputMapping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasOutputMapping.getOutputMapping" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasOutputMapping.setOutputMapping">
-<span class="sig-name descname"><span class="pre">setOutputMapping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasOutputMapping.setOutputMapping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasOutputMapping.setOutputMapping" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setOutputMapping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasOutputMapping.setOutputMapping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasOutputMapping.setOutputMapping" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasProtocol">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HasProtocol</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasProtocol"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasProtocol" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.</span></code></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HasProtocol</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasProtocol"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasProtocol" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.Params</span></code></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasProtocol.getProtocol">
-<span class="sig-name descname"><span class="pre">getProtocol</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasProtocol.getProtocol"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasProtocol.getProtocol" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasProtocol.protocol">
-<span class="sig-name descname"><span class="pre">protocol</span></span><a class="headerlink" href="#tensorflowonspark.pipeline.HasProtocol.protocol" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getProtocol</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasProtocol.getProtocol"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasProtocol.getProtocol" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasProtocol.setProtocol">
-<span class="sig-name descname"><span class="pre">setProtocol</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasProtocol.setProtocol"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasProtocol.setProtocol" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setProtocol</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasProtocol.setProtocol"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasProtocol.setProtocol" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasReaders">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HasReaders</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasReaders"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasReaders" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.</span></code></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HasReaders</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasReaders"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasReaders" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.Params</span></code></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasReaders.getReaders">
-<span class="sig-name descname"><span class="pre">getReaders</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasReaders.getReaders"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasReaders.getReaders" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasReaders.readers">
-<span class="sig-name descname"><span class="pre">readers</span></span><a class="headerlink" href="#tensorflowonspark.pipeline.HasReaders.readers" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getReaders</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasReaders.getReaders"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasReaders.getReaders" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasReaders.setReaders">
-<span class="sig-name descname"><span class="pre">setReaders</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasReaders.setReaders"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasReaders.setReaders" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setReaders</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasReaders.setReaders"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasReaders.setReaders" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasSignatureDefKey">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HasSignatureDefKey</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasSignatureDefKey"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasSignatureDefKey" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.</span></code></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HasSignatureDefKey</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasSignatureDefKey"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasSignatureDefKey" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.Params</span></code></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasSignatureDefKey.getSignatureDefKey">
-<span class="sig-name descname"><span class="pre">getSignatureDefKey</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasSignatureDefKey.getSignatureDefKey"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasSignatureDefKey.getSignatureDefKey" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getSignatureDefKey</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasSignatureDefKey.getSignatureDefKey"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasSignatureDefKey.getSignatureDefKey" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasSignatureDefKey.setSignatureDefKey">
-<span class="sig-name descname"><span class="pre">setSignatureDefKey</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasSignatureDefKey.setSignatureDefKey"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasSignatureDefKey.setSignatureDefKey" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasSignatureDefKey.signature_def_key">
-<span class="sig-name descname"><span class="pre">signature_def_key</span></span><a class="headerlink" href="#tensorflowonspark.pipeline.HasSignatureDefKey.signature_def_key" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setSignatureDefKey</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasSignatureDefKey.setSignatureDefKey"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasSignatureDefKey.setSignatureDefKey" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasSteps">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HasSteps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasSteps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasSteps" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.</span></code></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HasSteps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasSteps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasSteps" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.Params</span></code></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasSteps.getSteps">
-<span class="sig-name descname"><span class="pre">getSteps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasSteps.getSteps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasSteps.getSteps" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getSteps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasSteps.getSteps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasSteps.getSteps" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasSteps.setSteps">
-<span class="sig-name descname"><span class="pre">setSteps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasSteps.setSteps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasSteps.setSteps" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasSteps.steps">
-<span class="sig-name descname"><span class="pre">steps</span></span><a class="headerlink" href="#tensorflowonspark.pipeline.HasSteps.steps" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setSteps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasSteps.setSteps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasSteps.setSteps" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasTFRecordDir">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HasTFRecordDir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasTFRecordDir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasTFRecordDir" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.</span></code></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HasTFRecordDir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasTFRecordDir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasTFRecordDir" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.Params</span></code></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasTFRecordDir.getTFRecordDir">
-<span class="sig-name descname"><span class="pre">getTFRecordDir</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasTFRecordDir.getTFRecordDir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasTFRecordDir.getTFRecordDir" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getTFRecordDir</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasTFRecordDir.getTFRecordDir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasTFRecordDir.getTFRecordDir" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasTFRecordDir.setTFRecordDir">
-<span class="sig-name descname"><span class="pre">setTFRecordDir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasTFRecordDir.setTFRecordDir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasTFRecordDir.setTFRecordDir" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasTFRecordDir.tfrecord_dir">
-<span class="sig-name descname"><span class="pre">tfrecord_dir</span></span><a class="headerlink" href="#tensorflowonspark.pipeline.HasTFRecordDir.tfrecord_dir" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setTFRecordDir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasTFRecordDir.setTFRecordDir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasTFRecordDir.setTFRecordDir" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasTagSet">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HasTagSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasTagSet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasTagSet" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.</span></code></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HasTagSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasTagSet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasTagSet" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.Params</span></code></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasTagSet.getTagSet">
-<span class="sig-name descname"><span class="pre">getTagSet</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasTagSet.getTagSet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasTagSet.getTagSet" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getTagSet</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasTagSet.getTagSet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasTagSet.getTagSet" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasTagSet.setTagSet">
-<span class="sig-name descname"><span class="pre">setTagSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasTagSet.setTagSet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasTagSet.setTagSet" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasTagSet.tag_set">
-<span class="sig-name descname"><span class="pre">tag_set</span></span><a class="headerlink" href="#tensorflowonspark.pipeline.HasTagSet.tag_set" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setTagSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasTagSet.setTagSet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasTagSet.setTagSet" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasTensorboard">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HasTensorboard</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasTensorboard"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasTensorboard" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.</span></code></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HasTensorboard</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasTensorboard"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasTensorboard" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.Params</span></code></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasTensorboard.getTensorboard">
-<span class="sig-name descname"><span class="pre">getTensorboard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasTensorboard.getTensorboard"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasTensorboard.getTensorboard" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getTensorboard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasTensorboard.getTensorboard"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasTensorboard.getTensorboard" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasTensorboard.setTensorboard">
-<span class="sig-name descname"><span class="pre">setTensorboard</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasTensorboard.setTensorboard"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasTensorboard.setTensorboard" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="tensorflowonspark.pipeline.HasTensorboard.tensorboard">
-<span class="sig-name descname"><span class="pre">tensorboard</span></span><a class="headerlink" href="#tensorflowonspark.pipeline.HasTensorboard.tensorboard" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setTensorboard</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#HasTensorboard.setTensorboard"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.HasTensorboard.setTensorboard" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.Namespace">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">Namespace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#Namespace"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.Namespace" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Namespace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#Namespace"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.Namespace" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Utility class to convert dictionaries to Namespace-like objects.</p>
 <p>Based on <a class="reference external" href="https://docs.python.org/dev/library/types.html#types.SimpleNamespace">https://docs.python.org/dev/library/types.html#types.SimpleNamespace</a></p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.Namespace.argv">
-<span class="sig-name descname"><span class="pre">argv</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#tensorflowonspark.pipeline.Namespace.argv" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">argv</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#tensorflowonspark.pipeline.Namespace.argv" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.TFEstimator">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">TFEstimator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#TFEstimator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.TFEstimator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.pipeline.</span></code>, <a class="reference internal" href="#tensorflowonspark.pipeline.TFParams" title="tensorflowonspark.pipeline.TFParams"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.TFParams</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasInputMapping" title="tensorflowonspark.pipeline.HasInputMapping"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasInputMapping</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasClusterSize" title="tensorflowonspark.pipeline.HasClusterSize"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasClusterSize</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasNumPS" title="tensorflowonspark.pipeline.HasNumPS"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasNumPS</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasInputMode" title="tensorflowonspark.pipeline.HasInputMode"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasInputMode</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasMasterNode" title="tensorflowonspark.pipeline.HasMasterNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasMasterNode</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasProtocol" title="tensorflowonspark.pipeline.HasProtocol"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasProtocol</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasGraceSecs" title="tensorflowonspark.pipeline.HasGraceSecs"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasGraceSecs</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasTensorboard" title="tensorflowonspark.pipeline.HasTensorboard"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasTensorboard</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasModelDir" title="tensorflowonspark.pipeline.HasModelDir"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasModelDir</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasExportDir" title="tensorflowonspark.pipeline.HasExportDir"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasExportDir</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasTFRecordDir" title="tensorflowonspark.pipeline.HasTFRecordDir"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasTFRecordDir</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasBatchSize" title="tensorflowonspark.pipeline.HasBatchSize"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasBatchSize</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasEpochs" title="tensorflowonspark.pipeline.HasEpochs"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasEpochs</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasReaders" title="tensorflowonspark.pipeline.HasReaders"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasReaders</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasSteps" title="tensorflowonspark.pipeline.HasSteps"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasSteps</span></code></a></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TFEstimator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#TFEstimator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.TFEstimator" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.pipeline.Estimator</span></code>, <a class="reference internal" href="#tensorflowonspark.pipeline.TFParams" title="tensorflowonspark.pipeline.TFParams"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.TFParams</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasInputMapping" title="tensorflowonspark.pipeline.HasInputMapping"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasInputMapping</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasClusterSize" title="tensorflowonspark.pipeline.HasClusterSize"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasClusterSize</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasNumPS" title="tensorflowonspark.pipeline.HasNumPS"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasNumPS</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasInputMode" title="tensorflowonspark.pipeline.HasInputMode"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasInputMode</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasMasterNode" title="tensorflowonspark.pipeline.HasMasterNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasMasterNode</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasProtocol" title="tensorflowonspark.pipeline.HasProtocol"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasProtocol</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasGraceSecs" title="tensorflowonspark.pipeline.HasGraceSecs"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasGraceSecs</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasTensorboard" title="tensorflowonspark.pipeline.HasTensorboard"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasTensorboard</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasModelDir" title="tensorflowonspark.pipeline.HasModelDir"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasModelDir</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasExportDir" title="tensorflowonspark.pipeline.HasExportDir"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasExportDir</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasTFRecordDir" title="tensorflowonspark.pipeline.HasTFRecordDir"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasTFRecordDir</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasBatchSize" title="tensorflowonspark.pipeline.HasBatchSize"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasBatchSize</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasEpochs" title="tensorflowonspark.pipeline.HasEpochs"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasEpochs</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasReaders" title="tensorflowonspark.pipeline.HasReaders"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasReaders</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasSteps" title="tensorflowonspark.pipeline.HasSteps"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasSteps</span></code></a></p>
 <p>Spark ML Estimator which launches a TensorFlowOnSpark cluster for distributed training.</p>
 <p>The columns of the DataFrame passed to the <code class="docutils literal notranslate"><span class="pre">fit()</span></code> method will be mapped to TensorFlow tensors according to the <code class="docutils literal notranslate"><span class="pre">setInputMapping()</span></code> method.
 Since the Spark ML Estimator API inherently relies on DataFrames/DataSets, InputMode.TENSORFLOW is not supported.</p>
@@ -616,20 +428,20 @@ Since the Spark ML Estimator API inherently relies on DataFrames/DataSets, Input
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.TFEstimator.export_fn">
-<span class="sig-name descname"><span class="pre">export_fn</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#tensorflowonspark.pipeline.TFEstimator.export_fn" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">export_fn</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#tensorflowonspark.pipeline.TFEstimator.export_fn" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.TFEstimator.train_fn">
-<span class="sig-name descname"><span class="pre">train_fn</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#tensorflowonspark.pipeline.TFEstimator.train_fn" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">train_fn</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#tensorflowonspark.pipeline.TFEstimator.train_fn" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.TFModel">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">TFModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#TFModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.TFModel" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.pipeline.</span></code>, <a class="reference internal" href="#tensorflowonspark.pipeline.TFParams" title="tensorflowonspark.pipeline.TFParams"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.TFParams</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasInputMapping" title="tensorflowonspark.pipeline.HasInputMapping"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasInputMapping</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasOutputMapping" title="tensorflowonspark.pipeline.HasOutputMapping"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasOutputMapping</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasBatchSize" title="tensorflowonspark.pipeline.HasBatchSize"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasBatchSize</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasModelDir" title="tensorflowonspark.pipeline.HasModelDir"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasModelDir</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasExportDir" title="tensorflowonspark.pipeline.HasExportDir"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasExportDir</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasSignatureDefKey" title="tensorflowonspark.pipeline.HasSignatureDefKey"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasSignatureDefKey</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasTagSet" title="tensorflowonspark.pipeline.HasTagSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasTagSet</span></code></a></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TFModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#TFModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.TFModel" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.pipeline.Model</span></code>, <a class="reference internal" href="#tensorflowonspark.pipeline.TFParams" title="tensorflowonspark.pipeline.TFParams"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.TFParams</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasInputMapping" title="tensorflowonspark.pipeline.HasInputMapping"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasInputMapping</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasOutputMapping" title="tensorflowonspark.pipeline.HasOutputMapping"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasOutputMapping</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasBatchSize" title="tensorflowonspark.pipeline.HasBatchSize"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasBatchSize</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasModelDir" title="tensorflowonspark.pipeline.HasModelDir"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasModelDir</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasExportDir" title="tensorflowonspark.pipeline.HasExportDir"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasExportDir</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasSignatureDefKey" title="tensorflowonspark.pipeline.HasSignatureDefKey"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasSignatureDefKey</span></code></a>, <a class="reference internal" href="#tensorflowonspark.pipeline.HasTagSet" title="tensorflowonspark.pipeline.HasTagSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflowonspark.pipeline.HasTagSet</span></code></a></p>
 <p>Spark ML Model backed by a TensorFlow model checkpoint/saved_model on disk.</p>
 <p>During <code class="docutils literal notranslate"><span class="pre">transform()</span></code>, each executor will run an independent, single-node instance of TensorFlow in parallel, so the model must fit in memory.
 The model/session will be loaded/initialized just once for each Spark Python worker, and the session will be cached for
@@ -646,36 +458,36 @@ subsequent tasks/partitions to avoid re-loading the model for each partition.</p
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.TFParams">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">TFParams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#TFParams"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.TFParams" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.</span></code></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TFParams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#TFParams"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.TFParams" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.param.shared.Params</span></code></p>
 <p>Mix-in class to store namespace-style args and merge w/ SparkML-style params.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.TFParams.args">
-<span class="sig-name descname"><span class="pre">args</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#tensorflowonspark.pipeline.TFParams.args" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">args</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#tensorflowonspark.pipeline.TFParams.args" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.TFParams.merge_args_params">
-<span class="sig-name descname"><span class="pre">merge_args_params</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#TFParams.merge_args_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.TFParams.merge_args_params" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">merge_args_params</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#TFParams.merge_args_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.TFParams.merge_args_params" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.TFTypeConverters">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">TFTypeConverters</span></span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#TFTypeConverters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.TFTypeConverters" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TFTypeConverters</span></span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#TFTypeConverters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.TFTypeConverters" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Custom DataFrame TypeConverter for dictionary types (since this is not provided by Spark core).</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.TFTypeConverters.toDict">
-<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">toDict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#TFTypeConverters.toDict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.TFTypeConverters.toDict" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">toDict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#TFTypeConverters.toDict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.TFTypeConverters.toDict" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.get_meta_graph_def">
-<span class="sig-name descname"><span class="pre">get_meta_graph_def</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">saved_model_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag_set</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#get_meta_graph_def"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.get_meta_graph_def" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_meta_graph_def</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">saved_model_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag_set</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#get_meta_graph_def"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.get_meta_graph_def" title="Permalink to this definition"></a></dt>
 <dd><p>Utility function to read a meta_graph_def from disk.</p>
 <p>From <a class="reference external" href="https://github.com/tensorflow/tensorflow/blob/8e0e8d41a3a8f2d4a6100c2ea1dc9d6c6c4ad382/tensorflow/python/tools/saved_model_cli.py#L186">saved_model_cli.py</a></p>
 <p>DEPRECATED for TF2.0+</p>
@@ -696,7 +508,7 @@ subsequent tasks/partitions to avoid re-loading the model for each partition.</p
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.single_node_env">
-<span class="sig-name descname"><span class="pre">single_node_env</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#single_node_env"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.single_node_env" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">single_node_env</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#single_node_env"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.single_node_env" title="Permalink to this definition"></a></dt>
 <dd><p>Sets up environment for a single-node TF session.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="field-list simple">
@@ -710,7 +522,7 @@ subsequent tasks/partitions to avoid re-loading the model for each partition.</p
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tensorflowonspark.pipeline.yield_batch">
-<span class="sig-name descname"><span class="pre">yield_batch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iterable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_tensors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#yield_batch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.yield_batch" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">yield_batch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iterable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_tensors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorflowonspark/pipeline.html#yield_batch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflowonspark.pipeline.yield_batch" title="Permalink to this definition"></a></dt>
 <dd><p>Generator that yields batches of a DataFrame iterator.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="field-list simple">
@@ -730,54 +542,37 @@ subsequent tasks/partitions to avoid re-loading the model for each partition.</p
 </dl>
 </dd></dl>
 
-</div>
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="tensorflowonspark.reservation.html" class="btn btn-neutral float-right" title="tensorflowonspark.reservation module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="tensorflowonspark.marker.html" class="btn btn-neutral float-left" title="tensorflowonspark.marker module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tensorflowonspark.reservation.html" class="btn btn-neutral float-right" title="tensorflowonspark.reservation module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright 2020, Yahoo Inc / Verizon Media.
-
-    </p>
+    <p>&#169; Copyright 2020, Yahoo Inc.</p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>
