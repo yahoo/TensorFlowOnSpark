@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.yahoo.ml</groupId>
     <artifactId>tensorflowonspark</artifactId>
-    <version>2.2.4-SNAPSHOT</version>
+    <version>2.2.5-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>tensorflowonspark</name>
     <description>Spark Scala inferencing for TensorFlowOnSpark</description>
