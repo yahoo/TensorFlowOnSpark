@@ -15,32 +15,32 @@ shared:
 jobs:
   validate_test:
     template: python/validate_unittest
-    requires: [~commit, ~pr]
+    requires: [~commit]
     steps:
       - prevalidate_code: |
           source scripts/install_spark.sh
 
   validate_lint:
     template: python/validate_lint
-    requires: [~commit, ~pr]
+    requires: [~commit]
 
   validate_codestyle:
     template: python/validate_codestyle
-    requires: [~commit, ~pr]
+    requires: [~commit]
 
   validate_dependencies:
     template: python/validate_dependencies
-    requires: [~commit, ~pr]
+    requires: [~commit]
 
 #  validate_security:
 #    template: python/validate_security
-#    requires: [~commit, ~pr]
+#    requires: [~commit]
 
   validate_documentation:
     template: python/documentation
     environment:
       DOCUMENTATION_PUBLISH: False
-    requires: [~pr]
+    requires: [~commit]
     steps:
       - update_version: |
           echo 'using version from setup.cfg'
