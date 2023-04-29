@@ -18,7 +18,7 @@
         <json4s-native.version>3.5.3</json4s-native.version>
         <maven-shade-plugin.version>2.4.3</maven-shade-plugin.version>
         <maven-surefire-plugin.version>2.20.1</maven-surefire-plugin.version>
-        <spark.version>3.0.1</spark.version>
+        <spark.version>3.4.0</spark.version>
         <scala.version>2.12.10</scala.version>
         <scala-maven-plugin.version>3.2.1</scala-maven-plugin.version>
         <scala-parser-combinators.version>1.1.2</scala-parser-combinators.version>
